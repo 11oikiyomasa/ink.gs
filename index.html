@@ -504,62 +504,103 @@
     }
   </style>
 
-  <style id="reference-dark-editorial">
+  <style id="reference-light-editorial">
     :root {
-      --ink: #f1f1f1;
-      --muted: #a4a4a4;
-      --line: #343434;
-      --soft: #242424;
-      --green: #f2c94c;
-      --paper: #191919;
+      --ink: #242424;
+      --muted: #6b6b6b;
+      --line: #e6e6e6;
+      --soft: #f7f7f7;
+      --green: #1a8917;
+      --paper: #ffffff;
+      --warm: #fffdf9;
+      --promo: #ffc21c;
       --serif: Georgia, "Times New Roman", serif;
       --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
     }
 
-    html { background: #191919; }
+    html { background: var(--paper); }
     body {
-      color: #f1f1f1;
-      background: #191919;
+      color: var(--ink);
+      background: var(--paper);
       font-family: var(--sans);
     }
     button, input, textarea, select { color: inherit; }
+
     .topbar {
-      height: 68px;
+      height: 64px;
       padding: 0 max(24px, calc((100vw - 1280px) / 2));
-      border-bottom: 1px solid #343434;
-      background: #191919;
-      backdrop-filter: none;
+      border-bottom: 1px solid #e7e7e7;
+      background: rgba(255,255,255,.98);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 1px 0 rgba(0,0,0,.02);
     }
     .brand-name {
-      color: #f4f4f4;
-      font: 700 27px/1 Georgia, "Times New Roman", serif;
-      letter-spacing: -1.4px;
+      color: #242424;
+      font: 700 28px/1 Georgia, "Times New Roman", serif;
+      letter-spacing: -1.45px;
     }
-    .top-actions { color: #aaa; gap: 19px; }
+    .top-actions {
+      color: #595959;
+      gap: 19px;
+    }
     .search-box {
-      width: 205px;
+      width: 208px;
       height: 38px;
-      background: #242424;
-      border: 0;
-      color: #aaa;
+      background: #f5f5f5;
+      border: 1px solid transparent;
+      color: #757575;
     }
-    .search-box input { color: #eee; }
-    .search-box input::placeholder { color: #858585; }
-    .search-box:focus-within { background: #292929; border-color: #444; }
-    .text-action { color: #bdbdbd; }
-    .text-action:hover { color: #fff; }
-    .get-started {
+    .search-box input { color: #242424; }
+    .search-box input::placeholder { color: #8a8a8a; }
+    .search-box:focus-within {
       background: #fff;
-      color: #191919;
+      border-color: #d6d6d6;
+    }
+    .text-action { color: #555; }
+    .text-action:hover { color: #111; }
+    .get-started {
+      background: #191919;
+      color: #fff;
       border-radius: 18px;
       padding: 8px 14px;
     }
     .avatar {
       width: 31px;
       height: 31px;
-      background: #d74b78;
+      background: #e7e1d8;
+      color: #6f5e4b;
+      border: 1px solid #ece7e0;
+    }
+
+    .membership-banner {
+      min-height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: var(--promo);
+      color: #191919;
+      border-bottom: 1px solid rgba(0,0,0,.08);
+      font-size: 11px;
+      line-height: 1.2;
+      text-align: center;
+    }
+    .membership-banner .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #191919;
       color: #fff;
-      border: 0;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .membership-banner a {
+      color: inherit;
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 2px;
     }
 
     .layout {
@@ -567,147 +608,164 @@
       grid-template-columns: 170px minmax(0, 1fr) 290px;
       column-gap: clamp(28px, 4vw, 52px);
     }
+
     .left-rail {
-      top: 68px;
-      padding-top: 31px;
-      border-right-color: #303030;
+      top: 98px;
+      padding-top: 29px;
+      border-right-color: #ececec;
     }
     .rail-link {
-      color: #aaa;
+      color: #666;
       background: transparent;
     }
     .rail-link:hover,
     .rail-link.active {
-      color: #fff;
-      background: #252525;
+      color: #242424;
+      background: #f5f5f5;
     }
     .rail-link.active .rail-icon,
-    .rail-link:hover .rail-icon { color: #fff; }
-    .rail-divider { border-color: #343434; }
+    .rail-link:hover .rail-icon { color: #242424; }
+    .rail-divider { border-color: #e6e6e6; }
     .rail-label,
-    .rail-bottom { color: #777; }
+    .rail-bottom { color: #888; }
 
-    main { padding-top: 32px; }
+    main { padding-top: 34px; }
     h1 {
-      color: #f3f3f3;
+      color: #242424;
       font: 700 34px/1.1 var(--serif);
-      letter-spacing: -1.2px;
+      letter-spacing: -1.15px;
     }
-    .welcome p:last-child { color: #929292; }
-    .tabs { border-bottom-color: #343434; }
-    .tab { color: #8c8c8c; }
-    .tab.selected { color: #fff; }
-    .tab.selected::after { background: #fff; }
+    .welcome p:last-child { color: #707070; }
+    .tabs { border-bottom-color: #e5e5e5; }
+    .tab { color: #747474; }
+    .tab.selected { color: #242424; }
+    .tab.selected::after { background: #242424; }
 
     .story {
       grid-template-columns: minmax(0, 1fr) 112px;
-      border-bottom-color: #343434;
+      border-bottom-color: #e5e5e5;
       padding: 23px 0 22px;
     }
-    .byline { color: #999; }
-    .byline strong { color: #ddd; }
-    .mini-avatar { filter: saturate(.85); }
+    .byline { color: #737373; }
+    .byline strong { color: #343434; }
     .story h2 {
-      color: #f0f0f0;
+      color: #242424;
       font: 700 20px/1.22 var(--serif);
     }
-    .story-summary {
-      color: #999;
-      font-family: var(--sans);
+    .story-summary { color: #666; }
+    .story-image {
+      background: #f2f2f2;
+      border: 1px solid #efefef;
     }
-    .story-image { background: #292929; }
-    .story-meta { color: #858585; }
+    .story-meta { color: #777; }
     .topic-pill {
-      background: #292929;
-      color: #aaa;
+      background: #f2f2f2;
+      color: #555;
     }
-    .bookmark, .more { color: #999; }
-    .bookmark:hover, .more:hover { background: #292929; }
+    .bookmark,
+    .more { color: #757575; }
+    .bookmark:hover,
+    .more:hover { background: #f4f4f4; }
     .bookmark[aria-pressed="true"] { color: var(--green); }
 
-    .right-rail { top: 68px; }
-    .side-section h2 { color: #ddd; }
+    .right-rail { top: 98px; }
+    .side-section h2 { color: #333; }
     .topic-button {
-      background: #292929;
-      color: #c7c7c7;
+      background: #f2f2f2;
+      color: #454545;
     }
     .topic-button:hover,
-    .topic-button[aria-pressed="true"] { background: #353535; color: #fff; }
-    .pick-number { color: #555; }
+    .topic-button[aria-pressed="true"] {
+      background: #e8e8e8;
+      color: #242424;
+    }
+    .pick-number { color: #d0d0d0; }
     .pick-byline { color: #777; }
-    .pick h3 { color: #ddd; }
-    .see-more { color: #d9b83f; }
-    .membership-card { border-top-color: #343434; }
-    .membership-card h2 { color: #eee; }
-    .membership-card p { color: #999; }
+    .pick h3 { color: #333; }
+    .see-more { color: #1a8917; }
+    .membership-card { border-top-color: #e6e6e6; }
+    .membership-card h2 { color: #242424; }
+    .membership-card p { color: #666; }
     .membership-card button {
-      background: #fff;
-      color: #191919;
-      border-color: #fff;
+      background: #191919;
+      color: #fff;
+      border-color: #191919;
     }
 
-    .empty-state { color: #999; }
+    .empty-state { color: #777; }
 
     .reader,
     .composer,
     .login-dialog {
-      color: #eee;
-      background: #191919;
-      border-color: #343434;
-      box-shadow: 0 18px 70px #0009;
+      color: #242424;
+      background: #fff;
+      border-color: #e0e0e0;
+      box-shadow: 0 18px 70px rgba(0,0,0,.24);
+    }
+    .reader::backdrop,
+    .composer::backdrop,
+    .login-dialog::backdrop {
+      background: rgba(0,0,0,.46);
+      backdrop-filter: blur(2px);
     }
     .reader-toolbar,
     .composer-toolbar {
-      border-bottom-color: #343434;
+      border-bottom-color: #e6e6e6;
     }
     .reader-toolbar,
-    .composer-status { color: #999; }
+    .composer-status { color: #777; }
     .reader-close,
-    .composer-close { color: #aaa; }
-    .reader-progress { background: #303030; }
-    .reader-progress span { background: #d9b83f; }
+    .composer-close { color: #555; }
+    .reader-progress { background: #eeeeee; }
+    .reader-progress span { background: var(--green); }
     .reader-kicker,
-    .reader-byline { color: #888; }
+    .reader-byline { color: #777; }
     .reader-title,
     .reader-body,
     .composer-title,
     .composer-body,
     .composer-preview-title,
-    .composer-preview-body { color: #eee; }
-    .reader-actions { background: #191919; border-top-color: #343434; }
+    .composer-preview-body { color: #242424; }
+    .reader-actions {
+      background: #fff;
+      border-top-color: #e6e6e6;
+    }
     .reader-action,
     .composer-button {
-      background: #191919;
-      border-color: #444;
-      color: #ddd;
+      background: #fff;
+      border-color: #d8d8d8;
+      color: #333;
     }
     .reader-action:hover,
-    .composer-button:hover { background: #292929; }
+    .composer-button:hover { background: #f7f7f7; }
     .reader-action.primary,
     .composer-button.primary {
-      background: #fff;
-      border-color: #fff;
-      color: #191919;
+      background: #191919;
+      border-color: #191919;
+      color: #fff;
     }
-    .reader-action[aria-pressed="true"] { color: #d9b83f; border-color: #806f2f; }
+    .reader-action[aria-pressed="true"] {
+      color: #1a8917;
+      border-color: #b9d6b7;
+    }
 
     .draft-library,
     .online-library,
     .story-fields,
     .stats-card,
     .stats-scope-note {
-      background: #222;
-      border-color: #363636;
+      background: #fafafa;
+      border-color: #e7e7e7;
     }
     .draft-row,
     .online-story-row {
-      background: #191919;
-      border-color: #363636;
+      background: #fff;
+      border-color: #e7e7e7;
     }
     .draft-name,
     .draft-library-heading h3,
     .online-library-heading h3,
-    .stats-card dd { color: #eee; }
+    .stats-card dd { color: #242424; }
     .draft-date,
     .draft-library-heading p,
     .draft-empty,
@@ -715,25 +773,35 @@
     .stats-card p,
     .stats-footnote,
     .stats-heading p:last-child,
-    .stats-scope-note { color: #888; }
+    .stats-scope-note { color: #777; }
     .draft-row-actions button,
     .draft-rename-form button {
-      background: #191919;
-      border-color: #444;
-      color: #ccc;
+      background: #fff;
+      border-color: #dedede;
+      color: #555;
     }
     .draft-rename-form input,
     .login-dialog input,
     .story-fields input,
     .story-fields select {
-      background: #222;
-      border-color: #444;
-      color: #eee;
+      background: #fff;
+      border-color: #d9d9d9;
+      color: #242424;
     }
 
     .toast {
-      background: #f1f1f1;
-      color: #191919;
+      background: #242424;
+      color: #fff;
+    }
+
+    .reader-cover {
+      display: block;
+      width: 100%;
+      max-height: 390px;
+      object-fit: cover;
+      margin: 0 0 30px;
+      border: 1px solid #ededed;
+      background: #f3f3f3;
     }
 
     @media (max-width: 1120px) {
@@ -756,17 +824,23 @@
       .brand-name { font-size: 24px; }
       .top-actions { gap: 8px; }
       .get-started { padding: 8px 12px; }
-      .layout { width: 100%; display: block; }
-      .left-rail {
-        display: none;
+      .membership-banner {
+        min-height: 32px;
+        font-size: 10px;
+        gap: 6px;
       }
+      .membership-banner .badge {
+        font-size: 9px;
+        padding: 3px 7px;
+      }
+      .layout { width: 100%; display: block; }
+      .left-rail { display: none; }
       main { padding: 25px 18px 55px; }
-      .welcome { margin-bottom: 12px; }
       h1 { font-size: 29px; }
       .tabs { gap: 24px; }
       .story {
         grid-template-columns: minmax(0, 1fr) 92px;
-        gap: 13px;
+        gap: 12px;
         padding: 19px 0;
       }
       .story-image {
@@ -775,21 +849,20 @@
       }
       .story h2 { font-size: 18px; }
       .story-summary {
-        color: #929292;
+        color: #707070;
         font-size: 12.5px;
       }
-      .byline { color: #888; font-size: 10px; }
-      .byline strong { color: #ccc; }
+      .byline { color: #777; font-size: 10px; }
+      .byline strong { color: #3a3a3a; }
       .story-meta { color: #777; }
-      .topic-pill { background: #292929; }
+      .topic-pill { background: #f2f2f2; }
       .reader,
       .composer {
-        background: #191919;
+        background: #fff;
       }
-      .reader-scroll {
-        padding: 34px 22px;
-      }
-      .reader-body { color: #ddd; }
+      .reader-scroll { padding: 34px 22px; }
+      .reader-body { color: #2c2c2c; }
+      .reader-cover { max-height: 250px; margin-bottom: 24px; }
     }
   </style>
 
@@ -806,6 +879,11 @@
       <span class="avatar" aria-label="Reader profile">R</span>
     </div>
   </header>
+  <div class="membership-banner" role="note" aria-label="Welcome offer">
+    <span class="badge">Welcome Offer</span>
+    <span>Access to everything. Now 30% off.</span>
+    <a href="#membership">Upgrade now</a>
+  </div>
 
   <div class="layout" id="home">
     <aside class="left-rail" aria-label="Main navigation">
@@ -925,7 +1003,7 @@
         <article class="pick"><span class="pick-number">03</span><div><p class="pick-byline">New Rhythm · 5 min read</p><h3>A kinder way to make a plan</h3></div></article>
         <a class="see-more" href="#stories">See the full list</a>
       </section>
-      <section class="membership-card">
+      <section class="membership-card" id="membership">
         <h2>Read without limits.</h2>
         <p>Support the writers you love and find your next favorite idea.</p>
         <button data-toast="Membership is a demo action on this sample page.">Try membership</button>
@@ -993,6 +1071,7 @@
         <p class="reader-kicker" id="reader-kicker"></p>
         <h2 class="reader-title" id="reader-title"></h2>
         <p class="reader-byline" id="reader-byline"></p>
+        <img class="reader-cover" id="reader-image" src="" alt="" hidden />
         <div class="reader-body" id="reader-body"></div>
       </article>
     </div>
@@ -1067,6 +1146,7 @@
   const readerKicker = document.querySelector('#reader-kicker');
   const readerTitle = document.querySelector('#reader-title');
   const readerByline = document.querySelector('#reader-byline');
+  const readerImage = document.querySelector('#reader-image');
   const readerBody = document.querySelector('#reader-body');
   const readerProgress = document.querySelector('.reader-progress');
   const readerProgressFill = document.querySelector('.reader-progress span');
@@ -1364,6 +1444,16 @@
     if (readerKicker) readerKicker.textContent = data.publication ? data.author + ' in ' + data.publication : data.author;
     if (readerTitle) readerTitle.textContent = data.title;
     if (readerByline) readerByline.textContent = data.author + (data.publication ? ' · ' + data.publication : '');
+    if (readerImage) {
+      if (data.photo) {
+        readerImage.src = data.photo;
+        readerImage.alt = data.photoAlt || data.title;
+        readerImage.hidden = false;
+      } else {
+        readerImage.removeAttribute('src');
+        readerImage.hidden = true;
+      }
+    }
     if (readerBody) {
       readerBody.replaceChildren(...data.body.map(paragraphText => {
         const p = document.createElement('p');
