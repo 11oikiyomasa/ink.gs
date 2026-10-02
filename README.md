@@ -34,10 +34,10 @@ In Bash, generate the local hash and write only the hash to the ignored file:
 
 ```sh
 read -r -s -p 'Local editor password: ' editor_password
-printf '\\n'
+printf '\n'
 hash=$(printf '%s' "$editor_password" | node scripts/hash-editor-password.mjs)
 unset editor_password
-(umask 077; printf 'EDITOR_PASSWORD_HASH=%s\\n' "$hash" > .dev.vars)
+(umask 077; printf 'EDITOR_PASSWORD_HASH=%s\n' "$hash" > .dev.vars)
 unset hash
 ```
 
