@@ -1558,6 +1558,198 @@
       .story-image { width: 78px !important; height: 54px !important; }
     }
   </style>
+  <style id="reference-mobile-final">
+    @media (max-width: 700px) {
+      /* Match the reference vertical rhythm first: no "For you" hero on mobile. */
+      .welcome {
+        display: none !important;
+      }
+
+      .app-promo {
+        height: 41px !important;
+        min-height: 41px !important;
+        font-size: 11px !important;
+      }
+
+      .topbar {
+        height: 57px !important;
+        min-height: 57px !important;
+        padding: 0 27px !important;
+      }
+
+      .topbar .brand {
+        gap: 20px !important;
+      }
+
+      .menu-toggle,
+      .menu-toggle svg {
+        width: 24px !important;
+        height: 24px !important;
+      }
+
+      .brand-name {
+        font-size: 28px !important;
+        letter-spacing: -1.45px !important;
+      }
+
+      .search-toggle,
+      .search-toggle svg {
+        width: 25px !important;
+        height: 25px !important;
+      }
+
+      .avatar {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 10px !important;
+      }
+
+      .membership-banner {
+        height: 41px !important;
+        min-height: 41px !important;
+        padding: 0 11px !important;
+        font-size: 11px !important;
+      }
+
+      .membership-banner a {
+        font-size: 11px !important;
+      }
+
+      main {
+        padding: 27px 27px 55px !important;
+      }
+
+      .tabs {
+        margin-top: 0 !important;
+        gap: 29px !important;
+        border-bottom-color: #353535 !important;
+      }
+
+      .tab {
+        font-size: 11px !important;
+        line-height: 1 !important;
+        padding: 11px 0 12px !important;
+      }
+
+      .story {
+        grid-template-columns: minmax(0, 1fr) 81px !important;
+        gap: 10px !important;
+        padding: 15px 0 17px !important;
+      }
+
+      .byline {
+        gap: 5px !important;
+        margin-bottom: 7px !important;
+        font-size: 8px !important;
+        line-height: 1.3 !important;
+      }
+
+      .mini-avatar {
+        width: 14px !important;
+        height: 14px !important;
+        font-size: 6px !important;
+      }
+
+      /* Medium's feed headlines are sans-serif; serif belongs to long-form reading. */
+      .story h2 {
+        margin-bottom: 4px !important;
+        color: #f1f1f1 !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif !important;
+        font-size: 17px !important;
+        font-weight: 750 !important;
+        line-height: 1.16 !important;
+        letter-spacing: -.32px !important;
+      }
+
+      .story-summary {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif !important;
+        color: #9b9b9b !important;
+        font-size: 9.5px !important;
+        line-height: 1.38 !important;
+        -webkit-line-clamp: 2 !important;
+      }
+
+      .story-image {
+        width: 81px !important;
+        height: 54px !important;
+        border: 0 !important;
+        object-fit: cover !important;
+      }
+
+      .story-meta {
+        margin-top: 9px !important;
+        min-height: 18px !important;
+        font-size: 8px !important;
+      }
+
+      .meta-left {
+        gap: 6px !important;
+      }
+
+      .topic-pill {
+        padding: 2px 5px !important;
+        font-size: 7px !important;
+      }
+
+      .story-tools {
+        gap: 2px !important;
+      }
+
+      .bookmark,
+      .more {
+        width: 20px !important;
+        height: 20px !important;
+      }
+
+      /* Add the compact engagement language used by the reference without changing the data model. */
+      .story::after {
+        content: "";
+        display: block;
+        grid-column: 1 / -1;
+        height: 0;
+      }
+
+      /* Remove the heavy "topic chip" look from the feed meta on narrow screens. */
+      .story-meta .topic-pill {
+        background: transparent !important;
+        color: #7f7f7f !important;
+        padding-left: 0 !important;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .topbar {
+        padding-left: 18px !important;
+        padding-right: 18px !important;
+      }
+
+      .topbar .brand {
+        gap: 16px !important;
+      }
+
+      main {
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+      }
+
+      .story {
+        grid-template-columns: minmax(0, 1fr) 80px !important;
+      }
+
+      .story-image {
+        width: 80px !important;
+        height: 53px !important;
+      }
+
+      .story h2 {
+        font-size: 16px !important;
+      }
+
+      .story-summary {
+        font-size: 9px !important;
+      }
+    }
+  </style>
 </head>
 <body>
 <div class="app-promo"><a href="#app">Open in app&nbsp; ↗</a></div>
@@ -1601,7 +1793,7 @@
       </section>
       <div class="tabs" role="tablist" aria-label="Story feed">
         <button class="tab selected" role="tab" aria-selected="true" data-view="For you">For you</button>
-        <button class="tab" role="tab" aria-selected="false" data-view="Following">Following</button>
+        <button class="tab" role="tab" aria-selected="false" data-view="Following">Activity</button>
       </div>
       <section id="stories" aria-label="Recommended stories">
         <article class="story" data-author="Mara Ellis" data-topics="Creativity Writing Mindfulness">
