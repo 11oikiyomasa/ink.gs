@@ -6,8 +6,26 @@
   <meta name="theme-color" content="#171717" />
   <meta name="description" content="A personalized reading feed with thoughtful stories, writers, and ideas to explore." />
   <title>ink.gs — For you</title>
-  <style>
-    :root {
+  
+  
+  
+  
+  
+  
+
+  
+
+
+  
+  
+  
+  
+
+  
+
+  <style id="site-styles">
+/* ===== 1: base styles ===== */
+:root {
       --ink: #242424;
       --muted: #6b6b6b;
       --line: #e6e6e6;
@@ -134,9 +152,9 @@
       .story-tools { gap: 9px; }
       .topic-pill { padding: 4px 7px; }
     }
-  </style>
-  <style id="feed-refinement">
-    :root {
+
+/* ===== 2: feed-refinement ===== */
+:root {
       --ink: #242424;
       --muted: #6b6b6b;
       --line: #e6e6e6;
@@ -348,9 +366,9 @@
       .reader-action { padding: 9px 11px; font-size: 11px; }
       .reader-action.primary { width: 116px; min-height: 42px; height: auto; align-self: center; flex: 0 0 auto; padding: 8px 11px; line-height: 1.2; white-space: normal; }
     }
-  </style>
-  <style id="writer-styles">
-    .write-action { display: inline-flex; align-items: center; gap: 7px; }
+
+/* ===== 3: writer-styles ===== */
+.write-action { display: inline-flex; align-items: center; gap: 7px; }
     .write-action svg { width: 17px; height: 17px; flex: 0 0 auto; }
     .composer {
       width: min(860px, calc(100vw - 40px));
@@ -427,9 +445,9 @@
       .draft-row-actions { width: 100%; }
       .draft-row-actions button { flex: 1; }
     }
-  </style>
-  <style id="stats-styles">
-    .stats-view { padding-top: 0; }
+
+/* ===== 4: stats-styles ===== */
+.stats-view { padding-top: 0; }
     .stats-heading { margin: 0 0 24px; }
     .stats-heading h1 { margin: 0; }
     .stats-heading p:last-child { margin: 8px 0 0; color: #757575; font-size: 14px; line-height: 1.45; }
@@ -449,17 +467,17 @@
       .stats-card { padding: 14px 12px; }
       .stats-card dd { font-size: 28px; }
     }
-  </style>
-  <style id="private-sync-styles">
-    .sync-action { display: inline-flex !important; align-items: center; justify-content: center; border: 1px solid #dedede; border-radius: 18px; padding: 8px 12px; color: #555; font-size: 12px; line-height: 1; }
+
+/* ===== 5: private-sync-styles ===== */
+.sync-action { display: inline-flex !important; align-items: center; justify-content: center; border: 1px solid #dedede; border-radius: 18px; padding: 8px 12px; color: #555; font-size: 12px; line-height: 1; }
     .sync-action:hover { background: #f7f7f7; color: #242424; }
     .sync-action:disabled { cursor: wait; opacity: .55; }
     /* Keep the backend-only sync control out of the approved homepage header. */
     #sync-button { display: none !important; }
     @media (max-width: 620px) { .sync-action { padding: 7px 9px; font-size: 11px; } }
-  </style>
-  <style id="editor-styles">
-    .login-dialog { width: min(420px, calc(100vw - 32px)); padding: 28px; border: 1px solid #e8e8e8; border-radius: 6px; color: var(--ink); background: #fff; box-shadow: 0 18px 70px #0003; }
+
+/* ===== 6: editor-styles ===== */
+.login-dialog { width: min(420px, calc(100vw - 32px)); padding: 28px; border: 1px solid #e8e8e8; border-radius: 6px; color: var(--ink); background: #fff; box-shadow: 0 18px 70px #0003; }
     .login-dialog::backdrop { background: rgb(20 20 20 / 42%); backdrop-filter: blur(2px); }
     .login-dialog h2 { margin: 0 0 8px; font: 700 25px/1.2 var(--serif); }
     .login-dialog p { margin: 0 0 18px; color: #707070; font-size: 13px; line-height: 1.5; }
@@ -502,10 +520,9 @@
       .story-admin-actions { width: 100%; }
       .story-admin-actions button { flex: 1; }
     }
-  </style>
 
-  <style id="reference-dark-editorial">
-    :root {
+/* ===== 7: reference-dark-editorial ===== */
+:root {
       --ink: #f1f1f1;
       --muted: #a2a2a2;
       --line: #343434;
@@ -959,11 +976,12 @@
         color: #eee;
       }
     }
-  </style>
 
-<style id="mobile-menu-wrap">.menu-toggle-wrap{display:contents}</style>
-  <style id="mobile-reference-fix">
-    @media (max-width: 800px) {
+/* ===== 8: mobile-menu-wrap ===== */
+.menu-toggle-wrap{display:contents}
+
+/* ===== 9: mobile-reference-fix ===== */
+@media (max-width: 800px) {
       html, body { width: 100%; min-width: 0; overflow-x: hidden; }
       .app-promo {
         min-height: 72px;
@@ -1202,9 +1220,9 @@
       .membership-banner,
       .membership-banner a { font-size: 14px; }
     }
-  </style>
-  <style id="mobile-reference-calibration">
-    /* Calibrated against the supplied 691px Android screenshots.
+
+/* ===== 10: mobile-reference-calibration ===== */
+/* Calibrated against the supplied 691px Android screenshots.
        The physical screenshot is larger than the CSS viewport, so these values
        intentionally use CSS-pixel geometry rather than screenshot-pixel geometry. */
     @media (max-width: 700px) {
@@ -1557,9 +1575,9 @@
       .story { grid-template-columns: minmax(0,1fr) 78px !important; }
       .story-image { width: 78px !important; height: 54px !important; }
     }
-  </style>
-  <style id="reference-mobile-final">
-    @media (max-width: 700px) {
+
+/* ===== 11: reference-mobile-final ===== */
+@media (max-width: 700px) {
       /* Match the reference vertical rhythm first: no "For you" hero on mobile. */
       .welcome {
         display: none !important;
@@ -1650,7 +1668,7 @@
         font-size: 6px !important;
       }
 
-      /* Medium's feed headlines are sans-serif; serif belongs to long-form reading. */
+      /* Feed headlines use sans-serif; serif is reserved for long-form reading. */
       .story h2 {
         margin-bottom: 4px !important;
         color: #f1f1f1 !important;
@@ -1749,9 +1767,9 @@
         font-size: 9px !important;
       }
     }
-  </style>
-  <style id="reference-feed-calibrated">
-    .story-engagement {
+
+/* ===== 12: reference-feed-calibrated ===== */
+.story-engagement {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -2029,10 +2047,9 @@
         gap: 7px !important;
       }
     }
-  </style>
 
-  <style id="ink-mobile-detail-pass">
-    :root {
+/* ===== 13: ink-mobile-detail-pass ===== */
+:root {
       --ink-mobile-bg: #171717;
       --ink-mobile-surface: #1b1b1b;
       --ink-mobile-text: #f2f2f2;
@@ -2569,7 +2586,6 @@
       }
     }
   </style>
-
 </head>
 <body>
 <div class="app-promo"><a href="#app">Open in app&nbsp; ↗</a></div>
