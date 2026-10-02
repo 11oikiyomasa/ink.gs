@@ -962,6 +962,247 @@
   </style>
 
 <style id="mobile-menu-wrap">.menu-toggle-wrap{display:contents}</style>
+  <style id="mobile-reference-fix">
+    @media (max-width: 800px) {
+      html, body { width: 100%; min-width: 0; overflow-x: hidden; }
+      .app-promo {
+        min-height: 72px;
+        height: 72px;
+        padding: 0 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #171717;
+        border-bottom: 1px solid #303030;
+        color: #bdbdbd;
+        font-size: 14px;
+      }
+      .topbar {
+        height: 102px;
+        padding: 0 43px 0 43px;
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        background: #171717;
+        border-bottom: 1px solid #363636;
+      }
+      .topbar .brand {
+        display: flex;
+        align-items: center;
+        gap: 27px;
+        min-width: 0;
+      }
+      .menu-toggle {
+        display: inline-flex !important;
+        width: 38px;
+        height: 38px;
+        flex: 0 0 38px;
+        color: #bdbdbd;
+      }
+      .brand-name { font-size: 34px !important; letter-spacing: -1.7px; }
+      .top-actions {
+        gap: 9px;
+        min-width: 0;
+      }
+      .search-box {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        justify-content: center;
+        background: transparent;
+        border: 0;
+      }
+      .search-box > svg { display: none; }
+      .search-box input { display: none; }
+      .search-toggle {
+        display: grid !important;
+        width: 40px;
+        height: 40px;
+        place-items: center;
+        color: #aaa;
+        background: transparent;
+        border: 0;
+      }
+      .search-toggle svg { width: 26px; height: 26px; }
+      .text-action.write-action,
+      .get-started { display: none !important; }
+      .avatar {
+        display: grid !important;
+        width: 40px;
+        height: 40px;
+        font-size: 15px;
+      }
+      .membership-banner {
+        min-height: 70px;
+        height: 70px;
+        padding: 0 18px;
+        gap: 8px;
+        flex-wrap: nowrap;
+        background: #ffc118;
+        color: #191919;
+        font-size: 17px;
+      }
+      .membership-banner .badge { display: none; }
+      .membership-banner a { font-size: 17px; white-space: nowrap; }
+
+      .layout {
+        display: block !important;
+        width: 100% !important;
+        margin: 0;
+      }
+      main {
+        width: 100%;
+        min-width: 0;
+        padding: 34px 43px 70px;
+      }
+      .right-rail { display: none !important; }
+
+      .left-rail {
+        position: fixed !important;
+        inset: 0 auto 0 0 !important;
+        width: min(432px, 88vw) !important;
+        height: 100dvh !important;
+        min-height: 100dvh !important;
+        margin: 0;
+        padding: 102px 42px 34px !important;
+        background: #171717 !important;
+        border-right: 1px solid #363636 !important;
+        box-shadow: 18px 0 48px rgba(0,0,0,.48);
+        transform: translateX(-103%) !important;
+        transition: transform .22s ease !important;
+        z-index: 40 !important;
+        overflow-y: auto;
+      }
+      .left-rail.mobile-open { transform: translateX(0) !important; }
+      .left-rail .rail-list {
+        display: grid;
+        gap: 5px;
+      }
+      .left-rail .rail-link {
+        display: flex !important;
+        width: 100% !important;
+        min-height: 58px;
+        padding: 10px 7px;
+        gap: 18px;
+        font-size: 17px;
+        border-radius: 4px;
+      }
+      .left-rail .rail-link span:last-child { display: inline !important; }
+      .left-rail .rail-divider {
+        display: block !important;
+        margin: 20px 0 18px;
+      }
+      .left-rail .rail-label {
+        display: block !important;
+        margin-left: 7px;
+      }
+      .left-rail .rail-bottom {
+        position: static !important;
+        display: block !important;
+        margin-top: 26px;
+      }
+
+      body.menu-open { overflow: hidden; }
+      body.menu-open::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.28);
+        z-index: 35;
+        pointer-events: auto;
+      }
+
+      .welcome { margin-bottom: 17px; }
+      h1 { font-size: 32px; }
+      .welcome p:last-child { font-size: 14px; }
+      .tabs { gap: 30px; }
+      .tab {
+        font-size: 17px;
+        padding: 16px 0 15px;
+      }
+
+      .story {
+        grid-template-columns: minmax(0, 1fr) 143px !important;
+        gap: 17px !important;
+        padding: 25px 0 27px !important;
+        min-width: 0;
+      }
+      .story-copy { min-width: 0; }
+      .byline {
+        font-size: 12px;
+        line-height: 1.35;
+        margin-bottom: 11px;
+      }
+      .story h2 {
+        font-size: 23px;
+        line-height: 1.17;
+        letter-spacing: -.5px;
+      }
+      .story-summary {
+        max-width: none;
+        font-size: 15px;
+        line-height: 1.35;
+        color: #a0a0a0;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .story-image {
+        width: 143px !important;
+        height: 96px !important;
+        object-fit: cover;
+        align-self: center;
+      }
+      .story-meta {
+        margin-top: 15px;
+        font-size: 12px;
+      }
+      .story-tools { gap: 7px; }
+
+      .reader {
+        width: 100vw !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+      }
+      .reader-toolbar { min-height: 62px; }
+      .reader-scroll {
+        max-height: calc(100dvh - 170px);
+        padding: 34px 43px 45px;
+      }
+      .reader-title {
+        font-size: 40px;
+        line-height: 1.07;
+      }
+      .reader-body {
+        font-size: 20px;
+        line-height: 1.68;
+      }
+      .reader-actions {
+        padding: 10px 16px;
+        gap: 8px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .topbar {
+        padding-left: 18px;
+        padding-right: 18px;
+      }
+      .topbar .brand { gap: 15px; }
+      .brand-name { font-size: 29px !important; }
+      main { padding-left: 20px; padding-right: 20px; }
+      .story { grid-template-columns: minmax(0, 1fr) 112px !important; gap: 12px !important; }
+      .story-image { width: 112px !important; height: 80px !important; }
+      .story h2 { font-size: 20px; }
+      .story-summary { font-size: 13px; }
+      .byline { font-size: 10px; }
+      .membership-banner,
+      .membership-banner a { font-size: 14px; }
+    }
+  </style>
 </head>
 <body>
 <div class="app-promo"><a href="#app">Open in app&nbsp; ↗</a></div>
@@ -2061,6 +2302,7 @@
     if (!rail || !toggle) return;
     const open = typeof force === 'boolean' ? force : !rail.classList.contains('mobile-open');
     rail.classList.toggle('mobile-open', open);
+    document.body.classList.toggle('menu-open', open);
     toggle.setAttribute('aria-expanded', String(open));
     toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
   }
@@ -2072,6 +2314,12 @@
       toggleMobileMenu();
     });
     document.addEventListener('click', event => {
+      if (document.body.classList.contains('menu-open') &&
+          !event.target.closest('.left-rail') &&
+          !event.target.closest('#menu-toggle')) {
+        toggleMobileMenu(false);
+        return;
+      }
       const target = event.target.closest('button, a');
       if (!target) return;
 
