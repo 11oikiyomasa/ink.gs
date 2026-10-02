@@ -10,9 +10,13 @@ await mkdir(publicDir, { recursive: true });
 await mkdir(publicAssetsDir, { recursive: true });
 await copyFile(new URL("../index.html", import.meta.url), new URL("../public/index.html", import.meta.url));
 
-for (const entry of await readdir(sourceAssetsDir, { withFileTypes: true })) {
-  if (!entry.isFile()) continue;
-  await copyFile(join(sourceAssetsDir.pathname, entry.name), new URL(`../public/assets/${encodeURIComponent(entry.name)}`, import.meta.url));
+try {
+  for (const entry of await readdir(sourceAssetsDir, { withFileTypes: true })) {
+    if (!entry.isFile()) continue;
+    await copyFile(join(sourceAssetsDir.pathname, entry.name), new URL(`../public/assets/${encodeURIComponent(entry.name)}`, import.meta.url));
+  }
+  console.log(`Prepared public assets from ${projectRoot.pathname}.`);
+} catch (error) {
+  if (error?.code !== "ENOENT") throw error;
+  console.log("No optional source assets directory found; built-in image fallbacks remain available.");
 }
-
-console.log(`Prepared public assets from ${projectRoot.pathname}.`);
