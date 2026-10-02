@@ -1203,6 +1203,361 @@
       .membership-banner a { font-size: 14px; }
     }
   </style>
+  <style id="mobile-reference-calibration">
+    /* Calibrated against the supplied 691px Android screenshots.
+       The physical screenshot is larger than the CSS viewport, so these values
+       intentionally use CSS-pixel geometry rather than screenshot-pixel geometry. */
+    @media (max-width: 700px) {
+      html, body {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        overflow-x: hidden;
+        background: #171717;
+      }
+
+      .app-promo {
+        min-height: 45px !important;
+        height: 45px !important;
+        padding: 0 10px !important;
+        font-size: 11px !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .topbar {
+        height: 64px !important;
+        min-height: 64px !important;
+        padding: 0 27px !important;
+        position: sticky !important;
+        top: 0;
+        z-index: 50 !important;
+        border-bottom: 1px solid #303030;
+        background: #171717 !important;
+      }
+
+      .topbar .brand {
+        display: flex !important;
+        align-items: center;
+        gap: 15px !important;
+        min-width: 0;
+        flex: 1;
+      }
+
+      .menu-toggle {
+        display: inline-flex !important;
+        width: 25px !important;
+        height: 25px !important;
+        flex: 0 0 25px;
+        padding: 0 !important;
+        color: #aaa !important;
+        position: relative;
+        z-index: 70;
+      }
+      .menu-toggle svg {
+        width: 25px !important;
+        height: 25px !important;
+      }
+
+      .brand-name {
+        font-size: 27px !important;
+        line-height: 1 !important;
+        letter-spacing: -1.35px !important;
+      }
+
+      .top-actions {
+        gap: 4px !important;
+        min-width: 0;
+      }
+
+      .search-box {
+        width: 27px !important;
+        height: 27px !important;
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+      }
+      .search-box > svg,
+      .search-box input { display: none !important; }
+
+      .search-toggle {
+        display: grid !important;
+        width: 27px !important;
+        height: 27px !important;
+        padding: 0 !important;
+        place-items: center;
+        color: #aaa;
+      }
+      .search-toggle svg {
+        width: 25px !important;
+        height: 25px !important;
+      }
+
+      .text-action.write-action,
+      .get-started {
+        display: none !important;
+      }
+
+      .avatar {
+        display: grid !important;
+        width: 27px !important;
+        height: 27px !important;
+        font-size: 10px !important;
+        border: 0 !important;
+      }
+
+      .membership-banner {
+        min-height: 44px !important;
+        height: 44px !important;
+        padding: 0 11px !important;
+        gap: 5px !important;
+        flex-wrap: nowrap !important;
+        font-size: 11px !important;
+      }
+      .membership-banner .badge { display: none !important; }
+      .membership-banner a {
+        font-size: 11px !important;
+        white-space: nowrap;
+      }
+
+      .layout {
+        width: 100% !important;
+        max-width: none !important;
+        display: block !important;
+        margin: 0 !important;
+      }
+
+      main {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 30px 27px 55px !important;
+      }
+
+      .right-rail { display: none !important; }
+
+      /*
+       * The reference drawer is ~270 CSS px wide on this device.
+       * 270 CSS px renders at roughly 430 physical px in the supplied screenshot.
+       */
+      .left-rail {
+        position: fixed !important;
+        inset: 0 auto 0 0 !important;
+        width: 270px !important;
+        max-width: calc(100vw - 24px) !important;
+        height: 100dvh !important;
+        min-height: 100dvh !important;
+        margin: 0 !important;
+        padding: 147px 27px 28px !important;
+        background: #171717 !important;
+        border-right: 1px solid #343434 !important;
+        box-shadow: 18px 0 48px rgba(0,0,0,.46);
+        transform: translateX(-110%) !important;
+        transition: transform .22s ease !important;
+        z-index: 40 !important;
+        overflow-y: auto;
+      }
+
+      .left-rail.mobile-open {
+        transform: translateX(0) !important;
+      }
+
+      .left-rail .rail-list {
+        display: grid !important;
+        gap: 3px !important;
+        width: 100% !important;
+      }
+
+      .left-rail .rail-link {
+        display: flex !important;
+        width: 100% !important;
+        min-height: 39px !important;
+        height: 39px;
+        padding: 7px 4px !important;
+        gap: 15px !important;
+        border-radius: 4px !important;
+        font-size: 12px !important;
+        line-height: 1.15 !important;
+      }
+
+      .left-rail .rail-link span:last-child {
+        display: inline !important;
+      }
+
+      .left-rail .rail-icon {
+        width: 22px !important;
+        height: 22px !important;
+        flex: 0 0 22px !important;
+        font-size: 14px !important;
+      }
+      .left-rail .rail-icon svg {
+        width: 22px !important;
+        height: 22px !important;
+      }
+
+      .left-rail .rail-divider {
+        display: block !important;
+        margin: 18px 0 14px !important;
+      }
+
+      .left-rail .rail-label {
+        display: block !important;
+        margin: 0 0 7px 4px !important;
+        font-size: 8px !important;
+        letter-spacing: .08em;
+      }
+
+      .left-rail .rail-bottom {
+        position: static !important;
+        display: block !important;
+        margin: 30px 0 0 0 !important;
+        font-size: 9px !important;
+        line-height: 1.9 !important;
+      }
+
+      body.menu-open {
+        overflow: hidden !important;
+      }
+
+      body.menu-open::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.30);
+        z-index: 35;
+        pointer-events: auto;
+      }
+
+      .welcome { margin-bottom: 9px !important; }
+      h1 {
+        font-size: 21px !important;
+        line-height: 1.1 !important;
+        letter-spacing: -.7px !important;
+      }
+      .welcome p:last-child {
+        font-size: 9px !important;
+        line-height: 1.35 !important;
+      }
+
+      .tabs {
+        gap: 25px !important;
+        margin-bottom: 0 !important;
+      }
+      .tab {
+        font-size: 11px !important;
+        padding: 10px 0 10px !important;
+      }
+
+      .story {
+        grid-template-columns: minmax(0, 1fr) 89px !important;
+        gap: 10px !important;
+        padding: 15px 0 16px !important;
+      }
+
+      .byline {
+        gap: 5px !important;
+        margin-bottom: 6px !important;
+        font-size: 8px !important;
+        line-height: 1.3 !important;
+      }
+
+      .mini-avatar {
+        width: 14px !important;
+        height: 14px !important;
+        font-size: 6px !important;
+      }
+
+      .story h2 {
+        margin-bottom: 4px !important;
+        font-size: 14px !important;
+        line-height: 1.16 !important;
+        letter-spacing: -.25px !important;
+      }
+
+      .story-summary {
+        font-size: 9px !important;
+        line-height: 1.35 !important;
+        -webkit-line-clamp: 2 !important;
+        color: #929292 !important;
+      }
+
+      .story-image {
+        width: 89px !important;
+        height: 60px !important;
+        border: 1px solid #2d2d2d !important;
+      }
+
+      .story-meta {
+        margin-top: 8px !important;
+        font-size: 8px !important;
+      }
+
+      .topic-pill {
+        padding: 3px 5px !important;
+        font-size: 7px !important;
+      }
+
+      .story-tools { gap: 3px !important; }
+      .bookmark,
+      .more {
+        width: 18px !important;
+        height: 18px !important;
+        font-size: 10px !important;
+      }
+
+      .reader-scroll {
+        padding-left: 27px !important;
+        padding-right: 27px !important;
+      }
+
+      .reader-title {
+        font-size: 25px !important;
+        line-height: 1.08 !important;
+      }
+
+      .reader-body {
+        font-size: 12px !important;
+        line-height: 1.65 !important;
+      }
+
+      .reader-cover {
+        max-height: 155px !important;
+      }
+
+      .reader-action {
+        font-size: 8px !important;
+        padding: 7px 8px !important;
+      }
+
+      .reader-action.primary {
+        min-width: 76px !important;
+        width: 76px !important;
+      }
+
+      .composer-title,
+      .composer-preview-title {
+        font-size: 25px !important;
+      }
+      .composer-body,
+      .composer-preview-body {
+        font-size: 12px !important;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .topbar { padding-left: 18px !important; padding-right: 18px !important; }
+      .brand-name { font-size: 24px !important; }
+      main { padding-left: 18px !important; padding-right: 18px !important; }
+      .left-rail {
+        width: 270px !important;
+        max-width: calc(100vw - 18px) !important;
+        padding-left: 22px !important;
+        padding-right: 22px !important;
+      }
+      .story { grid-template-columns: minmax(0,1fr) 78px !important; }
+      .story-image { width: 78px !important; height: 54px !important; }
+    }
+  </style>
 </head>
 <body>
 <div class="app-promo"><a href="#app">Open in app&nbsp; ↗</a></div>
