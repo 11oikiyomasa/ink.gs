@@ -64,6 +64,7 @@
   const readerTitle = document.querySelector('#reader-title');
   const readerByline = document.querySelector('#reader-byline');
   const readerSummary = document.querySelector('#reader-summary');
+  const readerTopic = document.querySelector('#reader-topic');
   const readerImage = document.querySelector('#reader-image');
   const readerBody = document.querySelector('#reader-body');
   const readerProgress = document.querySelector('.reader-progress');
@@ -362,6 +363,7 @@
     if (readerKicker) readerKicker.textContent = data.publication ? data.author + ' in ' + data.publication : data.author;
     if (readerTitle) readerTitle.textContent = data.title;
     if (readerSummary) readerSummary.textContent = data.summary || '';
+    if (readerTopic) readerTopic.textContent = data.topic || 'Story';
     if (readerByline) readerByline.textContent = data.author + (data.publication ? ' · ' + data.publication : '');
     if (readerImage) {
       if (data.photo) {
