@@ -1,0 +1,11 @@
+{
+  "name": "medium-inspired-site-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:assets": "node scripts/build-assets.mjs",
+    "test": "node --test",
+    "hash:editor-password": "node scripts/hash-editor-password.mjs",
+    "deploy": "npm run build:assets && npx wrangler deploy"
+  }
+}
