@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "medium-inspired-site",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-02",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "medium-inspired-site-state",
+      "database_id": "dd86809c-6ce0-4dd2-a8bb-f5d9d840a5b9",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
