@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run tests
+        run: npm test
+      - name: Build static assets
+        run: npm run build:assets
+      - name: Validate D1 migrations with SQLite
+        run: |
+          python3 - <<'PY'
+          import sqlite3
+          from pathlib import Path
+          connection = sqlite3.connect(":memory:")
+          for migration in sorted(Path("migrations").glob("*.sql")):
+              connection.executescript(migration.read_text())
+          tables = [row[0] for row in connection.execute(
+              "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+          )]
+          expected = ["editor_login_attempts", "editor_sessions", "editor_stories", "owner_state"]
+          assert tables == expected, (tables, expected)
+          print("Migration tables:", tables)
+          PY
