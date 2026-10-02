@@ -1,0 +1,1000 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="description" content="A personalized reading feed with thoughtful stories, writers, and ideas to explore." />
+  <title>Medium — For you</title>
+  <style>
+    :root {
+      --ink: #242424;
+      --muted: #6b6b6b;
+      --line: #e6e6e6;
+      --soft: #f7f7f7;
+      --green: #1a8917;
+      --paper: #fff;
+      --serif: Georgia, 'Times New Roman', serif;
+      --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; color: var(--ink); background: var(--paper); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    a { color: inherit; text-decoration: none; }
+    .topbar { height: 70px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; padding: 0 max(28px, calc((100vw - 1320px) / 2)); position: sticky; top: 0; z-index: 10; background: rgba(255,255,255,.97); backdrop-filter: blur(12px); }
+    .brand { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+    .brand-mark { font: 700 36px/.8 var(--serif); letter-spacing: -4px; transform: scaleX(1.05); }
+    .brand-name { font: 700 23px/1 var(--serif); letter-spacing: -.8px; }
+    .top-actions { display: flex; align-items: center; gap: 25px; color: #595959; font-size: 14px; }
+    .search-box { display: flex; align-items: center; gap: 9px; background: #f5f5f5; padding: 9px 14px; border-radius: 24px; width: 215px; color: #757575; }
+    .search-box input { border: 0; outline: 0; background: transparent; min-width: 0; width: 100%; color: var(--ink); font-size: 14px; }
+    .text-action { border: 0; background: transparent; cursor: pointer; color: #595959; padding: 6px 0; }
+    .get-started { color: white; background: #191919; border: 0; border-radius: 22px; padding: 10px 16px; font-size: 14px; cursor: pointer; }
+    .avatar { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: #e7e1d8; color: #6f5e4b; font-size: 12px; font-weight: 650; }
+    .layout { width: min(1280px, calc(100% - 56px)); margin: 0 auto; display: grid; grid-template-columns: 180px minmax(0, 680px) 300px; gap: 52px; align-items: start; }
+    .left-rail { position: sticky; top: 92px; min-height: calc(100vh - 92px); padding: 42px 0 25px; border-right: 1px solid var(--line); }
+    .rail-list { display: grid; gap: 5px; }
+    .rail-link { display: flex; align-items: center; gap: 15px; border: 0; background: transparent; border-radius: 7px; color: #555; font-size: 14px; padding: 12px 12px; text-align: left; cursor: pointer; width: calc(100% - 18px); }
+    .rail-link.active { background: #f6f6f6; color: var(--ink); font-weight: 600; }
+    .rail-icon { width: 20px; display: inline-flex; justify-content: center; color: #777; font-size: 17px; }
+    .rail-divider { border: 0; border-top: 1px solid var(--line); margin: 21px 18px 18px 10px; }
+    .rail-label { color: #777; text-transform: uppercase; letter-spacing: .08em; font-size: 10px; margin: 0 0 10px 13px; }
+    .rail-bottom { position: absolute; bottom: 18px; left: 12px; color: #888; font-size: 11px; line-height: 2.1; max-width: 145px; }
+    .rail-bottom a { margin-right: 9px; }
+    main { min-width: 0; padding: 37px 0 80px; }
+    .welcome { margin-bottom: 30px; }
+    .eyebrow { text-transform: uppercase; color: #777; letter-spacing: .1em; font-size: 10px; font-weight: 650; margin: 0 0 8px; }
+    h1 { font: 500 31px/1.16 var(--serif); letter-spacing: -.7px; margin: 0; }
+    .welcome p:last-child { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
+    .tabs { display: flex; align-items: center; gap: 27px; border-bottom: 1px solid var(--line); margin-bottom: 7px; }
+    .tab { background: transparent; border: 0; color: #737373; padding: 13px 0 12px; font-size: 14px; cursor: pointer; position: relative; }
+    .tab.selected { color: var(--ink); }
+    .tab.selected::after { content: ''; height: 1px; background: var(--ink); position: absolute; left: 0; right: 0; bottom: -1px; }
+    .story { display: grid; grid-template-columns: minmax(0, 1fr) 154px; gap: 27px; padding: 23px 0 24px; border-bottom: 1px solid var(--line); align-items: center; }
+    .story-copy { min-width: 0; }
+    .byline { display: flex; gap: 8px; align-items: center; color: #4e4e4e; font-size: 12px; margin-bottom: 10px; }
+    .mini-avatar { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 9px; font-weight: 700; background: #ded5c8; color: #6c5743; flex: 0 0 auto; }
+    .mini-avatar.blue { background: #d9e5ec; color: #456575; }
+    .mini-avatar.pink { background: #ecdde3; color: #795567; }
+    .mini-avatar.green { background: #dce8db; color: #55734f; }
+    .mini-avatar.gold { background: #efe5cd; color: #77643a; }
+    .byline strong { font-weight: 600; color: #343434; }
+    .story h2 { font: 700 21px/1.22 var(--serif); letter-spacing: -.25px; margin: 0 0 7px; }
+    .story-summary { font: 15px/1.42 var(--serif); color: #666; margin: 0; max-width: 440px; }
+    .story-image { width: 154px; height: 112px; object-fit: cover; background: #f1f1f1; }
+    .story-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 13px; color: #757575; font-size: 11px; }
+    .meta-left { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .topic-pill { background: #f2f2f2; color: #595959; border-radius: 14px; padding: 5px 9px; font-size: 10px; }
+    .meta-dot { color: #aaa; }
+    .story-tools { display: flex; gap: 15px; align-items: center; }
+    .bookmark { border: 0; background: transparent; padding: 3px; color: #6b6b6b; cursor: pointer; font-size: 17px; line-height: 1; }
+    .bookmark[aria-pressed="true"] { color: var(--green); }
+    .more { border: 0; background: transparent; color: #777; cursor: pointer; letter-spacing: 2px; padding: 2px; }
+    .right-rail { padding-top: 43px; position: sticky; top: 70px; }
+    .side-section { margin-bottom: 32px; }
+    .side-section h2 { font-size: 14px; margin: 0 0 16px; font-weight: 650; }
+    .topics { display: flex; flex-wrap: wrap; gap: 8px; }
+    .topic-button { border: 0; background: #f2f2f2; border-radius: 20px; padding: 9px 13px; color: #454545; font-size: 12px; cursor: pointer; transition: background .15s ease; }
+    .topic-button:hover { background: #e8e8e8; }
+    .pick { display: grid; grid-template-columns: 25px 1fr; gap: 10px; margin: 0 0 17px; }
+    .pick-number { font: 600 18px/1 var(--serif); color: #ddd; }
+    .pick-byline { font-size: 10px; color: #5c5c5c; margin: 0 0 5px; }
+    .pick h3 { font: 650 13px/1.35 var(--serif); margin: 0; }
+    .see-more { color: var(--green); font-size: 12px; }
+    .membership-card { border-top: 1px solid var(--line); padding-top: 23px; }
+    .membership-card h2 { font: 600 21px/1.22 var(--serif); margin: 0 0 9px; }
+    .membership-card p { color: #666; font: 13px/1.5 var(--serif); margin: 0 0 15px; }
+    .membership-card button { border: 1px solid #191919; background: #191919; color: white; border-radius: 22px; padding: 9px 14px; font-size: 12px; cursor: pointer; }
+    .toast { position: fixed; left: 50%; bottom: 25px; transform: translate(-50%, 15px); opacity: 0; pointer-events: none; background: #202020; color: #fff; padding: 12px 18px; border-radius: 24px; font-size: 13px; transition: all .2s ease; z-index: 20; box-shadow: 0 5px 18px #0002; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .empty-state { display: none; padding: 48px 0; color: #777; font: 17px var(--serif); }
+    .empty-state.show { display: block; }
+    .story.hidden { display: none; }
+    @media (max-width: 1120px) {
+      .layout { grid-template-columns: 150px minmax(0, 1fr) 260px; gap: 30px; }
+      .left-rail { padding-right: 4px; }
+      .story { grid-template-columns: minmax(0, 1fr) 135px; gap: 19px; }
+      .story-image { width: 135px; height: 100px; }
+    }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 58px minmax(0, 680px); width: min(800px, calc(100% - 40px)); gap: 27px; }
+      .left-rail { padding-top: 33px; }
+      .rail-link { width: 42px; justify-content: center; padding: 12px 0; }
+      .rail-link span:last-child, .rail-label, .rail-divider, .rail-bottom { display: none; }
+      .rail-icon { font-size: 19px; }
+      .right-rail { display: none; }
+      main { padding-top: 32px; }
+    }
+    @media (max-width: 620px) {
+      .topbar { height: 60px; padding: 0 16px; }
+      .brand-mark { font-size: 31px; }
+      .brand-name { font-size: 21px; }
+      .top-actions { gap: 14px; }
+      .search-box { width: 38px; height: 38px; padding: 0; justify-content: center; background: transparent; }
+      .search-box input { display: none; }
+      .text-action { display: none; }
+      .get-started { padding: 9px 13px; font-size: 12px; }
+      .avatar { display: none; }
+      .layout { width: 100%; display: block; }
+      .left-rail { position: static; min-height: 0; border: 0; border-bottom: 1px solid var(--line); padding: 0 16px; }
+      .rail-list { display: flex; justify-content: space-around; }
+      .rail-link { width: auto; padding: 12px 8px; }
+      .rail-link:nth-child(n+4), .rail-divider { display: none; }
+      main { padding: 27px 20px 50px; }
+      .welcome { margin-bottom: 23px; }
+      h1 { font-size: 28px; }
+      .story { grid-template-columns: minmax(0,1fr) 92px; gap: 12px; padding: 19px 0; }
+      .story-image { width: 92px; height: 82px; }
+      .story h2 { font-size: 18px; }
+      .story-summary { font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+      .byline { font-size: 10px; margin-bottom: 8px; }
+      .story-meta { margin-top: 10px; font-size: 10px; }
+      .story-tools { gap: 9px; }
+      .topic-pill { padding: 4px 7px; }
+    }
+  </style>
+  <style id="feed-refinement">
+    :root {
+      --ink: #242424;
+      --muted: #6b6b6b;
+      --line: #e6e6e6;
+      --soft: #f5f5f5;
+      --green: #1a8917;
+      --paper: #fff;
+      --serif: Charter, Georgia, 'Times New Roman', serif;
+      --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    body { color: var(--ink); background: #fff; font-family: var(--sans); }
+    .topbar {
+      height: 68px;
+      padding: 0 max(32px, calc((100vw - 1290px) / 2));
+      border-bottom-color: #e6e6e6;
+      background: rgba(255,255,255,.98);
+    }
+    .brand { gap: 6px; }
+    .brand-mark { font-size: 37px; letter-spacing: -4.2px; }
+    .brand-name { font-size: 31px; letter-spacing: -1.45px; }
+    .top-actions { gap: 23px; font-size: 14px; }
+    .search-box {
+      width: 218px;
+      height: 40px;
+      padding: 0 14px;
+      border: 1px solid transparent;
+      background: #f5f5f5;
+      transition: border-color .15s ease, background .15s ease;
+    }
+    .search-box:focus-within { background: #fff; border-color: #d6d6d6; }
+    .search-box > svg { width: 17px; height: 17px; flex: 0 0 auto; stroke: #777; }
+    .search-box input { font-size: 14px; }
+    .text-action { display: inline-flex; align-items: center; gap: 7px; color: #555; }
+    .text-action svg { width: 17px; height: 17px; flex: 0 0 auto; }
+    .text-action:hover { color: #111; }
+    .get-started { background: #191919; padding: 10px 17px; font-size: 13px; }
+    .avatar { width: 32px; height: 32px; border: 1px solid #ece7e0; }
+
+    .layout {
+      width: min(1240px, calc(100% - 64px));
+      grid-template-columns: 170px minmax(0, 1fr) 290px;
+      column-gap: clamp(30px, 4vw, 52px);
+      align-items: start;
+    }
+    .left-rail {
+      top: 68px;
+      min-height: calc(100vh - 68px);
+      padding: 31px 13px 25px 0;
+      border-right: 1px solid #f0f0f0;
+    }
+    .rail-list { gap: 3px; }
+    .rail-link {
+      width: calc(100% - 12px);
+      min-height: 40px;
+      padding: 9px 10px;
+      gap: 13px;
+      border-radius: 5px;
+      color: #656565;
+      font-size: 13px;
+      transition: color .14s ease, background .14s ease;
+    }
+    .rail-link:hover { background: #f7f7f7; color: #242424; }
+    .rail-link.active {
+      color: #242424;
+      background: #f5f5f5;
+      font-weight: 600;
+    }
+    .rail-icon { width: 19px; height: 19px; flex: 0 0 19px; color: #777; }
+    .rail-icon svg { display: block; width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.55; stroke-linecap: round; stroke-linejoin: round; }
+    .rail-link.active .rail-icon { color: #242424; }
+    .rail-divider { margin: 18px 18px 17px 10px; border-color: #e8e8e8; }
+    .rail-label { margin: 0 0 9px 12px; color: #8a8a8a; font-size: 10px; letter-spacing: .08em; }
+    .rail-bottom { left: 11px; bottom: 16px; color: #8a8a8a; font-size: 11px; line-height: 1.9; }
+    .rail-bottom a:hover { color: #242424; }
+
+    main { padding: 34px 0 80px; }
+    .welcome { margin-bottom: 12px; }
+    .eyebrow { display: none; }
+    h1 { font: 700 34px/1.12 var(--serif); letter-spacing: -1.15px; }
+    .welcome p:last-child { margin: 7px 0 0; color: #757575; font-size: 14px; line-height: 1.45; }
+    .tabs { gap: 29px; margin-bottom: 0; border-bottom-color: #e6e6e6; }
+    .tab { padding: 13px 0 14px; color: #777; font-size: 13px; }
+    .tab.selected { color: #242424; font-weight: 600; }
+    .tab.selected::after { height: 2px; background: #242424; }
+    .story {
+      grid-template-columns: minmax(0, 1fr) 112px;
+      gap: 24px;
+      padding: 22px 0 21px;
+      border-bottom-color: #e6e6e6;
+      align-items: center;
+    }
+    .byline { gap: 8px; margin-bottom: 9px; color: #595959; font-size: 11px; }
+    .mini-avatar { width: 20px; height: 20px; font-size: 8px; }
+    .byline strong { color: #292929; font-weight: 600; }
+    .story h2 { margin: 0 0 6px; font: 700 20px/1.25 var(--serif); letter-spacing: -.36px; }
+    .story-summary { max-width: 440px; color: #6b6b6b; font: 14px/1.45 var(--sans); }
+    .story-image { width: 112px; height: 112px; object-fit: cover; background: #f2f2f2; }
+    .story-meta { margin-top: 13px; color: #777; font-size: 11px; }
+    .meta-left { gap: 8px; }
+    .topic-pill { padding: 4px 9px; border-radius: 14px; background: #f2f2f2; color: #555; font-size: 10px; }
+    .story-tools { gap: 12px; }
+    .bookmark, .more { display: grid; place-items: center; width: 25px; height: 25px; padding: 0; border-radius: 50%; }
+    .bookmark { position: relative; font-size: 0; }
+    .bookmark::before { content: ''; width: 11px; height: 14px; border: 1.4px solid currentColor; border-radius: 1px; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 74%, 0 100%); }
+    .bookmark[aria-pressed="true"]::before { border-color: var(--green); background: var(--green); }
+    .bookmark:hover, .more:hover { background: #f4f4f4; }
+    .bookmark svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+    .bookmark[aria-pressed="true"] svg { fill: var(--green); stroke: var(--green); }
+    .more { font-size: 15px; letter-spacing: 1px; }
+
+    .right-rail { top: 68px; padding-top: 39px; }
+    .side-section { margin-bottom: 30px; }
+    .side-section h2 { margin-bottom: 14px; color: #292929; font-size: 14px; line-height: 1.35; font-weight: 650; }
+    .topics { gap: 8px; }
+    .topic-button { padding: 8px 12px; background: #f2f2f2; color: #444; font-size: 12px; }
+    .topic-button:hover { background: #e8e8e8; }
+    .topic-button[aria-pressed="true"] { background: #dedede; color: #242424; }
+    .pick { grid-template-columns: 25px 1fr; gap: 9px; margin-bottom: 16px; }
+    .pick-number { color: #d5d5d5; font-size: 18px; }
+    .pick-byline { margin-bottom: 4px; color: #777; font-size: 10px; }
+    .pick h3 { color: #292929; font: 650 13px/1.35 var(--serif); }
+    .see-more { color: var(--green); font-size: 12px; }
+    .membership-card { padding-top: 21px; border-top-color: #e6e6e6; }
+    .membership-card h2 { font-size: 20px; letter-spacing: -.2px; }
+    .membership-card p { color: #6b6b6b; font: 13px/1.5 var(--sans); }
+    .membership-card button { border-color: #191919; background: #191919; padding: 9px 15px; font-size: 12px; }
+    .toast { font-family: var(--sans); }
+    .story-title-button { display: inline; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; letter-spacing: inherit; line-height: inherit; text-align: left; cursor: pointer; }
+    .story-title-button:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    .story-state { display: none; color: var(--green); font-size: 10px; white-space: nowrap; }
+    .story-state.visible { display: inline; }
+    .story-state::before { content: '·'; margin-right: 7px; color: #aaa; }
+    .search-toggle, .search-clear { display: none; border: 0; background: transparent; color: #666; cursor: pointer; padding: 4px; }
+    .search-clear.visible { display: grid; place-items: center; font-size: 18px; }
+    .reader { width: min(740px, calc(100vw - 36px)); max-width: none; max-height: min(900px, calc(100dvh - 36px)); padding: 0; border: 0; border-radius: 3px; color: var(--ink); background: #fff; box-shadow: 0 18px 70px #0003; overflow: hidden; }
+    .reader::backdrop { background: rgb(20 20 20 / 42%); backdrop-filter: blur(2px); }
+    .reader-toolbar { display: flex; justify-content: space-between; align-items: center; min-height: 53px; padding: 0 22px; border-bottom: 1px solid var(--line); color: #777; font-size: 12px; }
+    .reader-close { border: 0; background: transparent; color: #555; font-size: 23px; line-height: 1; cursor: pointer; padding: 5px 8px; }
+    .reader-progress { height: 2px; background: #f0f0f0; }
+    .reader-progress span { display: block; width: 0; height: 100%; background: var(--green); transition: width .12s linear; }
+    .reader-scroll { max-height: calc(100dvh - 145px); overflow: auto; overscroll-behavior: contain; padding: clamp(30px, 6vw, 58px) clamp(25px, 9vw, 82px) 42px; }
+    .reader-kicker { margin: 0 0 13px; color: #777; font-size: 12px; }
+    .reader-title { margin: 0 0 17px; font: 700 clamp(30px, 5vw, 42px)/1.12 var(--serif); letter-spacing: -1px; }
+    .reader-byline { margin: 0 0 34px; color: #666; font-size: 13px; }
+    .reader-body { color: #292929; font: 19px/1.72 var(--serif); }
+    .reader-body p { margin: 0 0 22px; }
+    .reader-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 22px; border-top: 1px solid var(--line); background: #fff; }
+    .reader-actions-group { display: flex; flex-wrap: wrap; gap: 9px; }
+    .reader-action { border: 1px solid #d8d8d8; border-radius: 22px; background: #fff; padding: 9px 14px; color: #333; font-size: 12px; cursor: pointer; }
+    .reader-action:hover { background: #f7f7f7; }
+    .reader-share { display: inline-flex; align-items: center; gap: 7px; }
+    .reader-share svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .reader-action.primary { border-color: #191919; background: #191919; color: #fff; }
+    .reader-action[aria-pressed="true"] { color: var(--green); border-color: #bfd8bd; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    @media (max-width: 1120px) {
+      .layout { grid-template-columns: 155px minmax(0, 1fr); column-gap: 34px; }
+      .right-rail { display: none; }
+      .story { grid-template-columns: minmax(0, 1fr) 112px; gap: 20px; }
+      .story-image { width: 112px; height: 112px; }
+    }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 58px minmax(0, 1fr); width: min(800px, calc(100% - 40px)); gap: 27px; }
+      .left-rail { padding: 30px 6px 25px 0; }
+      .rail-link { width: 43px; justify-content: center; padding: 10px 0; }
+      .rail-link span:last-child, .rail-label, .rail-divider, .rail-bottom { display: none; }
+      .rail-icon { font-size: 18px; }
+      main { padding-top: 30px; }
+    }
+    @media (max-width: 620px) {
+      .topbar { height: 60px; padding: 0 16px; }
+      .brand-mark { font-size: 32px; }
+      .brand-name { font-size: 21px; }
+      .top-actions { gap: 13px; }
+      .search-box { width: 38px; height: 38px; padding: 0; justify-content: center; background: transparent; border-color: transparent; }
+      .search-box > svg { display: none; }
+      .search-box input { display: none; }
+      .search-toggle { display: grid; place-items: center; width: 36px; height: 36px; }
+      .search-toggle svg { display: block; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+      .search-box.is-open { position: absolute; left: 16px; right: 16px; z-index: 2; width: auto; justify-content: flex-start; padding: 0 10px; border-color: #ddd; background: #fff; box-shadow: 0 2px 9px #00000012; }
+      .search-box.is-open > svg { display: block; }
+      .search-box.is-open input { display: block; }
+      .search-box.is-open .search-toggle { display: none; }
+      .search-box.is-open .search-clear { display: grid; place-items: center; font-size: 20px; }
+      .text-action { display: none; }
+      .get-started { padding: 9px 13px; font-size: 12px; }
+      .avatar { display: none; }
+      .layout { width: 100%; display: block; }
+      .left-rail { position: static; min-height: 0; padding: 0 10px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .rail-list { display: flex; justify-content: space-around; }
+      .rail-link { width: auto; min-width: 44px; padding: 12px 8px; }
+      .rail-link:nth-child(n+4) { display: none; }
+      main { padding: 27px 20px 50px; }
+      .welcome { margin-bottom: 13px; }
+      h1 { font-size: 30px; }
+      .story { grid-template-columns: minmax(0, 1fr) 88px; gap: 12px; padding: 19px 0; }
+      .story-image { width: 88px; height: 88px; }
+      .story h2 { font-size: 18px; }
+      .story-summary { font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+      .byline { font-size: 10px; margin-bottom: 8px; }
+      .story-meta { margin-top: 10px; font-size: 10px; }
+      .story-tools { gap: 5px; }
+      .reader { width: 100vw; max-height: 100dvh; height: 100dvh; border-radius: 0; }
+      .reader-toolbar { min-height: 50px; padding: 0 17px; }
+      .reader-scroll { max-height: calc(100dvh - 170px); padding: 34px 23px; }
+      .reader-body { font-size: 18px; line-height: 1.68; }
+      .reader-actions { align-items: center; padding: 11px 14px; }
+      .reader-actions-group { gap: 6px; }
+      .reader-action { padding: 9px 11px; font-size: 11px; }
+      .reader-action.primary { width: 116px; min-height: 42px; height: auto; align-self: center; flex: 0 0 auto; padding: 8px 11px; line-height: 1.2; white-space: normal; }
+    }
+  </style>
+  <style id="writer-styles">
+    .write-action { display: inline-flex; align-items: center; gap: 7px; }
+    .write-action svg { width: 17px; height: 17px; flex: 0 0 auto; }
+    .composer {
+      width: min(860px, calc(100vw - 40px));
+      max-width: none;
+      max-height: min(900px, calc(100dvh - 32px));
+      padding: 0;
+      border: 1px solid #e8e8e8;
+      border-radius: 4px;
+      color: var(--ink);
+      background: #fff;
+      box-shadow: 0 18px 70px #0003;
+      overflow: hidden;
+    }
+    .composer::backdrop { background: rgb(20 20 20 / 42%); backdrop-filter: blur(2px); }
+    .composer-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 60px; padding: 0 22px; border-bottom: 1px solid var(--line); }
+    .composer-status { color: #777; font-size: 12px; }
+    .composer-toolbar-actions { display: flex; align-items: center; gap: 9px; }
+    .composer-button { border: 1px solid #d8d8d8; border-radius: 20px; background: #fff; padding: 9px 14px; color: #333; font-size: 12px; cursor: pointer; }
+    .composer-button:hover { background: #f7f7f7; }
+    .composer-button.primary { border-color: #191919; background: #191919; color: #fff; }
+    .composer-button[aria-pressed="true"] { border-color: #bfd8bd; color: var(--green); }
+    .composer-close { border: 0; background: transparent; color: #555; font-size: 23px; line-height: 1; cursor: pointer; padding: 5px 8px; }
+    .composer-content { width: min(700px, 100%); height: min(760px, calc(100dvh - 100px)); margin: 0 auto; overflow: auto; padding: clamp(38px, 7vw, 72px) clamp(24px, 6vw, 60px) 34px; }
+    .composer-title { display: block; width: 100%; border: 0; outline: 0; padding: 0; color: #242424; background: transparent; font: 700 clamp(32px, 5vw, 44px)/1.12 var(--serif); letter-spacing: -1px; }
+    .composer-title::placeholder { color: #b7b7b7; opacity: 1; }
+    .composer-body { display: block; width: 100%; min-height: 390px; margin-top: 24px; border: 0; outline: 0; padding: 0; resize: vertical; color: #292929; background: transparent; font: 18px/1.72 var(--serif); }
+    .composer-body::placeholder { color: #999; opacity: 1; }
+    .composer-note { margin: 28px 0 0; color: #888; font-size: 11px; }
+    .composer-preview { display: none; min-height: 390px; }
+    .composer-preview-title { margin: 0 0 24px; font: 700 clamp(32px, 5vw, 44px)/1.12 var(--serif); letter-spacing: -1px; }
+    .composer-preview-body { color: #292929; font: 18px/1.72 var(--serif); overflow-wrap: anywhere; }
+    .composer-preview-body p { margin: 0 0 22px; white-space: pre-wrap; }
+    .draft-library { margin: 0 0 34px; padding: 18px; border: 1px solid #e8e8e8; border-radius: 7px; background: #fafafa; }
+    .draft-library-heading { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+    .draft-library-heading h3 { margin: 0 0 4px; font: 650 18px/1.2 var(--serif); }
+    .draft-library-heading p { margin: 0; color: #777; font-size: 11px; line-height: 1.4; }
+    .draft-list { display: grid; gap: 8px; margin-top: 16px; }
+    .draft-row { padding: 11px 12px; border: 1px solid #e8e8e8; border-radius: 6px; background: #fff; }
+    .draft-row-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .draft-open { display: grid; min-width: 0; gap: 4px; padding: 0; border: 0; background: transparent; text-align: left; cursor: pointer; }
+    .draft-open[aria-current="true"] .draft-name { color: var(--green); }
+    .draft-name { overflow: hidden; color: #292929; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+    .draft-date { color: #888; font-size: 10px; }
+    .draft-row-actions { display: flex; flex: 0 0 auto; gap: 5px; }
+    .draft-row-actions button, .draft-rename-form button { padding: 6px 9px; border: 1px solid #dedede; border-radius: 16px; background: #fff; color: #555; font-size: 10px; cursor: pointer; }
+    .draft-row-actions button:hover, .draft-rename-form button:hover { background: #f5f5f5; }
+    .draft-row-actions .draft-delete { color: #a33; }
+    .draft-rename-form { display: flex; gap: 7px; margin-top: 10px; }
+    .draft-rename-form[hidden] { display: none; }
+    .draft-rename-form input { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid #d8d8d8; border-radius: 5px; color: var(--ink); background: #fff; }
+    .draft-rename-form .draft-rename-save { border-color: #191919; background: #191919; color: #fff; }
+    .draft-empty { margin: 16px 0 0; color: #777; font: 14px/1.5 var(--serif); }
+    #composer[data-mode="preview"] .composer-title,
+    #composer[data-mode="preview"] .composer-body,
+    #composer[data-mode="preview"] .composer-note { display: none; }
+    #composer[data-mode="preview"] .composer-preview { display: block; }
+    .write-action:focus-visible, .composer button:focus-visible, .composer input:focus-visible, .composer textarea:focus-visible { outline: 2px solid #1a8917; outline-offset: 3px; }
+    @media (max-width: 620px) {
+      .text-action.write-action { display: inline-flex; width: 36px; height: 36px; justify-content: center; padding: 0; }
+      .write-action span { display: none; }
+      .composer { width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border: 0; border-radius: 0; }
+      .composer-toolbar { min-height: 56px; gap: 7px; padding: 0 11px; }
+      .composer-status { font-size: 10px; }
+      .composer-toolbar-actions { gap: 5px; }
+      .composer-button { padding: 8px 10px; font-size: 11px; }
+      .composer-content { width: 100%; height: calc(100dvh - 56px); padding: 42px 24px 30px; }
+      .composer-title, .composer-preview-title { font-size: 32px; }
+      .composer-body { min-height: calc(100dvh - 220px); font-size: 18px; }
+      .draft-library { margin-bottom: 26px; padding: 13px; }
+      .draft-library-heading { align-items: flex-start; }
+      .draft-library-heading .composer-button { flex: 0 0 auto; }
+      .draft-row { padding: 10px; }
+      .draft-row-summary { align-items: flex-start; flex-direction: column; gap: 9px; }
+      .draft-row-actions { width: 100%; }
+      .draft-row-actions button { flex: 1; }
+    }
+  </style>
+  <style id="stats-styles">
+    .stats-view { padding-top: 0; }
+    .stats-heading { margin: 0 0 24px; }
+    .stats-heading h1 { margin: 0; }
+    .stats-heading p:last-child { margin: 8px 0 0; color: #757575; font-size: 14px; line-height: 1.45; }
+    .stats-scope-note { margin: 25px 0 20px; padding: 14px 16px; border: 1px solid #ececec; border-radius: 4px; background: #fafafa; color: #666; font-size: 12px; line-height: 1.5; }
+    .stats-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; }
+    .stats-card { min-width: 0; padding: 18px; border: 1px solid #e8e8e8; border-radius: 4px; background: #fff; }
+    .stats-card dt { color: #666; font-size: 12px; font-weight: 550; }
+    .stats-card dd { margin: 9px 0 4px; color: #242424; font: 700 32px/1 var(--serif); letter-spacing: -.5px; }
+    .stats-card p { margin: 0; color: #777; font-size: 11px; line-height: 1.45; }
+    .stats-footnote { margin: 17px 0 0; color: #777; font-size: 11px; line-height: 1.5; }
+    @media (max-width: 620px) {
+      .left-rail .rail-link[data-view="Stats"] { display: flex; }
+      .left-rail .rail-link[data-toast] { display: none; }
+      .stats-heading { margin-bottom: 18px; }
+      .stats-scope-note { margin: 20px 0 16px; padding: 12px 13px; }
+      .stats-grid { gap: 8px; }
+      .stats-card { padding: 14px 12px; }
+      .stats-card dd { font-size: 28px; }
+    }
+  </style>
+  <style id="private-sync-styles">
+    .sync-action { display: inline-flex !important; align-items: center; justify-content: center; border: 1px solid #dedede; border-radius: 18px; padding: 8px 12px; color: #555; font-size: 12px; line-height: 1; }
+    .sync-action:hover { background: #f7f7f7; color: #242424; }
+    .sync-action:disabled { cursor: wait; opacity: .55; }
+    /* Keep the backend-only sync control out of the approved homepage header. */
+    #sync-button { display: none !important; }
+    @media (max-width: 620px) { .sync-action { padding: 7px 9px; font-size: 11px; } }
+  </style>
+  <style id="editor-styles">
+    .login-dialog { width: min(420px, calc(100vw - 32px)); padding: 28px; border: 1px solid #e8e8e8; border-radius: 6px; color: var(--ink); background: #fff; box-shadow: 0 18px 70px #0003; }
+    .login-dialog::backdrop { background: rgb(20 20 20 / 42%); backdrop-filter: blur(2px); }
+    .login-dialog h2 { margin: 0 0 8px; font: 700 25px/1.2 var(--serif); }
+    .login-dialog p { margin: 0 0 18px; color: #707070; font-size: 13px; line-height: 1.5; }
+    .login-dialog label, .story-fields label { display: grid; gap: 7px; color: #555; font-size: 12px; }
+    .login-dialog input, .story-fields input, .story-fields select { width: 100%; min-width: 0; padding: 10px 11px; border: 1px solid #d9d9d9; border-radius: 4px; color: var(--ink); background: #fff; }
+    .login-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+    .login-actions button, .story-admin-actions button { padding: 9px 13px; border: 1px solid #d8d8d8; border-radius: 20px; background: #fff; color: #333; font-size: 12px; cursor: pointer; }
+    .login-actions .primary { border-color: #191919; background: #191919; color: #fff; }
+    .login-error { min-height: 18px; margin-top: 9px; color: #9b2c2c; font-size: 12px; }
+    .story-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; margin: 24px 0 0; padding: 18px; border: 1px solid #e9e9e9; border-radius: 5px; background: #fafafa; }
+    .story-fields .full-width { grid-column: 1 / -1; }
+    .published-field { display: flex !important; align-items: center; gap: 9px !important; }
+    .published-field input { width: auto; }
+    .online-library { margin: 0 0 15px; padding: 16px; border: 1px solid #e8e8e8; border-radius: 6px; background: #fafafa; }
+    .online-library[hidden], .story-fields[hidden] { display: none; }
+    .online-library-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .online-library-heading h3 { margin: 0; font: 650 18px/1.2 var(--serif); }
+    .online-story-list { display: grid; gap: 8px; margin-top: 12px; }
+    .online-story-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 11px; border: 1px solid #e6e6e6; border-radius: 5px; background: #fff; }
+    .online-story-name { min-width: 0; overflow: hidden; font-size: 12px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+    .online-story-state { color: #777; font-size: 10px; }
+    .story-admin-actions { display: flex; flex: 0 0 auto; gap: 6px; }
+    .story-admin-actions .delete { color: #9b2c2c; }
+    .story-admin-card-actions { display: flex; gap: 6px; }
+    .editor-auth-only[hidden] { display: none !important; }
+    .story-admin-card-actions button { padding: 5px 8px; border: 1px solid #dedede; border-radius: 16px; background: #fff; color: #555; font-size: 10px; cursor: pointer; }
+    .composer-note { line-height: 1.5; }
+    #composer[data-mode="manage"] .composer-title,
+    #composer[data-mode="manage"] .composer-body,
+    #composer[data-mode="manage"] #story-fields,
+    #composer[data-mode="manage"] #draft-library,
+    #composer[data-mode="manage"] .composer-note,
+    #composer[data-mode="manage"] #draft-preview { display: none !important; }
+    #composer[data-mode="preview"] .story-fields { display: none; }
+    @media (max-width: 620px) {
+      .login-dialog { padding: 23px 19px; }
+      .story-fields { grid-template-columns: 1fr; padding: 13px; }
+      .story-fields .full-width { grid-column: auto; }
+      .online-story-row { align-items: flex-start; flex-direction: column; }
+      .story-admin-actions { width: 100%; }
+      .story-admin-actions button { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" href="#home" aria-label="Medium home"><span class="brand-name">Medium</span></a>
+    <div class="top-actions">
+      <div class="search-box" aria-label="Search stories"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10.8" cy="10.8" r="6.4"></circle><path d="m15.5 15.5 4.2 4.2"></path></svg><input id="search" type="search" placeholder="Search" autocomplete="off" aria-label="Search stories" /><button class="search-toggle" id="search-toggle" type="button" aria-label="Open search" aria-expanded="false"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.4"></circle><path d="m15.5 15.5 4.2 4.2"></path></svg></button><button class="search-clear" id="search-clear" type="button" aria-label="Clear search">×</button></div>
+      <button class="text-action write-action" id="write-button" type="button" aria-label="Write" aria-haspopup="dialog" aria-controls="composer"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m14.8 5.2 4 4L8 20H4v-4z"></path><path d="m12.9 7.1 4 4"></path></svg><span>Write</span></button>
+      <button class="text-action sync-action" id="sync-button" type="button" title="Manually merge this device’s reading data with your private account" aria-label="Sync reading data">Sync</button>
+      <button class="text-action" id="editor-login-button" type="button">Sign in</button>
+      <button class="get-started" data-toast="Welcome — this sample page is ready for you.">Get started</button>
+      <span class="avatar" aria-label="Reader profile">R</span>
+    </div>
+  </header>
+
+  <div class="layout" id="home">
+    <aside class="left-rail" aria-label="Main navigation">
+      <nav class="rail-list">
+        <button class="rail-link active" data-view="For you" aria-current="page"><span class="rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3.5 10.5 8.5-7 8.5 7"></path><path d="M5.5 9.4v10.1h13V9.4"></path><path d="M9.5 19.5v-6h5v6"></path></svg></span><span>For you</span></button>
+        <button class="rail-link" data-view="Following"><span class="rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"></circle><path d="M3.5 20c.6-3.4 2.4-5.2 5.5-5.2s4.9 1.8 5.5 5.2"></path><path d="M16 5.8a3 3 0 0 1 0 5.8M16.3 15c2.3.6 3.7 2.2 4.2 4.8"></path></svg></span><span>Following</span></button>
+        <button class="rail-link" data-view="Bookmarks"><span class="rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 4.5h12v16l-6-4-6 4z"></path></svg></span><span>Reading list</span></button>
+        <hr class="rail-divider" />
+        <p class="rail-label">Your space</p>
+        <button class="rail-link" id="manage-stories-button"><span class="rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m14.7 5.3 4 4L8 20H4v-4z"></path><path d="m12.8 7.2 4 4"></path></svg></span><span>Stories</span></button>
+        <button class="rail-link" data-view="Stats" aria-label="Stats"><span class="rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19.5h16"></path><path d="M6.5 17V11M12 17V5M17.5 17V8"></path></svg></span><span>Stats</span></button>
+      </nav>
+      <div class="rail-bottom"><a href="#about">About</a><a href="#help">Help</a><a href="#terms">Terms</a><br />Made for curious readers.</div>
+    </aside>
+
+    <main>
+      <div class="feed-view" id="feed-view">
+      <section class="welcome" aria-labelledby="welcome-title">
+        <p class="eyebrow">Home</p>
+        <h1 id="welcome-title">For you</h1>
+        <p>Stories and ideas picked for your next great read.</p>
+      </section>
+      <div class="tabs" role="tablist" aria-label="Story feed">
+        <button class="tab selected" role="tab" aria-selected="true" data-view="For you">For you</button>
+        <button class="tab" role="tab" aria-selected="false" data-view="Following">Following</button>
+      </div>
+      <section id="stories" aria-label="Recommended stories">
+        <article class="story" data-author="Mara Ellis" data-topics="Creativity Writing Mindfulness">
+          <div class="story-copy">
+            <div class="byline"><span class="mini-avatar">ME</span><span><strong>Mara Ellis</strong> in The Open Notebook</span></div>
+            <h2>The quiet craft of paying attention</h2>
+            <p class="story-summary">A small daily walk changed the way I write, work, and notice the life already happening around me.</p>
+            <div class="story-meta"><div class="meta-left"><span>May 12</span><span class="meta-dot">·</span><span>6 min read</span><span class="topic-pill">Creativity</span></div><div class="story-tools"><button class="bookmark" aria-label="Save The quiet craft of paying attention" aria-pressed="false">♧</button><button class="more" aria-label="More options">···</button></div></div>
+          </div>
+          <img class="story-image" src="assets/writing-garden.jpg" alt="A writer making notes in a garden" />
+        </article>
+        <article class="story" data-author="Theo Park" data-topics="Technology Design">
+          <div class="story-copy">
+            <div class="byline"><span class="mini-avatar blue">TP</span><span><strong>Theo Park</strong> in Small Systems</span></div>
+            <h2>Make your tools a little less impressive</h2>
+            <p class="story-summary">The best productivity setup I’ve tried is the one that asks the fewest questions of me.</p>
+            <div class="story-meta"><div class="meta-left"><span>May 11</span><span class="meta-dot">·</span><span>4 min read</span><span class="topic-pill">Technology</span></div><div class="story-tools"><button class="bookmark" aria-label="Save Make your tools a little less impressive" aria-pressed="false">♧</button><button class="more" aria-label="More options">···</button></div></div>
+          </div>
+          <img class="story-image" src="assets/notebook.jpg" alt="An open notebook resting outdoors" />
+        </article>
+        <article class="story" data-author="Juniper Wells" data-topics="Travel Life">
+          <div class="story-copy">
+            <div class="byline"><span class="mini-avatar pink">JW</span><span><strong>Juniper Wells</strong> in Elsewhere, Slowly</span></div>
+            <h2>What I learned from missing my train</h2>
+            <p class="story-summary">I thought the trip was about getting there. A quiet hour by the window changed the itinerary.</p>
+            <div class="story-meta"><div class="meta-left"><span>May 10</span><span class="meta-dot">·</span><span>8 min read</span><span class="topic-pill">Travel</span></div><div class="story-tools"><button class="bookmark" aria-label="Save What I learned from missing my train" aria-pressed="false">♧</button><button class="more" aria-label="More options">···</button></div></div>
+          </div>
+          <img class="story-image" src="assets/train-journal.jpeg" alt="A traveler writing in a journal by a train window" />
+        </article>
+        <article class="story" data-author="Ari Bennett" data-topics="Life Mindfulness">
+          <div class="story-copy">
+            <div class="byline"><span class="mini-avatar green">AB</span><span><strong>Ari Bennett</strong> in Good Enough Days</span></div>
+            <h2>There is no perfect time to begin again</h2>
+            <p class="story-summary">A practical note on starting small, especially when the calendar is already full.</p>
+            <div class="story-meta"><div class="meta-left"><span>May 9</span><span class="meta-dot">·</span><span>5 min read</span><span class="topic-pill">Life</span></div><div class="story-tools"><button class="bookmark" aria-label="Save There is no perfect time to begin again" aria-pressed="false">♧</button><button class="more" aria-label="More options">···</button></div></div>
+          </div>
+          <img class="story-image" src="assets/river-sunset.jpg" alt="A pink sunset reflected on a quiet river" />
+        </article>
+        <article class="story" data-author="Nadia Flores" data-topics="Health Mindfulness">
+          <div class="story-copy">
+            <div class="byline"><span class="mini-avatar gold">NF</span><span><strong>Nadia Flores</strong> in The Daily Practice</span></div>
+            <h2>Rest is not a reward for finishing</h2>
+            <p class="story-summary">We made a checklist out of being human. Here’s what happened when I stopped treating rest as the last item.</p>
+            <div class="story-meta"><div class="meta-left"><span>May 8</span><span class="meta-dot">·</span><span>7 min read</span><span class="topic-pill">Health</span></div><div class="story-tools"><button class="bookmark" aria-label="Save Rest is not a reward for finishing" aria-pressed="false">♧</button><button class="more" aria-label="More options">···</button></div></div>
+          </div>
+          <img class="story-image" src="assets/forest-wellness.jpg" alt="People practicing a quiet ritual in a green forest" />
+        </article>
+        <article class="story" data-author="Sam Rivera" data-topics="Culture Cities">
+          <div class="story-copy">
+            <div class="byline"><span class="mini-avatar blue">SR</span><span><strong>Sam Rivera</strong> in City Notes</span></div>
+            <h2>The city looks different when you walk home</h2>
+            <p class="story-summary">A familiar neighborhood can still surprise you; it just needs a slower pace and a little room to wander.</p>
+            <div class="story-meta"><div class="meta-left"><span>May 7</span><span class="meta-dot">·</span><span>5 min read</span><span class="topic-pill">Culture</span></div><div class="story-tools"><button class="bookmark" aria-label="Save The city looks different when you walk home" aria-pressed="false">♧</button><button class="more" aria-label="More options">···</button></div></div>
+          </div>
+          <img class="story-image" src="assets/city-scenes.jpg" alt="A collage of street scenes and city landmarks" />
+        </article>
+      </section>
+      <p class="empty-state" id="empty-state">No stories match that yet. Try another search.</p>
+      </div>
+      <section class="stats-view" id="stats-view" aria-labelledby="stats-title" hidden>
+        <div class="stats-heading">
+          <h1 id="stats-title">Reading stats</h1>
+          <p>A small snapshot of progress across the sample stories.</p>
+        </div>
+        <p class="stats-scope-note">These totals use stories available on this page and reading progress saved in this browser. The page does not track time spent reading.</p>
+        <dl class="stats-grid" aria-label="Local reading activity">
+          <div class="stats-card"><dt>Saved stories</dt><dd id="stats-saved">0</dd><p>In your reading list</p></div>
+          <div class="stats-card"><dt>Finished stories</dt><dd id="stats-finished">0</dd><p>Marked as finished in the reader</p></div>
+          <div class="stats-card"><dt>In progress</dt><dd id="stats-in-progress">0</dd><p>Opened and not marked finished</p></div>
+          <div class="stats-card"><dt>Estimated minutes</dt><dd id="stats-minutes">0</dd><p>Listed read-time estimates for finished stories</p></div>
+        </dl>
+        <p class="stats-footnote">Estimated minutes add published read-time labels. They are not a measure of actual reading time.</p>
+      </section>
+    </main>
+
+    <aside class="right-rail" aria-label="Explore Medium">
+      <section class="side-section">
+        <h2>Discover more of what matters to you</h2>
+        <div class="topics">
+          <button class="topic-button" data-topic="Technology">Technology</button>
+          <button class="topic-button" data-topic="Creativity">Creativity</button>
+          <button class="topic-button" data-topic="Life">Life</button>
+          <button class="topic-button" data-topic="Writing">Writing</button>
+          <button class="topic-button" data-topic="Travel">Travel</button>
+          <button class="topic-button" data-topic="Mindfulness">Mindfulness</button>
+        </div>
+      </section>
+      <section class="side-section">
+        <h2>Staff picks</h2>
+        <article class="pick"><span class="pick-number">01</span><div><p class="pick-byline">A Field Guide · 8 min read</p><h3>On keeping a notebook you never show anyone</h3></div></article>
+        <article class="pick"><span class="pick-number">02</span><div><p class="pick-byline">Civic Life · 6 min read</p><h3>How a block becomes a neighborhood</h3></div></article>
+        <article class="pick"><span class="pick-number">03</span><div><p class="pick-byline">New Rhythm · 5 min read</p><h3>A kinder way to make a plan</h3></div></article>
+        <a class="see-more" href="#stories">See the full list</a>
+      </section>
+      <section class="membership-card">
+        <h2>Read without limits.</h2>
+        <p>Support the writers you love and find your next favorite idea.</p>
+        <button data-toast="Membership is a demo action on this sample page.">Try membership</button>
+      </section>
+    </aside>
+  </div>
+  <dialog class="composer" id="composer" aria-labelledby="composer-label" data-mode="write">
+    <div class="composer-toolbar">
+      <span class="composer-status" id="draft-status" role="status" aria-live="polite">Your draft stays in this browser</span>
+      <div class="composer-toolbar-actions">
+        <button class="composer-button" id="draft-library-toggle" type="button" aria-expanded="false" aria-controls="draft-library">Drafts <span id="draft-count">0</span></button>
+        <button class="composer-button editor-auth-only" id="online-library-toggle" type="button" aria-expanded="false" aria-controls="online-library" hidden>Online stories</button>
+        <button class="composer-button" id="preview-toggle" type="button" aria-pressed="false">Preview</button>
+        <button class="composer-button primary" id="save-draft" type="button">Save draft</button>
+        <button class="composer-button primary editor-auth-only" id="publish-online" type="button" hidden>Publish online</button>
+        <button class="composer-close" id="close-composer" type="button" aria-label="Close writer">×</button>
+      </div>
+    </div>
+    <div class="composer-content">
+      <h2 class="visually-hidden" id="composer-label">Write a story</h2>
+      <section class="draft-library" id="draft-library" aria-label="Saved drafts" hidden>
+        <div class="draft-library-heading">
+          <div><h3>Your drafts</h3><p>Saved only in this browser on this device.</p></div>
+          <button class="composer-button primary" id="new-draft" type="button">New draft</button>
+        </div>
+        <div class="draft-list" id="draft-list" aria-live="polite"></div>
+      </section>
+      <section class="online-library" id="online-library" aria-label="Online stories" hidden>
+        <div class="online-library-heading"><h3>Online stories</h3><span class="composer-status" id="online-story-count"></span></div>
+        <div class="online-story-list" id="online-story-list" aria-live="polite"></div>
+      </section>
+      <label class="visually-hidden" for="draft-title">Story title</label>
+      <input class="composer-title" id="draft-title" type="text" maxlength="120" placeholder="Title" autocomplete="off" />
+      <label class="visually-hidden" for="draft-body">Story body</label>
+      <textarea class="composer-body" id="draft-body" placeholder="Tell your story..." spellcheck="true"></textarea>
+      <section class="story-fields editor-auth-only" id="story-fields" aria-label="Online story details" hidden>
+        <label>Author<input id="story-author" type="text" maxlength="80" value="Site Editor" autocomplete="off" /></label>
+        <label>Publication<input id="story-publication" type="text" maxlength="80" value="The Open Notebook" autocomplete="off" /></label>
+        <label>Topic<select id="story-topic"><option>Writing</option><option>Creativity</option><option>Technology</option><option>Travel</option><option>Life</option><option>Health</option><option>Culture</option><option>Mindfulness</option><option>Other</option></select></label>
+        <label>Cover photo<select id="story-photo"><option value="/assets/writing-garden.jpg">Writing garden</option><option value="/assets/notebook.jpg">Notebook</option><option value="/assets/train-journal.jpeg">Train journal</option><option value="/assets/river-sunset.jpg">River sunset</option><option value="/assets/forest-wellness.jpg">Forest wellness</option><option value="/assets/city-scenes.jpg">City scenes</option></select></label>
+        <label class="full-width">Photo description<input id="story-photo-alt" type="text" maxlength="180" value="A quiet scene for reading" autocomplete="off" /></label>
+        <label class="published-field full-width"><input id="story-published" type="checkbox" checked /> Publish publicly (uncheck to save as a private online draft)</label>
+      </section>
+      <article class="composer-preview" id="draft-preview" aria-label="Story preview">
+        <h1 class="composer-preview-title" id="draft-preview-title"></h1>
+        <div class="composer-preview-body" id="draft-preview-body"></div>
+      </article>
+      <p class="composer-note">Local drafts stay on this device. Online stories are visible only after you publish them.</p>
+    </div>
+  </dialog>
+  <dialog class="login-dialog" id="editor-login-dialog" aria-labelledby="editor-login-title">
+    <form id="editor-login-form">
+      <h2 id="editor-login-title">Editor sign in</h2>
+      <p>Use the private editor password to manage stories. Readers can browse without signing in.</p>
+      <label for="editor-password">Editor password<input id="editor-password" name="password" type="password" autocomplete="current-password" required maxlength="1024" /></label>
+      <div class="login-error" id="editor-login-error" role="status" aria-live="polite"></div>
+      <div class="login-actions"><button id="close-editor-login" type="button">Cancel</button><button class="primary" id="submit-editor-login" type="submit">Sign in</button></div>
+    </form>
+  </dialog>
+  <dialog class="reader" id="reader" aria-labelledby="reader-title">
+    <div class="reader-toolbar"><span id="reader-label">Reading room</span><button class="reader-close" id="reader-close" type="button" aria-label="Close reader">×</button></div>
+    <div class="reader-progress" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+    <div class="reader-scroll" id="reader-scroll" tabindex="0">
+      <article class="reader-article">
+        <p class="reader-kicker" id="reader-kicker"></p>
+        <h2 class="reader-title" id="reader-title"></h2>
+        <p class="reader-byline" id="reader-byline"></p>
+        <div class="reader-body" id="reader-body"></div>
+      </article>
+    </div>
+    <div class="reader-actions">
+      <div class="reader-actions-group"><button class="reader-action" id="reader-bookmark" type="button" aria-pressed="false">Save story</button><button class="reader-action" id="reader-follow" type="button" aria-pressed="false">Follow writer</button><button class="reader-action reader-share" id="reader-share" type="button" aria-label="Share story link" title="Share story link"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="m8.6 10.6 6.8-4.1M8.6 13.4l6.8 4.1"></path></svg><span>Share</span></button></div>
+      <button class="reader-action primary" id="reader-read" type="button">Mark as finished</button>
+    </div>
+  </dialog>
+  <div class="toast" role="status" aria-live="polite"></div>
+  <script>
+    let stories = [...document.querySelectorAll('.story')];
+    const toast = document.querySelector('.toast');
+    const search = document.querySelector('#search');
+    const searchBox = document.querySelector('.search-box');
+    const searchToggle = document.querySelector('#search-toggle');
+    const searchClear = document.querySelector('#search-clear');
+    const emptyState = document.querySelector('#empty-state');
+    const feedView = document.querySelector('#feed-view');
+    const statsView = document.querySelector('#stats-view');
+    const reader = document.querySelector('#reader');
+    const readerScroll = document.querySelector('#reader-scroll');
+    const readerProgress = document.querySelector('.reader-progress');
+    const readerProgressFill = document.querySelector('.reader-progress span');
+    const writeButton = document.querySelector('#write-button');
+    const syncButton = document.querySelector('#sync-button');
+    const composer = document.querySelector('#composer');
+    const draftTitle = document.querySelector('#draft-title');
+    const draftBody = document.querySelector('#draft-body');
+    const draftStatus = document.querySelector('#draft-status');
+    const previewToggle = document.querySelector('#preview-toggle');
+    const previewTitle = document.querySelector('#draft-preview-title');
+    const previewBody = document.querySelector('#draft-preview-body');
+    const draftLibrary = document.querySelector('#draft-library');
+    const draftLibraryToggle = document.querySelector('#draft-library-toggle');
+    const draftCount = document.querySelector('#draft-count');
+    const draftList = document.querySelector('#draft-list');
+    const newDraftButton = document.querySelector('#new-draft');
+    const editorLoginButton = document.querySelector('#editor-login-button');
+    const editorLoginDialog = document.querySelector('#editor-login-dialog');
+    const editorLoginForm = document.querySelector('#editor-login-form');
+    const editorPassword = document.querySelector('#editor-password');
+    const editorLoginError = document.querySelector('#editor-login-error');
+    const onlineLibraryToggle = document.querySelector('#online-library-toggle');
+    const onlineLibrary = document.querySelector('#online-library');
+    const onlineStoryList = document.querySelector('#online-story-list');
+    const onlineStoryCount = document.querySelector('#online-story-count');
+    const publishOnlineButton = document.querySelector('#publish-online');
+    const saveDraftButton = document.querySelector('#save-draft');
+    const storyAuthor = document.querySelector('#story-author');
+    const storyPublication = document.querySelector('#story-publication');
+    const storyTopic = document.querySelector('#story-topic');
+    const storyPhoto = document.querySelector('#story-photo');
+    const storyPhotoAlt = document.querySelector('#story-photo-alt');
+    const storyPublished = document.querySelector('#story-published');
+    const manageStoriesButton = document.querySelector('#manage-stories-button');
+    const storageKey = 'reading-room-demo-v1';
+    const originalArticles = {
+      'the-quiet-craft-of-paying-attention': [
+        'On the first Monday in May, I took the same twenty-minute walk I always take and left my headphones at home. Without a podcast filling the gaps, the walk seemed to lengthen. I noticed a bakery opening its blue shutters, a neighbor carrying a basil plant, and the particular patch of afternoon light that lands on the corner wall.',
+        'I used to think attention was something you spent, like a battery. The day asked for so much of it that I tried to conserve what was left. But attention turned out to behave more like a path: the more often I returned to the ordinary details around me, the easier it became to find my way back. Nothing on that route was new. My way of meeting it was.',
+        'Now I keep a small notebook by the door. I write down one thing I would have missed if I had hurried. It is not a productivity system, and the notes do not need to become anything. They are simply proof that a day can hold more than its loudest task.',
+        'The walk still takes twenty minutes. It just feels like a place I have arrived.'
+      ],
+      'make-your-tools-a-little-less-impressive': [
+        'My most useful work tool is a timer that does almost nothing. It cannot score me, build a dashboard, or send a report. It gives me one quiet interval, then it rings. For a long time I assumed a tool had to offer more in order to be worth keeping.',
+        'That assumption made my setup impressive and my work strangely indirect. Before starting a short note, I could spend ten minutes adjusting the system that was meant to help me write it. Every new option brought another tiny decision: which view, which label, which ritual? The overhead was easy to mistake for progress.',
+        'So I started removing things. The task list became a plain page. Notifications became quiet by default. I kept the tools that let me begin, and let the rest go. The change was not dramatic; that was the point. Less ceremony left more room for the work itself.',
+        'A tool is doing enough when you can forget it is there.'
+      ],
+      'what-i-learned-from-missing-my-train': [
+        'I arrived at the station with time to spare and still watched the train leave. I had mistaken the departure board for a suggestion and the coffee line for a short one. For the first few minutes, I did what I always do when a plan breaks: I searched for a faster plan.',
+        'There was no faster connection for an hour. The bench by the window was free, so I sat down with the notebook I had packed for the journey. I wrote a list of things I could not do until the next train: answer a message, make a meeting, get to the hotel. Then the list was over, and the waiting began.',
+        'Outside, rain moved across the platforms in narrow bands. A child counted suitcases. Someone shared half a pastry with a stranger. None of this made the missed train worthwhile, exactly, but it gave the hour its own shape. I stopped treating it as an empty space between the real parts of the trip.',
+        'I still like arriving on time. I am learning that a detour can belong to the story, too.'
+      ],
+      'there-is-no-perfect-time-to-begin-again': [
+        'When a week gets crowded, I wait for a clean morning to begin again. I imagine an empty inbox, a fresh page, and enough time to do the thing properly. Those mornings are rare, and waiting for one can turn a small pause into a much longer one.',
+        'A friend once suggested I make the first step almost laughably small. Not “get back in shape,” but put on shoes and walk to the end of the block. Not “write every day,” but open the file and leave one honest sentence. The small step is not a trick for doing more. It is a way to meet the day you actually have.',
+        'Some starts remain small. Some grow into a habit; others simply make the next decision easier. I no longer need to decide whether this is a fresh start or a continuation. I can do one useful thing, then look up.',
+        'The calendar does not have to agree that today is a good day to begin.'
+      ],
+      'rest-is-not-a-reward-for-finishing': [
+        'I used to write rest at the bottom of a list, as if it were a prize waiting behind every unfinished errand. The list kept finding new items. Rest kept moving to tomorrow, where it would have to compete with the next list.',
+        'The first change was small: I put a pause on the calendar before I knew whether I had earned it. I went outside after lunch. I left one email for the morning. Nothing collapsed. The unfinished work was still there, but it looked less like an emergency once I stopped trying to carry it through every quiet moment.',
+        'This is not an argument for ignoring what matters. It is a reminder that attention and energy are part of the work, not bonuses you receive after it. A rested person is still a person with responsibilities; they are just less likely to meet each one as a crisis.',
+        'Some days the kindest item on the list is the space between the items.'
+      ],
+      'the-city-looks-different-when-you-walk-home': [
+        'I took the long way home because the usual bus was full. One extra block turned into three. I saw a tailor putting a paper sign in the window, a new bench under the plane trees, and a corner shop that had changed its name but kept the same green awning.',
+        'On the bus, my neighborhood becomes a sequence of stops. Walking makes it a collection of small decisions: cross here, pause there, take the street with the late sun. I started noticing the people who give a place its rhythm—the grocer sweeping the same stretch of pavement, the dog that waits outside the library, the children who race the crossing signal.',
+        'The city had not changed much in the hour I was away. My scale had. At street level, a familiar route is not a line between errands. It is a place where other people are also making their way through the day.',
+        'I still take the bus when I am in a hurry. When I am not, I try to leave room for the next block.'
+      ]
+    };
+    let activeTopic = '';
+    let activeView = 'For you';
+    let currentStory = null;
+    let toastTimer;
+    let progressSaveTimer;
+    let draftSaveTimer;
+    let editorAuthenticated = false;
+    let editorCsrfToken = '';
+    let editorStories = [];
+    let editingOnlineStoryId = null;
+    let openComposerAfterLogin = false;
+    let openLibraryAfterLogin = false;
+    const onlineStoryBodies = new Map();
+
+    function isPlainRecord(value) {
+      return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+    }
+    function readSyncTimestampMap(value) {
+      if (!isPlainRecord(value)) return {};
+      return Object.fromEntries(Object.entries(value).filter(([, timestamp]) => typeof timestamp === 'string' && !Number.isNaN(Date.parse(timestamp))));
+    }
+    function readMembershipChangeMap(value) {
+      if (!isPlainRecord(value)) return {};
+      return Object.fromEntries(Object.entries(value).filter(([, record]) => isPlainRecord(record) && typeof record.present === 'boolean' && typeof record.at === 'string' && !Number.isNaN(Date.parse(record.at))).map(([key, record]) => [key, { present: record.present, at: record.at }]));
+    }
+    function readState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
+        const usedIds = new Set();
+        const drafts = [];
+        const rawDrafts = Array.isArray(saved.drafts) ? saved.drafts : [];
+        rawDrafts.forEach((draft, index) => {
+          if (!draft || typeof draft !== 'object' || Array.isArray(draft)) return;
+          let id = typeof draft.id === 'string' && draft.id ? draft.id : `draft-migrated-${index + 1}`;
+          while (usedIds.has(id)) id = `${id}-${index + 1}`;
+          usedIds.add(id);
+          drafts.push({
+            id,
+            title: typeof draft.title === 'string' ? draft.title.slice(0, 120) : '',
+            body: typeof draft.body === 'string' ? draft.body : '',
+            savedAt: typeof draft.savedAt === 'string' ? draft.savedAt : null
+          });
+        });
+        if (saved.draft && typeof saved.draft === 'object' && !Array.isArray(saved.draft)) {
+          let id = 'legacy-draft';
+          while (usedIds.has(id)) id = `${id}-imported`;
+          drafts.push({
+            id,
+            title: typeof saved.draft.title === 'string' ? saved.draft.title.slice(0, 120) : '',
+            body: typeof saved.draft.body === 'string' ? saved.draft.body : '',
+            savedAt: typeof saved.draft.savedAt === 'string' ? saved.draft.savedAt : null
+          });
+        }
+        const normalized = {
+          ...saved,
+          bookmarks: Array.isArray(saved.bookmarks) ? saved.bookmarks : [],
+          following: Array.isArray(saved.following) ? saved.following : [],
+          progress: saved.progress && typeof saved.progress === 'object' ? saved.progress : {},
+          drafts,
+          activeDraftId: typeof saved.activeDraftId === 'string' && drafts.some(draft => draft.id === saved.activeDraftId)
+            ? saved.activeDraftId : drafts[0]?.id || null,
+          membershipChanges: {
+            bookmarks: readMembershipChangeMap(saved.membershipChanges?.bookmarks),
+            following: readMembershipChangeMap(saved.membershipChanges?.following)
+          },
+          progressUpdatedAt: readSyncTimestampMap(saved.progressUpdatedAt),
+          draftTombstones: readSyncTimestampMap(saved.draftTombstones)
+        };
+        delete normalized.draft;
+        return normalized;
+      } catch {
+        return { bookmarks: [], following: [], progress: {}, drafts: [], activeDraftId: null, membershipChanges: { bookmarks: {}, following: {} }, progressUpdatedAt: {}, draftTombstones: {} };
+      }
+    }
+    let state = readState();
+    function persistState() {
+      try { localStorage.setItem(storageKey, JSON.stringify(state)); return true; } catch { /* Keep the current page usable when storage is unavailable. */ return false; }
+    }
+    persistState();
+    function recordMembershipChange(collection, id, present) {
+      if (!state.membershipChanges) state.membershipChanges = { bookmarks: {}, following: {} };
+      if (!state.membershipChanges[collection]) state.membershipChanges[collection] = {};
+      state.membershipChanges[collection][id] = { present, at: new Date().toISOString() };
+    }
+    function recordProgressChange(id) {
+      if (!state.progressUpdatedAt) state.progressUpdatedAt = {};
+      state.progressUpdatedAt[id] = new Date().toISOString();
+    }
+    function createDraftId() {
+      const randomId = globalThis.crypto?.randomUUID?.();
+      return randomId || `draft-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    }
+    function findDraft(id = state.activeDraftId) { return state.drafts.find(draft => draft.id === id) || null; }
+    function updateDraftCount() {
+      draftCount.textContent = String(state.drafts.length);
+      draftLibraryToggle.setAttribute('aria-label', `Show saved drafts (${state.drafts.length})`);
+    }
+    function renderDraftList() {
+      const fragment = document.createDocumentFragment();
+      if (!state.drafts.length) {
+        const empty = document.createElement('p');
+        empty.className = 'draft-empty';
+        empty.textContent = 'No saved drafts yet. Start a new draft whenever you are ready.';
+        fragment.append(empty);
+      }
+      state.drafts.forEach(draft => {
+        const row = document.createElement('div');
+        row.className = 'draft-row';
+        row.dataset.draftId = draft.id;
+        const summary = document.createElement('div');
+        summary.className = 'draft-row-summary';
+        const open = document.createElement('button');
+        open.className = 'draft-open';
+        open.type = 'button';
+        open.dataset.draftAction = 'open';
+        open.setAttribute('aria-current', String(draft.id === state.activeDraftId));
+        const name = document.createElement('span');
+        name.className = 'draft-name';
+        name.textContent = draft.title.trim() || 'Untitled draft';
+        const date = document.createElement('span');
+        date.className = 'draft-date';
+        const editedAt = draft.savedAt ? new Date(draft.savedAt) : null;
+        date.textContent = editedAt && !Number.isNaN(editedAt.getTime())
+          ? `Edited ${editedAt.toLocaleDateString()}` : 'Saved on this device';
+        open.append(name, date);
+        const actions = document.createElement('div');
+        actions.className = 'draft-row-actions';
+        [['rename', 'Rename'], ['delete', 'Delete']].forEach(([action, label]) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.dataset.draftAction = action;
+          button.textContent = label;
+          if (action === 'delete') button.className = 'draft-delete';
+          actions.append(button);
+        });
+        summary.append(open, actions);
+        const renameForm = document.createElement('div');
+        renameForm.className = 'draft-rename-form';
+        renameForm.hidden = true;
+        const renameInput = document.createElement('input');
+        renameInput.type = 'text';
+        renameInput.maxLength = 120;
+        renameInput.value = draft.title;
+        renameInput.setAttribute('aria-label', `New title for ${draft.title.trim() || 'untitled draft'}`);
+        renameInput.dataset.renameInput = '';
+        const saveRename = document.createElement('button');
+        saveRename.type = 'button';
+        saveRename.className = 'draft-rename-save';
+        saveRename.dataset.draftAction = 'save-rename';
+        saveRename.textContent = 'Save name';
+        const cancelRename = document.createElement('button');
+        cancelRename.type = 'button';
+        cancelRename.dataset.draftAction = 'cancel-rename';
+        cancelRename.textContent = 'Cancel';
+        renameForm.append(renameInput, saveRename, cancelRename);
+        row.append(summary, renameForm);
+        fragment.append(row);
+      });
+      draftList.replaceChildren(fragment);
+      updateDraftCount();
+    }
+    function loadDraftIntoEditor(id) {
+      const draft = findDraft(id);
+      if (!draft) return false;
+      state.activeDraftId = draft.id;
+      persistState();
+      draftTitle.value = draft.title;
+      draftBody.value = draft.body;
+      draftStatus.textContent = 'Draft saved on this device';
+      renderDraftPreview();
+      renderDraftList();
+      return true;
+    }
+    function createDraft() {
+      if (findDraft()) saveDraft(false);
+      const draft = { id: createDraftId(), title: '', body: '', savedAt: new Date().toISOString() };
+      state.drafts.unshift(draft);
+      state.activeDraftId = draft.id;
+      delete state.draftTombstones[draft.id];
+      persistState();
+      loadDraftIntoEditor(draft.id);
+      draftLibrary.hidden = true;
+      draftLibraryToggle.setAttribute('aria-expanded', 'false');
+      composer.dataset.mode = 'write';
+      previewToggle.textContent = 'Preview';
+      previewToggle.setAttribute('aria-pressed', 'false');
+      if (composer.open) requestAnimationFrame(() => draftTitle.focus());
+      return draft;
+    }
+    function renderDraftPreview() {
+      previewTitle.textContent = draftTitle.value.trim() || 'Untitled story';
+      const paragraphs = draftBody.value.trim().split(/\n\s*\n/).filter(Boolean);
+      if (!paragraphs.length) paragraphs.push('Nothing to preview yet.');
+      previewBody.replaceChildren(...paragraphs.map(text => {
+        const paragraph = document.createElement('p');
+        paragraph.textContent = text.trim();
+        return paragraph;
+      }));
+    }
+    function saveDraft(announce = false) {
+      clearTimeout(draftSaveTimer);
