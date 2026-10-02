@@ -9,6 +9,8 @@ const sourceAssetsDir = new URL("../assets/", import.meta.url);
 await mkdir(publicDir, { recursive: true });
 await mkdir(publicAssetsDir, { recursive: true });
 await copyFile(new URL("../index.html", import.meta.url), new URL("../public/index.html", import.meta.url));
+await copyFile(new URL("../styles.css", import.meta.url), new URL("../public/styles.css", import.meta.url));
+await copyFile(new URL("../app.js", import.meta.url), new URL("../public/app.js", import.meta.url));
 
 try {
   for (const entry of await readdir(sourceAssetsDir, { withFileTypes: true })) {

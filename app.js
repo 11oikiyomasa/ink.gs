@@ -1,0 +1,1174 @@
+
+(() => {
+  'use strict';
+
+  const storageKey = 'reading-room-demo-v1';
+  const API_BASE = (document.documentElement.dataset.apiBase || localStorage.getItem('reading-room-api-base') || '').replace(/\/+$/, '');
+  const originalArticles = {
+    'the-quiet-craft-of-paying-attention': [
+      'On the first Monday in May, I took the same twenty-minute walk I always take and left my headphones at home. Without a podcast filling the gaps, the walk seemed to lengthen. I noticed a bakery opening its blue shutters, a neighbor carrying a basil plant, and the particular patch of afternoon light that lands on the corner wall.',
+      'I used to think attention was something you spent, like a battery. The day asked for so much of it that I tried to conserve what was left. But attention turned out to behave more like a path: the more often I returned to the ordinary details around me, the easier it became to find my way back. Nothing on that route was new. My way of meeting it was.',
+      'Now I keep a small notebook by the door. I write down one thing I would have missed if I had hurried. It is not a productivity system, and the notes do not need to become anything. They are simply proof that a day can hold more than its loudest task.',
+      'The walk still takes twenty minutes. It just feels like a place I have arrived.'
+    ],
+    'make-your-tools-a-little-less-impressive': [
+      'My most useful work tool is a timer that does almost nothing. It cannot score me, build a dashboard, or send a report. It gives me one quiet interval, then it rings. For a long time I assumed a tool had to offer more in order to be worth keeping.',
+      'That assumption made my setup impressive and my work strangely indirect. Before starting a short note, I could spend ten minutes adjusting the system that was meant to help me write it. Every new option brought another tiny decision: which view, which label, which ritual? The overhead was easy to mistake for progress.',
+      'So I started removing things. The task list became a plain page. Notifications became quiet by default. I kept the tools that let me begin, and let the rest go. The change was not dramatic; that was the point. Less ceremony left more room for the work itself.',
+      'A tool is doing enough when you can forget it is there.'
+    ],
+    'what-i-learned-from-missing-my-train': [
+      'I arrived at the station with time to spare and still watched the train leave. I had mistaken the departure board for a suggestion and the coffee line for a short one. For the first few minutes, I did what I always do when a plan breaks: I searched for a faster plan.',
+      'There was no faster connection for an hour. The bench by the window was free, so I sat down with the notebook I had packed for the journey. I wrote a list of things I could not do until the next train: answer a message, make a meeting, get to the hotel. Then the list was over, and the waiting began.',
+      'Outside, rain moved across the platforms in narrow bands. A child counted suitcases. Someone shared half a pastry with a stranger. None of this made the missed train worthwhile, exactly, but it gave the hour its own shape. I stopped treating it as an empty space between the real parts of the trip.',
+      'I still like arriving on time. I am learning that a detour can belong to the story, too.'
+    ],
+    'there-is-no-perfect-time-to-begin-again': [
+      'When a week gets crowded, I wait for a clean morning to begin again. I imagine an empty inbox, a fresh page, and enough time to do the thing properly. Those mornings are rare, and waiting for one can turn a small pause into a much longer one.',
+      'A friend once suggested I make the first step almost laughably small. Not “get back in shape,” but put on shoes and walk to the end of the block. Not “write every day,” but open the file and leave one honest sentence. The small step is not a trick for doing more. It is a way to meet the day you actually have.',
+      'Some starts remain small. Some grow into a habit; others simply make the next decision easier. I no longer need to decide whether this is a fresh start or a continuation. I can do one useful thing, then look up.',
+      'The calendar does not have to agree that today is a good day to begin.'
+    ],
+    'rest-is-not-a-reward-for-finishing': [
+      'I used to write rest at the bottom of a list, as if it were a prize waiting behind every unfinished errand. The list kept finding new items. Rest kept moving to tomorrow, where it would have to compete with the next list.',
+      'The first change was small: I put a pause on the calendar before I knew whether I had earned it. I went outside after lunch. I left one email for the morning. Nothing collapsed. The unfinished work was still there, but it looked less like an emergency once I stopped trying to carry it through every quiet moment.',
+      'This is not an argument for ignoring what matters. It is a reminder that attention and energy are part of the work, not bonuses you receive after it. A rested person is still a person with responsibilities; they are just less likely to meet each one as a crisis.',
+      'Some days the kindest item on the list is the space between the items.'
+    ],
+    'the-city-looks-different-when-you-walk-home': [
+      'I took the long way home because the usual bus was full. One extra block turned into three. I saw a tailor putting a paper sign in the window, a new bench under the plane trees, and a corner shop that had changed its name but kept the same green awning.',
+      'On the bus, my neighborhood becomes a sequence of stops. Walking makes it a collection of small decisions: cross here, pause there, take the street with the late sun. I started noticing the people who give a place its rhythm—the grocer sweeping the same stretch of pavement, the dog that waits outside the library, the children who race the crossing signal.',
+      'The city had not changed much in the hour I was away. My scale had. At street level, a familiar route is not a line between errands. It is a place where other people are also making their way through the day.',
+      'I still take the bus when I am in a hurry. When I am not, I try to leave room for the next block.'
+    ]
+  };
+
+  const stories = [...document.querySelectorAll('.story')].map((element, index) => {
+    const title = element.querySelector('h2')?.textContent?.trim() || ('Story ' + (index + 1));
+    const id = element.dataset.storyId || slugify(title);
+    element.dataset.storyId = id;
+    return element;
+  });
+
+  const toast = document.querySelector('.toast');
+  const search = document.querySelector('#search');
+  const searchToggle = document.querySelector('#search-toggle');
+  const searchClear = document.querySelector('#search-clear');
+  const emptyState = document.querySelector('#empty-state');
+  const feedView = document.querySelector('#feed-view');
+  const statsView = document.querySelector('#stats-view');
+  const reader = document.querySelector('#reader');
+  const readerLabel = document.querySelector('#reader-label');
+  const readerScroll = document.querySelector('#reader-scroll');
+  const readerKicker = document.querySelector('#reader-kicker');
+  const readerTitle = document.querySelector('#reader-title');
+  const readerByline = document.querySelector('#reader-byline');
+  const readerSummary = document.querySelector('#reader-summary');
+  const readerImage = document.querySelector('#reader-image');
+  const readerBody = document.querySelector('#reader-body');
+  const readerProgress = document.querySelector('.reader-progress');
+  const readerProgressFill = document.querySelector('.reader-progress span');
+  const writeButton = document.querySelector('#write-button');
+  const syncButton = document.querySelector('#sync-button');
+  const composer = document.querySelector('#composer');
+  const draftTitle = document.querySelector('#draft-title');
+  const draftBody = document.querySelector('#draft-body');
+  const draftStatus = document.querySelector('#draft-status');
+  const previewToggle = document.querySelector('#preview-toggle');
+  const previewTitle = document.querySelector('#draft-preview-title');
+  const previewBody = document.querySelector('#draft-preview-body');
+  const draftLibrary = document.querySelector('#draft-library');
+  const draftLibraryToggle = document.querySelector('#draft-library-toggle');
+  const draftCount = document.querySelector('#draft-count');
+  const draftList = document.querySelector('#draft-list');
+  const newDraftButton = document.querySelector('#new-draft');
+  const editorLoginButton = document.querySelector('#editor-login-button');
+  const editorLoginDialog = document.querySelector('#editor-login-dialog');
+  const editorLoginForm = document.querySelector('#editor-login-form');
+  const editorPassword = document.querySelector('#editor-password');
+  const editorLoginError = document.querySelector('#editor-login-error');
+  const onlineLibraryToggle = document.querySelector('#online-library-toggle');
+  const onlineLibrary = document.querySelector('#online-library');
+  const onlineStoryList = document.querySelector('#online-story-list');
+  const onlineStoryCount = document.querySelector('#online-story-count');
+  const publishOnlineButton = document.querySelector('#publish-online');
+  const saveDraftButton = document.querySelector('#save-draft');
+  const storyAuthor = document.querySelector('#story-author');
+  const storyPublication = document.querySelector('#story-publication');
+  const storyTopic = document.querySelector('#story-topic');
+  const storyPhoto = document.querySelector('#story-photo');
+  const storyPhotoAlt = document.querySelector('#story-photo-alt');
+  const storyPublished = document.querySelector('#story-published');
+  const manageStoriesButton = document.querySelector('#manage-stories-button');
+  const editorLoginDialogClose = document.querySelector('#close-editor-login');
+  const composerClose = document.querySelector('#close-composer');
+  const readerClose = document.querySelector('#reader-close');
+  const readerBookmark = document.querySelector('#reader-bookmark');
+  const readerFollow = document.querySelector('#reader-follow');
+  const readerShare = document.querySelector('#reader-share');
+  const readerRead = document.querySelector('#reader-read');
+  const statsSaved = document.querySelector('#stats-saved');
+  const statsFinished = document.querySelector('#stats-finished');
+  const statsInProgress = document.querySelector('#stats-in-progress');
+  const statsMinutes = document.querySelector('#stats-minutes');
+
+  let state = loadState();
+  let currentStory = null;
+  let toastTimer = null;
+  let progressSaveTimer = null;
+  let editorAuthenticated = false;
+  let editorCsrfToken = '';
+  let editorStories = [];
+  let editingOnlineStoryId = null;
+
+  function slugify(value) {
+    return value.toLowerCase()
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 90);
+  }
+
+  function loadState() {
+    const fallback = {
+      bookmarks: [],
+      following: [],
+      progress: {},
+      drafts: [],
+      activeDraftId: null,
+      membershipChanges: { bookmarks: {}, following: {} },
+      progressUpdatedAt: {},
+      draftTombstones: {}
+    };
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
+      return {
+        ...fallback,
+        ...saved,
+        bookmarks: Array.isArray(saved.bookmarks) ? saved.bookmarks : [],
+        following: Array.isArray(saved.following) ? saved.following : [],
+        progress: saved.progress && typeof saved.progress === 'object' ? saved.progress : {},
+        drafts: Array.isArray(saved.drafts) ? saved.drafts.filter(isRecord).map(normalizeDraft) : [],
+        activeDraftId: typeof saved.activeDraftId === 'string' ? saved.activeDraftId : null,
+        membershipChanges: {
+          bookmarks: isRecord(saved.membershipChanges?.bookmarks) ? saved.membershipChanges.bookmarks : {},
+          following: isRecord(saved.membershipChanges?.following) ? saved.membershipChanges.following : {}
+        },
+        progressUpdatedAt: isRecord(saved.progressUpdatedAt) ? saved.progressUpdatedAt : {},
+        draftTombstones: isRecord(saved.draftTombstones) ? saved.draftTombstones : {}
+      };
+    } catch {
+      return fallback;
+    }
+  }
+
+  function isRecord(value) {
+    return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+  }
+
+  function normalizeDraft(draft, index) {
+    return {
+      id: typeof draft.id === 'string' && draft.id ? draft.id : 'draft-' + Date.now() + '-' + index,
+      title: typeof draft.title === 'string' ? draft.title.slice(0, 120) : '',
+      body: typeof draft.body === 'string' ? draft.body : '',
+      savedAt: typeof draft.savedAt === 'string' ? draft.savedAt : null
+    };
+  }
+
+  function persistState() {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function showToast(message) {
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+  }
+
+  function recordMembershipChange(collection, id, present) {
+    if (!state.membershipChanges) state.membershipChanges = { bookmarks: {}, following: {} };
+    if (!state.membershipChanges[collection]) state.membershipChanges[collection] = {};
+    state.membershipChanges[collection][id] = { present, at: new Date().toISOString() };
+  }
+
+  function recordProgressChange(id) {
+    state.progressUpdatedAt[id] = new Date().toISOString();
+  }
+
+  function storyData(element) {
+    if (!element) return null;
+    const id = element.dataset.storyId;
+    const title = element.querySelector('h2')?.textContent?.trim() || '';
+    const byline = element.querySelector('.byline')?.textContent?.trim() || '';
+    const author = element.dataset.author || byline.split(' in ')[0] || 'Unknown author';
+    const publication = byline.includes(' in ') ? byline.split(' in ').slice(1).join(' in ').trim() : '';
+    const summary = element.querySelector('.story-summary')?.textContent?.trim() || '';
+    const meta = [...element.querySelectorAll('.story-meta .meta-left > span')].map(node => node.textContent.trim());
+    const readTime = (meta.find(text => /min read$/i.test(text)) || '').match(/(\d+)/)?.[1];
+    const topic = element.querySelector('.topic-pill')?.textContent?.trim() || '';
+    const photo = element.querySelector('.story-image')?.getAttribute('src') || '';
+    const photoAlt = element.querySelector('.story-image')?.getAttribute('alt') || '';
+    return {
+      id, title, author, publication, summary, topic, photo, photoAlt,
+      body: originalArticles[id] || [
+        summary || 'This story is part of the sample reading room.',
+        'The full text is not available on the static demo yet.'
+      ],
+      readMinutes: Number(readTime || 0)
+    };
+  }
+
+  function allStoryData() {
+    return stories.map(storyData).filter(Boolean);
+  }
+
+  function findStory(id) {
+    return allStoryData().find(story => story.id === id) || null;
+  }
+
+  function setBookmark(id, present, announce = true) {
+    const set = new Set(state.bookmarks);
+    if (present) set.add(id); else set.delete(id);
+    state.bookmarks = [...set];
+    recordMembershipChange('bookmarks', id, present);
+    persistState();
+    refreshBookmarkButtons();
+    renderCurrentView();
+    renderStats();
+    if (announce) showToast(present ? 'Saved to your reading list.' : 'Removed from your reading list.');
+  }
+
+  function setFollowing(author, present, announce = true) {
+    if (!author) return;
+    const set = new Set(state.following);
+    if (present) set.add(author); else set.delete(author);
+    state.following = [...set];
+    recordMembershipChange('following', author, present);
+    persistState();
+    refreshFollowButton();
+    if (announce) showToast(present ? 'Now following ' + author + '.' : 'Unfollowed ' + author + '.');
+  }
+
+  function refreshBookmarkButtons() {
+    stories.forEach(element => {
+      const button = element.querySelector('.bookmark');
+      if (!button) return;
+      const active = state.bookmarks.includes(element.dataset.storyId);
+      button.setAttribute('aria-pressed', String(active));
+      button.setAttribute('aria-label', (active ? 'Remove from saved stories: ' : 'Save ') + (element.querySelector('h2')?.textContent?.trim() || 'story'));
+    });
+    if (readerBookmark && currentStory) {
+      const active = state.bookmarks.includes(currentStory.id);
+      readerBookmark.setAttribute('aria-pressed', String(active));
+      readerBookmark.textContent = active ? 'Saved story' : 'Save story';
+    }
+  }
+
+  function refreshFollowButton() {
+    if (!readerFollow || !currentStory) return;
+    const active = state.following.includes(currentStory.author);
+    readerFollow.setAttribute('aria-pressed', String(active));
+    readerFollow.textContent = active ? 'Following writer' : 'Follow writer';
+  }
+
+  function renderStats() {
+    const storiesData = allStoryData();
+    const saved = state.bookmarks.length;
+    const finished = storiesData.filter(story => state.progress[story.id]?.finished).length;
+    const inProgress = storiesData.filter(story => {
+      const progress = state.progress[story.id];
+      return progress && !progress.finished && Number(progress.ratio) > 0;
+    }).length;
+    const minutes = storiesData.reduce((sum, story) => sum + (state.progress[story.id]?.finished ? story.readMinutes : 0), 0);
+    if (statsSaved) statsSaved.textContent = String(saved);
+    if (statsFinished) statsFinished.textContent = String(finished);
+    if (statsInProgress) statsInProgress.textContent = String(inProgress);
+    if (statsMinutes) statsMinutes.textContent = String(minutes);
+  }
+
+  function currentViewMatches(element) {
+    const view = document.querySelector('.rail-link.active')?.dataset.view || 'For you';
+    const id = element.dataset.storyId;
+    const author = element.dataset.author || '';
+    if (view === 'Following') return state.following.includes(author);
+    if (view === 'Reading list') return state.bookmarks.includes(id);
+    return true;
+  }
+
+  function renderCurrentView() {
+    const query = (search?.value || '').trim().toLowerCase();
+    const topic = document.querySelector('.topic-button[aria-pressed="true"]')?.dataset.topic || '';
+    const view = document.querySelector('.rail-link.active')?.dataset.view || 'For you';
+    let visible = 0;
+
+    stories.forEach(element => {
+      const data = storyData(element);
+      if (!data) return;
+      const haystack = [data.title, data.summary, data.author, data.publication, data.topic, element.dataset.topics || ''].join(' ').toLowerCase();
+      const matchesSearch = !query || haystack.includes(query);
+      const matchesTopic = !topic || (element.dataset.topics || '').split(/\s+/).includes(topic);
+      const matchesView = view === 'Stats' ? false : currentViewMatches(element);
+      const shouldShow = matchesSearch && matchesTopic && matchesView;
+      element.classList.toggle('hidden', !shouldShow);
+      if (shouldShow) visible++;
+    });
+
+    if (feedView) feedView.hidden = view === 'Stats';
+    if (statsView) statsView.hidden = view !== 'Stats';
+    if (emptyState) {
+      emptyState.classList.toggle('show', view !== 'Stats' && visible === 0);
+      emptyState.hidden = view === 'Stats' || visible !== 0;
+    }
+    renderStats();
+  }
+
+  function setView(view) {
+    document.querySelectorAll('.rail-link[data-view]').forEach(button => {
+      button.classList.toggle('active', button.dataset.view === view);
+      button.setAttribute('aria-current', button.dataset.view === view ? 'page' : 'false');
+    });
+    document.querySelectorAll('.tab[data-view]').forEach(button => {
+      button.classList.toggle('selected', button.dataset.view === view);
+    });
+    if (view === 'Stats') {
+      if (feedView) feedView.hidden = true;
+      if (statsView) statsView.hidden = false;
+    } else {
+      if (feedView) feedView.hidden = false;
+      if (statsView) statsView.hidden = true;
+    }
+    renderCurrentView();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function updateSearchControls() {
+    const hasQuery = Boolean(search?.value);
+    if (searchClear) searchClear.classList.toggle('visible', hasQuery);
+  }
+
+  function openReader(id) {
+    const data = findStory(id);
+    if (!data || !reader) return;
+    currentStory = data;
+    if (readerLabel) readerLabel.textContent = data.readMinutes + ' min read';
+    if (readerKicker) readerKicker.textContent = data.publication ? data.author + ' in ' + data.publication : data.author;
+    if (readerTitle) readerTitle.textContent = data.title;
+    if (readerSummary) readerSummary.textContent = data.summary || '';
+    if (readerByline) readerByline.textContent = data.author + (data.publication ? ' · ' + data.publication : '');
+    if (readerImage) {
+      if (data.photo) {
+        readerImage.src = data.photo;
+        readerImage.alt = data.photoAlt || data.title;
+        readerImage.hidden = false;
+      } else {
+        readerImage.removeAttribute('src');
+        readerImage.hidden = true;
+      }
+    }
+    if (readerBody) {
+      readerBody.replaceChildren(...data.body.map(paragraphText => {
+        const p = document.createElement('p');
+        p.textContent = paragraphText;
+        return p;
+      }));
+    }
+    const progress = state.progress[id] || { ratio: 0, finished: false };
+    if (!progress.finished && Number(progress.ratio) > 0) {
+      if (readerLabel) readerLabel.textContent = Math.round(Number(progress.ratio) * 100) + '% read';
+    }
+    if (readerProgressFill) readerProgressFill.style.width = (progress.finished ? 100 : Math.max(0, Math.min(1, Number(progress.ratio) || 0)) * 100) + '%';
+    refreshBookmarkButtons();
+    refreshFollowButton();
+    if (typeof reader.showModal === 'function') reader.showModal();
+    else reader.setAttribute('open', '');
+  }
+
+  function closeReader() {
+    if (!reader) return;
+    if (reader.open && typeof reader.close === 'function') reader.close();
+    else reader.removeAttribute('open');
+    currentStory = null;
+  }
+
+  function updateReaderProgress() {
+    if (!readerScroll || !currentStory) return;
+    const max = Math.max(1, readerScroll.scrollHeight - readerScroll.clientHeight);
+    const ratio = Math.max(0, Math.min(1, readerScroll.scrollTop / max));
+    const previous = state.progress[currentStory.id] || {};
+    state.progress[currentStory.id] = {
+      ratio: previous.finished ? 1 : ratio,
+      finished: Boolean(previous.finished)
+    };
+    recordProgressChange(currentStory.id);
+    if (readerProgressFill) readerProgressFill.style.width = ((state.progress[currentStory.id].finished ? 1 : ratio) * 100) + '%';
+    clearTimeout(progressSaveTimer);
+    progressSaveTimer = setTimeout(() => {
+      persistState();
+      renderStats();
+    }, 220);
+  }
+
+  function markFinished() {
+    if (!currentStory) return;
+    state.progress[currentStory.id] = { ratio: 1, finished: true };
+    recordProgressChange(currentStory.id);
+    persistState();
+    if (readerProgressFill) readerProgressFill.style.width = '100%';
+    if (readerRead) readerRead.textContent = 'Finished';
+    renderStats();
+    showToast('Story marked as finished.');
+  }
+
+  function shareCurrentStory() {
+    if (!currentStory) return;
+    const url = new URL(window.location.href);
+    url.hash = 'story=' + encodeURIComponent(currentStory.id);
+    if (navigator.share) {
+      navigator.share({ title: currentStory.title, text: currentStory.summary, url: url.toString() }).catch(() => {});
+      return;
+    }
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(url.toString()).then(() => showToast('Story link copied.')).catch(() => showToast('Story link: ' + url.toString()));
+    } else {
+      showToast('Story link: ' + url.toString());
+    }
+  }
+
+  function findDraft(id) {
+    return state.drafts.find(draft => draft.id === (id || state.activeDraftId)) || null;
+  }
+
+  function updateDraftCount() {
+    if (draftCount) draftCount.textContent = String(state.drafts.length);
+    if (draftLibraryToggle) draftLibraryToggle.setAttribute('aria-label', 'Show saved drafts (' + state.drafts.length + ')');
+  }
+
+  function renderDraftList() {
+    if (!draftList) return;
+    const fragment = document.createDocumentFragment();
+    if (!state.drafts.length) {
+      const empty = document.createElement('p');
+      empty.className = 'draft-empty';
+      empty.textContent = 'No saved drafts yet. Start a new draft whenever you are ready.';
+      fragment.append(empty);
+    }
+    state.drafts.forEach(draft => {
+      const row = document.createElement('div');
+      row.className = 'draft-row';
+      row.dataset.draftId = draft.id;
+      const summary = document.createElement('div');
+      summary.className = 'draft-row-summary';
+      const open = document.createElement('button');
+      open.className = 'draft-open';
+      open.type = 'button';
+      open.dataset.draftAction = 'open';
+      open.setAttribute('aria-current', String(draft.id === state.activeDraftId));
+      const name = document.createElement('span');
+      name.className = 'draft-name';
+      name.textContent = draft.title.trim() || 'Untitled draft';
+      const date = document.createElement('span');
+      date.className = 'draft-date';
+      const editedAt = draft.savedAt ? new Date(draft.savedAt) : null;
+      date.textContent = editedAt && !Number.isNaN(editedAt.getTime()) ? 'Edited ' + editedAt.toLocaleDateString() : 'Saved on this device';
+      open.append(name, date);
+      const actions = document.createElement('div');
+      actions.className = 'draft-row-actions';
+      const rename = document.createElement('button');
+      rename.type = 'button'; rename.dataset.draftAction = 'rename'; rename.textContent = 'Rename';
+      const remove = document.createElement('button');
+      remove.type = 'button'; remove.dataset.draftAction = 'delete'; remove.className = 'draft-delete'; remove.textContent = 'Delete';
+      actions.append(rename, remove);
+      summary.append(open, actions);
+      const renameForm = document.createElement('div');
+      renameForm.className = 'draft-rename-form';
+      renameForm.hidden = true;
+      const renameInput = document.createElement('input');
+      renameInput.type = 'text'; renameInput.maxLength = 120; renameInput.value = draft.title;
+      renameInput.dataset.renameInput = '';
+      const saveRename = document.createElement('button');
+      saveRename.type = 'button'; saveRename.dataset.draftAction = 'save-rename'; saveRename.textContent = 'Save name';
+      const cancelRename = document.createElement('button');
+      cancelRename.type = 'button'; cancelRename.dataset.draftAction = 'cancel-rename'; cancelRename.textContent = 'Cancel';
+      renameForm.append(renameInput, saveRename, cancelRename);
+      row.append(summary, renameForm);
+      fragment.append(row);
+    });
+    draftList.replaceChildren(fragment);
+    updateDraftCount();
+  }
+
+  function renderDraftPreview() {
+    if (!previewTitle || !previewBody) return;
+    previewTitle.textContent = draftTitle?.value?.trim() || 'Untitled story';
+    const paragraphs = (draftBody?.value || '').trim().split(/\n\s*\n/).filter(Boolean);
+    previewBody.replaceChildren(...(paragraphs.length ? paragraphs : ['Nothing to preview yet.']).map(text => {
+      const p = document.createElement('p');
+      p.textContent = text.trim();
+      return p;
+    }));
+  }
+
+  function loadDraftIntoEditor(id) {
+    const draft = findDraft(id);
+    if (!draft) return false;
+    state.activeDraftId = draft.id;
+    persistState();
+    if (draftTitle) draftTitle.value = draft.title;
+    if (draftBody) draftBody.value = draft.body;
+    if (draftStatus) draftStatus.textContent = 'Draft saved on this device';
+    renderDraftPreview();
+    renderDraftList();
+    return true;
+  }
+
+  function createDraft() {
+    if (findDraft() && draftTitle && draftBody) saveDraft(false);
+    const draft = { id: 'draft-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8), title: '', body: '', savedAt: new Date().toISOString() };
+    state.drafts.unshift(draft);
+    state.activeDraftId = draft.id;
+    delete state.draftTombstones[draft.id];
+    persistState();
+    loadDraftIntoEditor(draft.id);
+    if (draftLibrary) draftLibrary.hidden = true;
+    if (draftLibraryToggle) draftLibraryToggle.setAttribute('aria-expanded', 'false');
+    if (composer) {
+      composer.dataset.mode = 'write';
+      if (!composer.open && typeof composer.showModal === 'function') composer.showModal();
+      else composer.setAttribute('open', '');
+    }
+    previewOff();
+    if (draftTitle) setTimeout(() => draftTitle.focus(), 0);
+  }
+
+  function saveDraft(announce = true) {
+    if (!draftTitle || !draftBody) return false;
+    let draft = findDraft();
+    if (!draft) {
+      draft = { id: 'draft-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8), title: '', body: '', savedAt: null };
+      state.drafts.unshift(draft);
+      state.activeDraftId = draft.id;
+    }
+    draft.title = draftTitle.value.trim().slice(0, 120);
+    draft.body = draftBody.value;
+    draft.savedAt = new Date().toISOString();
+    persistState();
+    renderDraftList();
+    if (draftStatus) draftStatus.textContent = 'Saved just now';
+    if (announce) showToast('Draft saved on this device.');
+    return true;
+  }
+
+  function deleteDraft(id) {
+    const target = findDraft(id);
+    if (!target) return;
+    state.draftTombstones[id] = new Date().toISOString();
+    state.drafts = state.drafts.filter(draft => draft.id !== id);
+    state.activeDraftId = state.drafts[0]?.id || null;
+    persistState();
+    renderDraftList();
+    if (state.activeDraftId) loadDraftIntoEditor(state.activeDraftId);
+    else {
+      if (draftTitle) draftTitle.value = '';
+      if (draftBody) draftBody.value = '';
+      renderDraftPreview();
+    }
+    showToast('Draft deleted.');
+  }
+
+  function previewOn() {
+    if (!composer) return;
+    composer.dataset.mode = 'preview';
+    if (previewToggle) {
+      previewToggle.textContent = 'Edit';
+      previewToggle.setAttribute('aria-pressed', 'true');
+    }
+    if (draftBody) draftBody.hidden = true;
+    const preview = document.querySelector('#draft-preview');
+    if (preview) preview.hidden = false;
+    renderDraftPreview();
+  }
+
+  function previewOff() {
+    if (!composer) return;
+    composer.dataset.mode = 'write';
+    if (previewToggle) {
+      previewToggle.textContent = 'Preview';
+      previewToggle.setAttribute('aria-pressed', 'false');
+    }
+    if (draftBody) draftBody.hidden = false;
+    const preview = document.querySelector('#draft-preview');
+    if (preview) preview.hidden = true;
+  }
+
+  function closeComposer() {
+    saveDraft(false);
+    if (composer?.open && typeof composer.close === 'function') composer.close();
+    else composer?.removeAttribute('open');
+  }
+
+  async function apiRequest(path, options = {}) {
+    const response = await fetch(API_BASE + path, {
+      credentials: 'include',
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options.headers || {})
+      }
+    });
+    let data = {};
+    try { data = await response.json(); } catch {}
+    if (!response.ok) {
+      const error = new Error(data.error || ('HTTP ' + response.status));
+      error.status = response.status;
+      throw error;
+    }
+    return data;
+  }
+
+  async function trySession() {
+    try {
+      const data = await apiRequest('/api/editor/session', { method: 'GET', headers: {} });
+      editorAuthenticated = Boolean(data.authenticated);
+      editorCsrfToken = data.csrfToken || '';
+      updateEditorUi();
+      return editorAuthenticated;
+    } catch {
+      updateEditorUi();
+      return false;
+    }
+  }
+
+  function updateEditorUi() {
+    if (editorLoginButton) {
+      editorLoginButton.textContent = editorAuthenticated ? 'Signed in' : 'Sign in';
+      editorLoginButton.setAttribute('aria-pressed', String(editorAuthenticated));
+    }
+    if (publishOnlineButton) publishOnlineButton.disabled = !editorAuthenticated;
+    if (onlineLibraryToggle) onlineLibraryToggle.textContent = editorAuthenticated ? 'Online stories' : 'Online stories';
+  }
+
+  async function loginEditor(event) {
+    event.preventDefault();
+    if (!editorPassword) return;
+    editorLoginError.textContent = '';
+    try {
+      const data = await apiRequest('/api/editor/login', {
+        method: 'POST',
+        body: JSON.stringify({ password: editorPassword.value })
+      });
+      editorAuthenticated = true;
+      editorCsrfToken = data.csrfToken || '';
+      editorPassword.value = '';
+      if (editorLoginDialog?.open) editorLoginDialog.close();
+      updateEditorUi();
+      showToast('Signed in to the editor.');
+      openComposer();
+    } catch (error) {
+      editorLoginError.textContent = API_BASE
+        ? 'Sign-in failed: ' + error.message
+        : 'GitHub Pages is static. Connect the Cloudflare Worker API to enable editor sign-in.';
+    }
+  }
+
+  async function logoutEditor() {
+    try {
+      await apiRequest('/api/editor/logout', {
+        method: 'POST',
+        headers: editorCsrfToken ? { 'X-CSRF-Token': editorCsrfToken } : {}
+      });
+    } catch {}
+    editorAuthenticated = false;
+    editorCsrfToken = '';
+    updateEditorUi();
+    showToast('Signed out.');
+  }
+
+  function openLogin() {
+    if (!editorLoginDialog) return;
+    if (typeof editorLoginDialog.showModal === 'function') editorLoginDialog.showModal();
+    else editorLoginDialog.setAttribute('open', '');
+    setTimeout(() => editorPassword?.focus(), 0);
+  }
+
+  function openComposer() {
+    if (!composer) return;
+    const draft = findDraft();
+    if (!draft) createDraft();
+    else {
+      loadDraftIntoEditor(draft.id);
+      if (typeof composer.showModal === 'function' && !composer.open) composer.showModal();
+      else composer.setAttribute('open', '');
+    }
+    previewOff();
+  }
+
+  function populateEditorFromStory(story) {
+    if (!story) return;
+    editingOnlineStoryId = story.id;
+    if (draftTitle) draftTitle.value = story.title || '';
+    if (draftBody) draftBody.value = Array.isArray(story.body) ? story.body.join('\n\n') : (story.body || '');
+    if (storyAuthor) storyAuthor.value = story.author || '';
+    if (storyPublication) storyPublication.value = story.publication || '';
+    if (storyTopic) storyTopic.value = story.topic || '';
+    if (storyPhoto) storyPhoto.value = story.photo || '';
+    if (storyPhotoAlt) storyPhotoAlt.value = story.photo_alt || story.photoAlt || '';
+    if (storyPublished) storyPublished.checked = Boolean(story.published);
+    previewOff();
+    renderDraftPreview();
+  }
+
+  function storyPayload() {
+    const body = (draftBody?.value || '').trim();
+    const title = (draftTitle?.value || '').trim();
+    const summary = body.split(/\n\s*\n/).filter(Boolean)[0]?.slice(0, 280) || '';
+    return {
+      title,
+      summary,
+      body,
+      author: (storyAuthor?.value || '').trim() || 'Anonymous',
+      publication: (storyPublication?.value || '').trim(),
+      topic: (storyTopic?.value || '').trim() || 'Other',
+      photo: (storyPhoto?.value || '').trim(),
+      photoAlt: (storyPhotoAlt?.value || '').trim(),
+      published: Boolean(storyPublished?.checked)
+    };
+  }
+
+  async function publishOnline() {
+    if (!API_BASE) {
+      showToast('GitHub Pages has no /api backend. Use the Cloudflare Worker URL for online publishing.');
+      return;
+    }
+    if (!editorAuthenticated) {
+      showToast('Sign in to publish online.');
+      openLogin();
+      return;
+    }
+    const payload = storyPayload();
+    if (!payload.title || !payload.body) {
+      showToast('Add a title and story body first.');
+      return;
+    }
+    try {
+      const path = editingOnlineStoryId ? '/api/editor/stories/' + encodeURIComponent(editingOnlineStoryId) : '/api/editor/stories';
+      const data = await apiRequest(path, {
+        method: editingOnlineStoryId ? 'PUT' : 'POST',
+        headers: { 'X-CSRF-Token': editorCsrfToken },
+        body: JSON.stringify(payload)
+      });
+      const story = data.story;
+      editingOnlineStoryId = story?.id || null;
+      showToast(payload.published ? 'Story published online.' : 'Story saved online.');
+      await loadOnlineStories();
+    } catch (error) {
+      showToast('Could not publish: ' + error.message);
+    }
+  }
+
+  async function loadOnlineStories() {
+    if (!onlineStoryList) return;
+    if (!API_BASE) {
+      onlineStoryList.replaceChildren();
+      onlineStoryCount.textContent = '0';
+      const empty = document.createElement('p');
+      empty.className = 'draft-empty';
+      empty.textContent = 'Online stories require the Cloudflare Worker API.';
+      onlineStoryList.append(empty);
+      return;
+    }
+    try {
+      const data = await apiRequest(editorAuthenticated ? '/api/editor/stories' : '/api/stories', { method: 'GET', headers: {} });
+      editorStories = Array.isArray(data.stories) ? data.stories : [];
+      onlineStoryCount.textContent = String(editorStories.length);
+      renderOnlineStories();
+    } catch (error) {
+      onlineStoryList.replaceChildren();
+      const empty = document.createElement('p');
+      empty.className = 'draft-empty';
+      empty.textContent = 'Online stories unavailable: ' + error.message;
+      onlineStoryList.append(empty);
+    }
+  }
+
+  function renderOnlineStories() {
+    if (!onlineStoryList) return;
+    const fragment = document.createDocumentFragment();
+    if (!editorStories.length) {
+      const empty = document.createElement('p');
+      empty.className = 'draft-empty';
+      empty.textContent = 'No online stories yet.';
+      fragment.append(empty);
+    }
+    editorStories.forEach(story => {
+      const row = document.createElement('div');
+      row.className = 'draft-row';
+      const summary = document.createElement('div');
+      summary.className = 'draft-row-summary';
+      const open = document.createElement('button');
+      open.type = 'button';
+      open.className = 'draft-open';
+      open.textContent = story.title || 'Untitled story';
+      open.dataset.onlineStoryId = story.id;
+      const stateLabel = document.createElement('span');
+      stateLabel.className = 'draft-date';
+      stateLabel.textContent = story.published ? 'Published' : 'Draft';
+      summary.append(open, stateLabel);
+      row.append(summary);
+      if (editorAuthenticated) {
+        const actions = document.createElement('div');
+        actions.className = 'draft-row-actions';
+        const edit = document.createElement('button');
+        edit.type = 'button'; edit.dataset.onlineAction = 'edit'; edit.dataset.onlineStoryId = story.id; edit.textContent = 'Edit';
+        const remove = document.createElement('button');
+        remove.type = 'button'; remove.dataset.onlineAction = 'delete'; remove.dataset.onlineStoryId = story.id; remove.className = 'draft-delete'; remove.textContent = 'Delete';
+        actions.append(edit, remove);
+        row.append(actions);
+      }
+      fragment.append(row);
+    });
+    onlineStoryList.replaceChildren(fragment);
+  }
+
+  async function deleteOnlineStory(id) {
+    if (!API_BASE || !editorAuthenticated || !id) return;
+    try {
+      await apiRequest('/api/editor/stories/' + encodeURIComponent(id), {
+        method: 'DELETE',
+        headers: { 'X-CSRF-Token': editorCsrfToken }
+      });
+      showToast('Online story deleted.');
+      await loadOnlineStories();
+    } catch (error) {
+      showToast('Could not delete: ' + error.message);
+    }
+  }
+
+  function placeholderDataUri(topic = 'Story') {
+    const palette = {
+      Technology: ['#15304a', '#5e88a8'],
+      Creativity: ['#5a3b63', '#d29ad6'],
+      Travel: ['#36513c', '#9fb99d'],
+      Life: ['#5b4633', '#c99d6b'],
+      Health: ['#3f5b56', '#a7c6bf'],
+      Culture: ['#4f3842', '#c18b9f']
+    };
+    const [a,b] = palette[topic] || ['#303030','#666666'];
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="' + a + '"/><stop offset="1" stop-color="' + b + '"/></linearGradient></defs><rect width="1200" height="800" fill="url(#g)"/><circle cx="960" cy="180" r="150" fill="#fff" opacity=".08"/><path d="M0 640 C220 520 410 730 620 600 S980 470 1200 620 V800 H0Z" fill="#000" opacity=".14"/></svg>';
+    return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+  }
+
+  function installImageFallbacks() {
+    document.querySelectorAll('img.story-image, img.reader-cover').forEach(image => {
+      if (image.dataset.fallbackReady) return;
+      image.dataset.fallbackReady = 'true';
+      image.addEventListener('error', () => {
+        const story = image.closest('.story');
+        const topic = story?.querySelector('.topic-pill')?.textContent?.trim() || 'Story';
+        image.src = placeholderDataUri(topic);
+      }, { once: true });
+    });
+  }
+
+  function toggleMobileMenu(force) {
+    const rail = document.querySelector('.left-rail');
+    const toggle = document.querySelector('#menu-toggle');
+    if (!rail || !toggle) return;
+    const open = typeof force === 'boolean' ? force : !rail.classList.contains('mobile-open');
+    rail.classList.toggle('mobile-open', open);
+    document.body.classList.toggle('menu-open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  }
+
+  function wireEvents() {
+    document.querySelector('#menu-toggle')?.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleMobileMenu();
+    });
+    document.querySelector('.mobile-drawer-close')?.addEventListener('click', () => toggleMobileMenu(false));
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && document.body.classList.contains('menu-open')) toggleMobileMenu(false);
+    });
+
+    document.addEventListener('click', event => {
+      if (document.body.classList.contains('menu-open') &&
+          !event.target.closest('.left-rail') &&
+          !event.target.closest('#menu-toggle')) {
+        toggleMobileMenu(false);
+        return;
+      }
+      const target = event.target.closest('button, a');
+      if (!target) return;
+
+      const view = target.dataset.view;
+      if (view) {
+        event.preventDefault();
+        setView(view);
+        toggleMobileMenu(false);
+        return;
+      }
+
+      const topic = target.dataset.topic;
+      if (topic) {
+        event.preventDefault();
+        const active = target.getAttribute('aria-pressed') === 'true';
+        document.querySelectorAll('.topic-button').forEach(button => button.setAttribute('aria-pressed', 'false'));
+        if (!active) target.setAttribute('aria-pressed', 'true');
+        renderCurrentView();
+        return;
+      }
+
+      if (target.matches('.story-title-button')) {
+        openReader(target.closest('.story')?.dataset.storyId);
+        return;
+      }
+
+      if (target.matches('.bookmark')) {
+        const story = target.closest('.story');
+        if (story) setBookmark(story.dataset.storyId, !state.bookmarks.includes(story.dataset.storyId));
+        return;
+      }
+
+      if (target.matches('.more')) {
+        const story = target.closest('.story');
+        const data = storyData(story);
+        if (data) showToast(data.title + ' · ' + data.readMinutes + ' min read');
+        return;
+      }
+
+      if (target.id === 'write-button') {
+        event.preventDefault();
+        openComposer();
+        return;
+      }
+
+      if (target.id === 'sync-button') {
+        event.preventDefault();
+        if (API_BASE) loadOnlineStories().then(() => showToast('Online content synced.')).catch(() => {});
+        else showToast('Nothing to sync on static GitHub Pages.');
+        return;
+      }
+
+      if (target.id === 'editor-login-button') {
+        event.preventDefault();
+        if (editorAuthenticated) logoutEditor(); else openLogin();
+        return;
+      }
+
+      if (target.id === 'search-toggle') {
+        search?.focus();
+        return;
+      }
+
+      if (target.id === 'search-clear') {
+        if (search) search.value = '';
+        updateSearchControls();
+        renderCurrentView();
+        search?.focus();
+        return;
+      }
+
+      if (target.id === 'draft-library-toggle') {
+        const hidden = draftLibrary?.hidden;
+        if (draftLibrary) draftLibrary.hidden = !hidden;
+        target.setAttribute('aria-expanded', String(Boolean(hidden)));
+        renderDraftList();
+        return;
+      }
+
+      if (target.id === 'new-draft') {
+        createDraft();
+        return;
+      }
+
+      if (target.id === 'preview-toggle') {
+        if (composer?.dataset.mode === 'preview') previewOff(); else previewOn();
+        return;
+      }
+
+      if (target.id === 'save-draft') {
+        saveDraft(true);
+        return;
+      }
+
+      if (target.id === 'publish-online') {
+        publishOnline();
+        return;
+      }
+
+      if (target.id === 'close-composer') {
+        closeComposer();
+        return;
+      }
+
+      if (target.id === 'manage-stories-button') {
+        openComposer();
+        if (draftLibrary) draftLibrary.hidden = false;
+        renderDraftList();
+        return;
+      }
+
+      if (target.id === 'online-library-toggle') {
+        const hidden = onlineLibrary?.hidden;
+        if (onlineLibrary) onlineLibrary.hidden = !hidden;
+        loadOnlineStories();
+        return;
+      }
+
+      if (target.id === 'close-editor-login') {
+        if (editorLoginDialog?.open) editorLoginDialog.close();
+        return;
+      }
+
+      if (target.dataset.draftAction) {
+        const row = target.closest('.draft-row');
+        const id = row?.dataset.draftId;
+        const action = target.dataset.draftAction;
+        if (!id) return;
+        const draft = findDraft(id);
+        if (action === 'open') loadDraftIntoEditor(id);
+        if (action === 'rename') {
+          row.querySelector('.draft-rename-form').hidden = false;
+          row.querySelector('[data-rename-input]')?.focus();
+        }
+        if (action === 'cancel-rename') row.querySelector('.draft-rename-form').hidden = true;
+        if (action === 'save-rename' && draft) {
+          const input = row.querySelector('[data-rename-input]');
+          draft.title = (input?.value || '').trim().slice(0, 120);
+          draft.savedAt = new Date().toISOString();
+          persistState();
+          renderDraftList();
+          showToast('Draft renamed.');
+        }
+        if (action === 'delete') deleteDraft(id);
+        return;
+      }
+
+      if (target.dataset.onlineAction) {
+        const id = target.dataset.onlineStoryId;
+        const story = editorStories.find(item => item.id === id);
+        if (target.dataset.onlineAction === 'edit' && story) {
+          openComposer();
+          populateEditorFromStory(story);
+        }
+        if (target.dataset.onlineAction === 'delete') deleteOnlineStory(id);
+        return;
+      }
+
+      if (target.id === 'reader-close') {
+        closeReader();
+        return;
+      }
+
+      if (target.id === 'reader-bookmark') {
+        if (currentStory) setBookmark(currentStory.id, !state.bookmarks.includes(currentStory.id));
+        return;
+      }
+
+      if (target.id === 'reader-follow') {
+        if (currentStory) setFollowing(currentStory.author, !state.following.includes(currentStory.author));
+        return;
+      }
+
+      if (target.id === 'reader-share') {
+        shareCurrentStory();
+        return;
+      }
+
+      if (target.id === 'reader-read') {
+        markFinished();
+        return;
+      }
+
+      if (target.dataset.toast) {
+        showToast(target.dataset.toast);
+        return;
+      }
+
+      if (target.textContent?.trim() === 'Get started') {
+        const membership = document.querySelector('.membership-card');
+        membership?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      if (target.matches('.story h2')) {
+        openReader(target.closest('.story')?.dataset.storyId);
+      }
+    });
+
+    document.addEventListener('click', event => {
+      const title = event.target.closest('.story h2');
+      if (!title || event.target.closest('button')) return;
+      openReader(title.closest('.story')?.dataset.storyId);
+    });
+
+    search?.addEventListener('input', () => {
+      updateSearchControls();
+      renderCurrentView();
+    });
+
+    search?.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        search.value = '';
+        updateSearchControls();
+        renderCurrentView();
+      }
+    });
+
+    readerScroll?.addEventListener('scroll', updateReaderProgress, { passive: true });
+
+    editorLoginForm?.addEventListener('submit', loginEditor);
+
+    [composer, editorLoginDialog, reader].forEach(dialog => {
+      dialog?.addEventListener('cancel', event => {
+        if (dialog === composer) saveDraft(false);
+      });
+    });
+
+    draftTitle?.addEventListener('input', renderDraftPreview);
+    draftBody?.addEventListener('input', renderDraftPreview);
+
+    window.addEventListener('hashchange', handleHash);
+  }
+
+  function handleHash() {
+    const match = window.location.hash.match(/^#story=(.+)$/);
+    if (match) openReader(decodeURIComponent(match[1]));
+  }
+
+  stories.forEach(element => {
+    const title = element.querySelector('h2');
+    if (title) {
+      title.classList.add('story-title-button');
+      title.setAttribute('role', 'button');
+      title.setAttribute('tabindex', '0');
+      title.setAttribute('aria-label', 'Read ' + title.textContent.trim());
+      title.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openReader(element.dataset.storyId);
+        }
+      });
+    }
+  });
+
+  installImageFallbacks();
+  refreshBookmarkButtons();
+  updateDraftCount();
+  renderDraftList();
+  renderStats();
+  renderCurrentView();
+  updateEditorUi();
+  wireEvents();
+  trySession();
+  handleHash();
+})();
