@@ -6,34 +6,26 @@
   <meta name="theme-color" content="#171717" />
   <meta name="description" content="A personalized reading feed with thoughtful stories, writers, and ideas to explore." />
   <title>ink.gs — For you</title>
-  
-  
-  
-  
-  
-  
-
-  
 
 
-  
-  
-  
-  
 
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   <style id="site-styles">
-/* ===== 1: base styles ===== */
-:root {
-      --ink: #242424;
-      --muted: #6b6b6b;
-      --line: #e6e6e6;
-      --green: #1a8917;
-      --paper: #fff;
-      --serif: Georgia, 'Times New Roman', serif;
-      --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }
+
+
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body { margin: 0; color: var(--ink); background: var(--paper); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
@@ -152,16 +144,7 @@
       .topic-pill { padding: 4px 7px; }
     }
 
-/* ===== 2: feed-refinement ===== */
-:root {
-      --ink: #242424;
-      --muted: #6b6b6b;
-      --line: #e6e6e6;
-      --green: #1a8917;
-      --paper: #fff;
-      --serif: Charter, Georgia, 'Times New Roman', serif;
-      --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }
+
     body { color: var(--ink); background: #fff; font-family: var(--sans); }
     .topbar {
       height: 68px;
@@ -365,7 +348,6 @@
       .reader-action.primary { width: 116px; min-height: 42px; height: auto; align-self: center; flex: 0 0 auto; padding: 8px 11px; line-height: 1.2; white-space: normal; }
     }
 
-/* ===== 3: writer-styles ===== */
 .write-action { display: inline-flex; align-items: center; gap: 7px; }
     .write-action svg { width: 17px; height: 17px; flex: 0 0 auto; }
     .composer {
@@ -444,7 +426,6 @@
       .draft-row-actions button { flex: 1; }
     }
 
-/* ===== 4: stats-styles ===== */
 .stats-view { padding-top: 0; }
     .stats-heading { margin: 0 0 24px; }
     .stats-heading h1 { margin: 0; }
@@ -466,7 +447,6 @@
       .stats-card dd { font-size: 28px; }
     }
 
-/* ===== 5: private-sync-styles ===== */
 .sync-action { display: inline-flex !important; align-items: center; justify-content: center; border: 1px solid #dedede; border-radius: 18px; padding: 8px 12px; color: #555; font-size: 12px; line-height: 1; }
     .sync-action:hover { background: #f7f7f7; color: #242424; }
     .sync-action:disabled { cursor: wait; opacity: .55; }
@@ -474,7 +454,6 @@
     #sync-button { display: none !important; }
     @media (max-width: 620px) { .sync-action { padding: 7px 9px; font-size: 11px; } }
 
-/* ===== 6: editor-styles ===== */
 .login-dialog { width: min(420px, calc(100vw - 32px)); padding: 28px; border: 1px solid #e8e8e8; border-radius: 6px; color: var(--ink); background: #fff; box-shadow: 0 18px 70px #0003; }
     .login-dialog::backdrop { background: rgb(20 20 20 / 42%); backdrop-filter: blur(2px); }
     .login-dialog h2 { margin: 0 0 8px; font: 700 25px/1.2 var(--serif); }
@@ -519,7 +498,6 @@
       .story-admin-actions button { flex: 1; }
     }
 
-/* ===== 7: reference-dark-editorial ===== */
 :root {
       --ink: #f1f1f1;
       --muted: #a2a2a2;
@@ -972,10 +950,8 @@
       }
     }
 
-/* ===== 8: mobile-menu-wrap ===== */
 .menu-toggle-wrap{display:contents}
 
-/* ===== 9: mobile-reference-fix ===== */
 @media (max-width: 800px) {
       html, body { width: 100%; min-width: 0; overflow-x: hidden; }
       .app-promo {
@@ -1216,7 +1192,6 @@
       .membership-banner a { font-size: 14px; }
     }
 
-/* ===== 10: mobile-reference-calibration ===== */
 /* Calibrated against the supplied 691px Android screenshots.
        The physical screenshot is larger than the CSS viewport, so these values
        intentionally use CSS-pixel geometry rather than screenshot-pixel geometry. */
@@ -1571,7 +1546,6 @@
       .story-image { width: 78px !important; height: 54px !important; }
     }
 
-/* ===== 11: reference-mobile-final ===== */
 @media (max-width: 700px) {
       /* Match the reference vertical rhythm first: no "For you" hero on mobile. */
       .welcome {
@@ -1763,7 +1737,6 @@
       }
     }
 
-/* ===== 12: reference-feed-calibrated ===== */
 .story-engagement {
       display: flex;
       align-items: center;
@@ -2043,7 +2016,6 @@
       }
     }
 
-/* ===== 13: ink-mobile-detail-pass ===== */
 :root {
       --ink-mobile-bg: #171717;
       --ink-mobile-text: #f2f2f2;
