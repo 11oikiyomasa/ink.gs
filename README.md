@@ -1,6 +1,6 @@
 # ink.gs — personal publishing site source archive
 
-This archive contains the homepage, the Cloudflare Worker API, D1 migrations, tests, and the configuration/scripts needed to build and run the project. The homepage references six local photo paths and includes client-side image fallbacks, so the photo source directory is optional. It contains no local editor password/hash, Cloudflare API token, or other credential.
+This archive contains the homepage, the Cloudflare Worker API, D1 migrations, tests, and the configuration/scripts needed to build and run the project. The homepage is split into semantic HTML, an external stylesheet, and an external application module. It references six local photo paths and includes client-side image fallbacks, so the photo source directory is optional. It contains no local editor password/hash, Cloudflare API token, or other credential.
 
 ## Requirements and local checks
 
@@ -11,7 +11,7 @@ npm test
 npm run build:assets
 ```
 
-`npm test` runs the Worker tests using an in-memory D1 test double. `npm run build:assets` copies `index.html` into `public/` and copies files from `assets/` when that optional source directory exists. When `assets/` is absent, the build still prepares the static homepage and reports that the built-in image fallbacks remain available. The generated `public/` copy is intentionally not duplicated in this archive.
+`npm test` runs the Worker tests using an in-memory D1 test double. `npm run build:assets` copies `index.html`, `styles.css`, and `app.js` into `public/`, then copies files from `assets/` when that optional source directory exists. When `assets/` is absent, the build still prepares the static homepage and reports that the built-in image fallbacks remain available. The generated `public/` copy is intentionally not duplicated in this archive.
 
 Both SQL migrations can also be checked locally with SQLite. For example:
 
