@@ -258,6 +258,13 @@
     </form>
   </dialog>
   <dialog class="reader" id="reader" aria-labelledby="reader-title">
+    <div class="reader-site-bar">
+      <span class="reader-menu-mark" aria-hidden="true">☰</span>
+      <span class="reader-brand">ink.gs</span>
+      <span class="reader-site-search" aria-hidden="true">⌕</span>
+      <span class="reader-site-avatar" aria-hidden="true">R</span>
+    </div>
+    <div class="reader-offer"><span>Access to everything. Now 30% off.</span><a href="#membership">Upgrade now</a></div>
     <div class="reader-toolbar">
       <span id="reader-label">Reading room</span>
       <button class="reader-close" id="reader-close" type="button" aria-label="Close reader">×</button>
@@ -266,6 +273,10 @@
     <div class="reader-scroll" id="reader-scroll" tabindex="0">
       <article class="reader-article">
         <p class="reader-kicker" id="reader-kicker"></p>
+        <div class="reader-chips" aria-label="Story attributes">
+          <span class="reader-chip reader-chip-accent">Member story</span>
+          <span class="reader-chip" id="reader-topic">Story</span>
+        </div>
         <h2 class="reader-title" id="reader-title"></h2>
         <p class="reader-summary" id="reader-summary"></p>
         <p class="reader-byline" id="reader-byline"></p>
