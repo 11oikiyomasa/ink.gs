@@ -69,3 +69,12 @@ test("games prevent duplicate answers and expose a truthful round total", () => 
   assert.match(js, /if \(!current \|\| gameState\.answered\) return/u);
   assert.match(js, /button\.disabled = true/u);
 });
+
+
+test("utility links resolve to real site information sections", () => {
+  assert.match(html, /id=["']about["']/u);
+  assert.match(html, /id=["']help["']/u);
+  assert.match(html, /id=["']terms["']/u);
+  assert.match(html, /title=["']Refresh published online stories["']/u);
+  assert.match(js, /Published stories refreshed\./u);
+});
