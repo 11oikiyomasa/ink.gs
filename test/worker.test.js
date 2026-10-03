@@ -472,3 +472,22 @@ test("social mutations reject malformed reader identity and payloads", async () 
   }), env, {});
   assert.equal(badKind.status, 400);
 });
+
+
+test("social activity rejects missing or unpublished stories", async () => {
+  const env = createEnv();
+  const missing = await worker.fetch(request("/api/social/reactions", {
+    method: "POST", headers: withReader(), body: { storyId: "missing-story", kind: "applause" },
+  }), env, {});
+  assert.equal(missing.status, 404);
+
+  const editor = await signIn(env);
+  const draft = await worker.fetch(request("/api/editor/stories", {
+    method: "POST", headers: withEditor(editor), body: { ...storyInput, published: false },
+  }), env, {});
+  const draftId = (await draft.json()).story.id;
+  const denied = await worker.fetch(request("/api/social/reactions", {
+    method: "POST", headers: withReader(), body: { storyId: draftId, kind: "applause" },
+  }), env, {});
+  assert.equal(denied.status, 404);
+});
