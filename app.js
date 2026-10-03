@@ -226,15 +226,24 @@
 
   function normalizeDraft(draft, index) {
     const source = isRecord(draft) ? draft : {};
+    const allowedTopics = ['Creativity', 'Technology', 'Travel', 'Life', 'Health', 'Culture', 'Writing', 'Mindfulness', 'Other'];
+    const allowedPhotos = [
+      '/assets/city-scenes.jpg',
+      '/assets/forest-wellness.jpg',
+      '/assets/notebook.jpg',
+      '/assets/river-sunset.jpg',
+      '/assets/train-journal.jpeg',
+      '/assets/writing-garden.jpg'
+    ];
     return {
       id: typeof source.id === 'string' && source.id ? source.id : 'draft-' + Date.now() + '-' + index,
       title: typeof source.title === 'string' ? source.title.slice(0, 120) : '',
-      body: typeof source.body === 'string' ? source.body : '',
+      body: typeof source.body === 'string' ? source.body.slice(0, 120000) : '',
       savedAt: typeof source.savedAt === 'string' ? source.savedAt : null,
       author: typeof source.author === 'string' ? source.author.slice(0, 80) : defaultStoryFields.author,
       publication: typeof source.publication === 'string' ? source.publication.slice(0, 80) : defaultStoryFields.publication,
-      topic: typeof source.topic === 'string' ? source.topic : defaultStoryFields.topic,
-      photo: typeof source.photo === 'string' ? source.photo : defaultStoryFields.photo,
+      topic: allowedTopics.includes(source.topic) ? source.topic : defaultStoryFields.topic,
+      photo: allowedPhotos.includes(source.photo) ? source.photo : defaultStoryFields.photo,
       photoAlt: typeof source.photoAlt === 'string' ? source.photoAlt.slice(0, 180) : defaultStoryFields.photoAlt,
       published: typeof source.published === 'boolean' ? source.published : defaultStoryFields.published
     };
@@ -438,7 +447,7 @@
         feedStatus.hidden = false;
         feedStatus.textContent = 'Showing local sample stories. Open the Worker app to load published online stories.';
       }
-      return;
+      return false;
     }
     try {
       const data = await apiRequest('/api/stories', { method: 'GET', headers: {} });
@@ -450,11 +459,13 @@
           ? remoteStories.length + (remoteStories.length === 1 ? ' published online story loaded.' : ' published online stories loaded.')
           : 'No published online stories yet. Local sample stories remain available.';
       }
+      return true;
     } catch (error) {
       if (feedStatus) {
         feedStatus.hidden = false;
         feedStatus.textContent = 'Online stories are temporarily unavailable. Local stories remain available.';
       }
+      return false;
     }
   }
 
@@ -992,7 +1003,7 @@
       state.activeDraftId = draft.id;
     }
     draft.title = draftTitle.value.trim().slice(0, 120);
-    draft.body = draftBody.value;
+    draft.body = draftBody.value.slice(0, 120000);
     draft.author = (storyAuthor?.value || defaultStoryFields.author).trim().slice(0, 80) || defaultStoryFields.author;
     draft.publication = (storyPublication?.value || defaultStoryFields.publication).trim().slice(0, 80) || defaultStoryFields.publication;
     draft.topic = storyTopic?.value || defaultStoryFields.topic;
@@ -1233,19 +1244,21 @@
       empty.className = 'draft-empty';
       empty.textContent = 'Online stories require the Cloudflare Worker API.';
       onlineStoryList.append(empty);
-      return;
+      return false;
     }
     try {
       const data = await apiRequest(editorAuthenticated ? '/api/editor/stories' : '/api/stories', { method: 'GET', headers: {} });
       editorStories = Array.isArray(data.stories) ? data.stories : [];
       onlineStoryCount.textContent = String(editorStories.length);
       renderOnlineStories();
+      return true;
     } catch (error) {
       onlineStoryList.replaceChildren();
       const empty = document.createElement('p');
       empty.className = 'draft-empty';
       empty.textContent = 'Online stories unavailable: ' + error.message;
       onlineStoryList.append(empty);
+      return false;
     }
   }
 
@@ -1563,7 +1576,9 @@
           showToast('Published online stories require the Cloudflare Worker app.');
           return;
         }
-        Promise.all([loadPublicStories(), loadOnlineStories()]).then(() => showToast('Published stories refreshed.')).catch(() => {});
+        Promise.all([loadPublicStories(), loadOnlineStories()]).then(results => {
+          showToast(results.every(Boolean) ? 'Published stories refreshed.' : 'Refresh completed with unavailable online data.');
+        });
         return;
       }
 
