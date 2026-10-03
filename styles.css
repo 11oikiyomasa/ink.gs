@@ -2639,3 +2639,35 @@ main {
   opacity: .6;
   cursor: default;
 }
+
+
+.site-footer {
+  width: min(1120px, calc(100% - 48px));
+  margin: 12px auto 56px;
+  padding: 28px 0 8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+  border-top: 1px solid var(--line);
+}
+.site-footer section {
+  min-width: 0;
+}
+.site-footer h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+.site-footer p:not(.eyebrow) {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+@media (max-width: 700px) {
+  .site-footer {
+    width: calc(100% - 28px);
+    grid-template-columns: 1fr;
+    gap: 22px;
+    margin-bottom: 32px;
+  }
+}
