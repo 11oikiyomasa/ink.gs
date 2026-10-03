@@ -117,6 +117,7 @@
   const profileForm = document.querySelector('#profile-form');
   const profileName = document.querySelector('#profile-name');
   const profileBio = document.querySelector('#profile-bio');
+  const profileCancel = document.querySelector('#profile-cancel');
   const profileFollowingCount = document.querySelector('#profile-following-count');
   const profileSavedCount = document.querySelector('#profile-saved-count');
   const profileFinishedCount = document.querySelector('#profile-finished-count');
@@ -298,8 +299,10 @@
     avatar.className = 'mini-avatar';
     avatar.textContent = String(story.author || 'U').split(/\s+/u).map(part => part[0]).join('').slice(0, 2).toUpperCase();
     const bylineText = document.createElement('span');
-    bylineText.innerHTML = '<strong></strong>' + (story.publication ? ' in ' + story.publication : '');
-    bylineText.querySelector('strong').textContent = story.author || 'Unknown author';
+    const authorStrong = document.createElement('strong');
+    authorStrong.textContent = story.author || 'Unknown author';
+    bylineText.append(authorStrong);
+    if (story.publication) bylineText.append(document.createTextNode(' in ' + story.publication));
     byline.append(avatar, bylineText);
     const title = document.createElement('h2');
     title.textContent = story.title || 'Untitled story';
