@@ -313,6 +313,14 @@
     return allStoryData().find(story => story.id === id) || null;
   }
 
+  function presentationPhoto(photo, topic) {
+    if (!photo) return '';
+    if (photo.startsWith('data:')) return photo;
+    if (photo.startsWith('/assets/')) return placeholderDataUri(topic);
+    return photo;
+  }
+
+
 
   function formatCount(value) {
     const count = Number(value || 0);
@@ -403,7 +411,7 @@
     copy.append(byline, title, summary, meta);
     const image = document.createElement('img');
     image.className = 'story-image';
-    image.src = story.photo || '';
+    image.src = presentationPhoto(story.photo, story.topic);
     image.alt = story.photoAlt || story.title || '';
     article.append(copy, image);
     return article;
@@ -782,7 +790,7 @@
     if (readerByline) readerByline.textContent = data.author + (data.publication ? ' · ' + data.publication : '');
     if (readerImage) {
       if (data.photo) {
-        readerImage.src = data.photo;
+        readerImage.src = presentationPhoto(data.photo, data.topic);
         readerImage.alt = data.photoAlt || data.title;
         readerImage.hidden = false;
       } else {
