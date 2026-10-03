@@ -361,12 +361,16 @@ async function readerHash(request, env, { required = false } = {}) {
   return hmacHex(socialSecret(env), readerId);
 }
 
-async function storySocialData(request, env, storyId) {
-  const db = requireDatabase(env);
+async function requirePublishedStory(db, storyId) {
   const story = await db.prepare(
     "SELECT 1 FROM editor_stories WHERE id = ? AND published = 1 AND managed_by = ?",
   ).bind(storyId, EDITOR_OWNER).first();
   if (!story) throw new HttpError(404, "Story not found");
+}
+
+async function storySocialData(request, env, storyId) {
+  const db = requireDatabase(env);
+  await requirePublishedStory(db, storyId);
   const reader = await readerHash(request, env);
   const counts = await db.prepare(
     `SELECT
@@ -416,6 +420,7 @@ async function handleSocialReaction(request, env) {
   const kind = typeof input.kind === "string" ? input.kind.trim() : "";
   if (!/^[A-Za-z0-9._~-]{1,160}$/u.test(storyId) || !["applause", "repost"].includes(kind)) throw new HttpError(400, "Invalid reaction request");
   const db = requireDatabase(env);
+  await requirePublishedStory(db, storyId);
   const existing = await db.prepare(
     "SELECT 1 FROM story_social_actions WHERE story_id = ? AND reader_hash = ? AND kind = ?",
   ).bind(storyId, reader, kind).first();
@@ -441,6 +446,7 @@ async function handleSocialResponse(request, env) {
   const body = typeof input.body === "string" ? input.body.trim() : "";
   if (!/^[A-Za-z0-9._~-]{1,160}$/u.test(storyId) || !body || body.length > 1200) throw new HttpError(400, "Invalid response");
   const db = requireDatabase(env);
+  await requirePublishedStory(db, storyId);
   const recent = await db.prepare(
     "SELECT COUNT(*) AS count FROM story_responses WHERE reader_hash = ? AND created_at >= ?",
   ).bind(reader, new Date(Date.now() - 60 * 60 * 1000).toISOString()).first();
@@ -515,6 +521,16 @@ async function handleEditorStories(request, env) {
     return jsonResponse({ story: editorStory(row) });
   }
   if (request.method === "DELETE") {
+    const existing = await db.prepare(
+      "SELECT 1 FROM editor_stories WHERE id = ? AND managed_by = ?",
+    ).bind(id, EDITOR_OWNER).first();
+    if (!existing) return jsonResponse({ error: "not_found" }, 404);
+    await db.prepare(
+      "DELETE FROM story_social_actions WHERE story_id = ?",
+    ).bind(id).run();
+    await db.prepare(
+      "DELETE FROM story_responses WHERE story_id = ?",
+    ).bind(id).run();
     const result = await db.prepare(
       "DELETE FROM editor_stories WHERE id = ? AND managed_by = ?",
     ).bind(id, EDITOR_OWNER).run();
