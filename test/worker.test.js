@@ -38,6 +38,7 @@ class MemoryD1 {
   }
 
   async first(sql, values) {
+    if (sql === "SELECT 1") return { ok: 1 };
     if (sql.startsWith("SELECT csrf_hash, expires_at FROM editor_sessions")) {
       const row = this.sessions.get(values[0]);
       return row ? { ...row } : null;
@@ -259,6 +260,35 @@ function withEditor({ sessionCookie, csrfCookie, csrfToken }, extra = {}) {
   if (csrfToken) headers.set("X-CSRF-Token", csrfToken);
   return headers;
 }
+
+test("health endpoint reports readiness without secrets", async () => {
+  const env = createEnv();
+  const response = await worker.fetch(request("/api/health"), env, {});
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    ok: true,
+    services: { database: true, editorAuth: true, social: true },
+  });
+  assert.equal(response.headers.get("cache-control"), "no-store, private");
+});
+
+test("health endpoint fails when required storage or editor auth is unavailable", async () => {
+  const noDb = createEnv({ db: null });
+  const storageDown = await worker.fetch(request("/api/health"), noDb, {});
+  assert.equal(storageDown.status, 503);
+  assert.deepEqual(await storageDown.json(), {
+    ok: false,
+    services: { database: false, editorAuth: true, social: true },
+  });
+
+  const noAuth = createEnv({ passwordHashValue: "" });
+  const authDown = await worker.fetch(request("/api/health"), noAuth, {});
+  assert.equal(authDown.status, 503);
+  assert.deepEqual(await authDown.json(), {
+    ok: false,
+    services: { database: true, editorAuth: false, social: false },
+  });
+});
 
 test("public homepage and story reads need no editor session and receive security headers", async () => {
   const env = createEnv();
