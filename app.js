@@ -206,12 +206,28 @@
     return Boolean(value && typeof value === 'object' && !Array.isArray(value));
   }
 
+  const defaultStoryFields = {
+    author: 'Site Editor',
+    publication: 'The Open Notebook',
+    topic: 'Writing',
+    photo: '/assets/writing-garden.jpg',
+    photoAlt: 'A quiet scene for reading',
+    published: true
+  };
+
   function normalizeDraft(draft, index) {
+    const source = isRecord(draft) ? draft : {};
     return {
-      id: typeof draft.id === 'string' && draft.id ? draft.id : 'draft-' + Date.now() + '-' + index,
-      title: typeof draft.title === 'string' ? draft.title.slice(0, 120) : '',
-      body: typeof draft.body === 'string' ? draft.body : '',
-      savedAt: typeof draft.savedAt === 'string' ? draft.savedAt : null
+      id: typeof source.id === 'string' && source.id ? source.id : 'draft-' + Date.now() + '-' + index,
+      title: typeof source.title === 'string' ? source.title.slice(0, 120) : '',
+      body: typeof source.body === 'string' ? source.body : '',
+      savedAt: typeof source.savedAt === 'string' ? source.savedAt : null,
+      author: typeof source.author === 'string' ? source.author.slice(0, 80) : defaultStoryFields.author,
+      publication: typeof source.publication === 'string' ? source.publication.slice(0, 80) : defaultStoryFields.publication,
+      topic: typeof source.topic === 'string' ? source.topic : defaultStoryFields.topic,
+      photo: typeof source.photo === 'string' ? source.photo : defaultStoryFields.photo,
+      photoAlt: typeof source.photoAlt === 'string' ? source.photoAlt.slice(0, 180) : defaultStoryFields.photoAlt,
+      published: typeof source.published === 'boolean' ? source.published : defaultStoryFields.published
     };
   }
 
@@ -845,9 +861,16 @@
     const draft = findDraft(id);
     if (!draft) return false;
     state.activeDraftId = draft.id;
+    editingOnlineStoryId = null;
     persistState();
     if (draftTitle) draftTitle.value = draft.title;
     if (draftBody) draftBody.value = draft.body;
+    if (storyAuthor) storyAuthor.value = draft.author || defaultStoryFields.author;
+    if (storyPublication) storyPublication.value = draft.publication || defaultStoryFields.publication;
+    if (storyTopic) storyTopic.value = draft.topic || defaultStoryFields.topic;
+    if (storyPhoto) storyPhoto.value = draft.photo || defaultStoryFields.photo;
+    if (storyPhotoAlt) storyPhotoAlt.value = draft.photoAlt || defaultStoryFields.photoAlt;
+    if (storyPublished) storyPublished.checked = typeof draft.published === 'boolean' ? draft.published : defaultStoryFields.published;
     if (draftStatus) draftStatus.textContent = 'Draft saved on this device';
     renderDraftPreview();
     renderDraftList();
@@ -856,7 +879,14 @@
 
   function createDraft() {
     if (findDraft() && draftTitle && draftBody) saveDraft(false);
-    const draft = { id: 'draft-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8), title: '', body: '', savedAt: new Date().toISOString() };
+    const draft = {
+      id: 'draft-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+      title: '',
+      body: '',
+      savedAt: new Date().toISOString(),
+      ...defaultStoryFields
+    };
+    editingOnlineStoryId = null;
     state.drafts.unshift(draft);
     state.activeDraftId = draft.id;
     delete state.draftTombstones[draft.id];
@@ -877,12 +907,24 @@
     if (!draftTitle || !draftBody) return false;
     let draft = findDraft();
     if (!draft) {
-      draft = { id: 'draft-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8), title: '', body: '', savedAt: null };
+      draft = {
+        id: 'draft-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+        title: '',
+        body: '',
+        savedAt: null,
+        ...defaultStoryFields
+      };
       state.drafts.unshift(draft);
       state.activeDraftId = draft.id;
     }
     draft.title = draftTitle.value.trim().slice(0, 120);
     draft.body = draftBody.value;
+    draft.author = (storyAuthor?.value || defaultStoryFields.author).trim().slice(0, 80) || defaultStoryFields.author;
+    draft.publication = (storyPublication?.value || defaultStoryFields.publication).trim().slice(0, 80) || defaultStoryFields.publication;
+    draft.topic = storyTopic?.value || defaultStoryFields.topic;
+    draft.photo = storyPhoto?.value || defaultStoryFields.photo;
+    draft.photoAlt = (storyPhotoAlt?.value || defaultStoryFields.photoAlt).trim().slice(0, 180);
+    draft.published = Boolean(storyPublished?.checked ?? defaultStoryFields.published);
     draft.savedAt = new Date().toISOString();
     persistState();
     renderDraftList();
@@ -973,12 +1015,19 @@
   }
 
   function updateEditorUi() {
+    document.querySelectorAll('.editor-auth-only').forEach(element => {
+      element.hidden = !editorAuthenticated;
+    });
     if (editorLoginButton) {
       editorLoginButton.textContent = editorAuthenticated ? 'Signed in' : 'Sign in';
       editorLoginButton.setAttribute('aria-pressed', String(editorAuthenticated));
+      editorLoginButton.setAttribute('aria-label', editorAuthenticated ? 'Sign out of editor' : 'Sign in to editor');
     }
     if (publishOnlineButton) publishOnlineButton.disabled = !editorAuthenticated;
-    if (onlineLibraryToggle) onlineLibraryToggle.textContent = editorAuthenticated ? 'Online stories' : 'Online stories';
+    if (!editorAuthenticated && onlineLibrary) {
+      onlineLibrary.hidden = true;
+      onlineStoryList?.replaceChildren();
+    }
   }
 
   async function loginEditor(event) {
@@ -1041,11 +1090,11 @@
     editingOnlineStoryId = story.id;
     if (draftTitle) draftTitle.value = story.title || '';
     if (draftBody) draftBody.value = Array.isArray(story.body) ? story.body.join('\n\n') : (story.body || '');
-    if (storyAuthor) storyAuthor.value = story.author || '';
-    if (storyPublication) storyPublication.value = story.publication || '';
-    if (storyTopic) storyTopic.value = story.topic || '';
-    if (storyPhoto) storyPhoto.value = story.photo || '';
-    if (storyPhotoAlt) storyPhotoAlt.value = story.photo_alt || story.photoAlt || '';
+    if (storyAuthor) storyAuthor.value = story.author || defaultStoryFields.author;
+    if (storyPublication) storyPublication.value = story.publication || defaultStoryFields.publication;
+    if (storyTopic) storyTopic.value = story.topic || defaultStoryFields.topic;
+    if (storyPhoto) storyPhoto.value = story.photo || defaultStoryFields.photo;
+    if (storyPhotoAlt) storyPhotoAlt.value = story.photo_alt || story.photoAlt || defaultStoryFields.photoAlt;
     if (storyPublished) storyPublished.checked = Boolean(story.published);
     previewOff();
     renderDraftPreview();
@@ -1091,6 +1140,7 @@
         body: JSON.stringify(payload)
       });
       const story = data.story;
+      saveDraft(false);
       editingOnlineStoryId = story?.id || null;
       showToast(payload.published ? 'Story published online.' : 'Story saved online.');
       await loadOnlineStories();
