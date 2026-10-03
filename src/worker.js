@@ -403,6 +403,7 @@ async function handleSocialStory(request, env, storyId) {
 }
 
 async function handleSocialReaction(request, env) {
+  if (!originMatches(request, { required: true })) throw new HttpError(403, "Same-origin request required");
   if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "POST" });
   const reader = await readerHash(request, env, { required: true });
   const input = await readJsonBody(request, 4 * 1024);
@@ -427,6 +428,7 @@ async function handleSocialReaction(request, env) {
 }
 
 async function handleSocialResponse(request, env) {
+  if (!originMatches(request, { required: true })) throw new HttpError(403, "Same-origin request required");
   if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "POST" });
   const reader = await readerHash(request, env, { required: true });
   const input = await readJsonBody(request, 16 * 1024);
