@@ -19,7 +19,8 @@
     }
   }
 
-  const API_BASE = (document.documentElement.dataset.apiBase || readStorageValue('reading-room-api-base') || '').replace(/\/+$/, '');
+  const configuredApiBase = (document.documentElement.dataset.apiBase || readStorageValue('reading-room-api-base') || '').replace(/\/+$/, '');
+  const API_BASE = /\.workers\.dev$/iu.test(location.hostname) ? location.origin : configuredApiBase;
   const API_ENABLED = Boolean(API_BASE) || /\.workers\.dev$/iu.test(location.hostname);
   const originalArticles = {
     'the-quiet-craft-of-paying-attention': [
