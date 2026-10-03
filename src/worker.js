@@ -326,6 +326,9 @@ function publicStory(row) {
     published: true,
     publishedAt: row.published_at,
     readMinutes: Math.max(1, Math.ceil(wordCount / 220)),
+    applauseCount: Number(row.applause_count || 0),
+    repostCount: Number(row.repost_count || 0),
+    responseCount: Number(row.response_count || 0),
   };
 }
 
@@ -338,11 +341,120 @@ function editorStory(row) {
   };
 }
 
+
+function socialSecret(env) {
+  const secret = typeof env.SOCIAL_SECRET === "string" ? env.SOCIAL_SECRET.trim() : "";
+  const fallback = typeof env.EDITOR_PASSWORD_HASH === "string" ? env.EDITOR_PASSWORD_HASH.trim() : "";
+  if (!secret && !fallback) throw new HttpError(503, "Social interactions are not configured");
+  return secret || fallback;
+}
+
+async function readerHash(request, env, { required = false } = {}) {
+  const readerId = request.headers.get("X-Reader-ID") || "";
+  if (!readerId) {
+    if (required) throw new HttpError(400, "Reader identity is required");
+    return null;
+  }
+  if (readerId.length < 16 || readerId.length > 128 || !/^[A-Za-z0-9._~-]+$/u.test(readerId)) {
+    throw new HttpError(400, "Invalid reader identity");
+  }
+  return hmacHex(socialSecret(env), readerId);
+}
+
+async function storySocialData(request, env, storyId) {
+  const db = requireDatabase(env);
+  const reader = await readerHash(request, env);
+  const counts = await db.prepare(
+    `SELECT
+      (SELECT COUNT(*) FROM story_social_actions WHERE story_id = ? AND kind = 'applause') AS applause,
+      (SELECT COUNT(*) FROM story_social_actions WHERE story_id = ? AND kind = 'repost') AS reposts,
+      (SELECT COUNT(*) FROM story_responses WHERE story_id = ?) AS responses`,
+  ).bind(storyId, storyId, storyId).first();
+  const me = reader ? await db.prepare(
+    `SELECT
+      EXISTS(SELECT 1 FROM story_social_actions WHERE story_id = ? AND reader_hash = ? AND kind = 'applause') AS applauded,
+      EXISTS(SELECT 1 FROM story_social_actions WHERE story_id = ? AND reader_hash = ? AND kind = 'repost') AS reposted`,
+  ).bind(storyId, reader, storyId, reader).first() : null;
+  const responseRows = await db.prepare(
+    "SELECT id, body, created_at FROM story_responses WHERE story_id = ? ORDER BY created_at DESC LIMIT 20",
+  ).bind(storyId).all();
+  return {
+    counts: {
+      applause: Number(counts?.applause || 0),
+      reposts: Number(counts?.reposts || 0),
+      responses: Number(counts?.responses || 0),
+    },
+    me: {
+      applauded: Boolean(Number(me?.applauded || 0)),
+      reposted: Boolean(Number(me?.reposted || 0)),
+    },
+    responses: (responseRows.results || []).map(row => ({
+      id: row.id,
+      body: row.body,
+      createdAt: row.created_at,
+    })),
+  };
+}
+
+async function handleSocialStory(request, env, storyId) {
+  if (!/^[A-Za-z0-9._~-]{1,160}$/u.test(storyId)) return jsonResponse({ error: "not_found" }, 404);
+  if (request.method !== "GET") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET" });
+  return jsonResponse(await storySocialData(request, env, storyId));
+}
+
+async function handleSocialReaction(request, env) {
+  if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "POST" });
+  const reader = await readerHash(request, env, { required: true });
+  const input = await readJsonBody(request, 4 * 1024);
+  if (!isRecord(input) || Object.keys(input).some(key => !["storyId", "kind"].includes(key))) throw new HttpError(400, "Invalid reaction request");
+  const storyId = typeof input.storyId === "string" ? input.storyId.trim() : "";
+  const kind = typeof input.kind === "string" ? input.kind.trim() : "";
+  if (!/^[A-Za-z0-9._~-]{1,160}$/u.test(storyId) || !["applause", "repost"].includes(kind)) throw new HttpError(400, "Invalid reaction request");
+  const db = requireDatabase(env);
+  const existing = await db.prepare(
+    "SELECT 1 FROM story_social_actions WHERE story_id = ? AND reader_hash = ? AND kind = ?",
+  ).bind(storyId, reader, kind).first();
+  if (existing) {
+    await db.prepare(
+      "DELETE FROM story_social_actions WHERE story_id = ? AND reader_hash = ? AND kind = ?",
+    ).bind(storyId, reader, kind).run();
+  } else {
+    await db.prepare(
+      "INSERT INTO story_social_actions (story_id, reader_hash, kind, created_at) VALUES (?, ?, ?, ?)",
+    ).bind(storyId, reader, kind, new Date().toISOString()).run();
+  }
+  return jsonResponse(await storySocialData(request, env, storyId));
+}
+
+async function handleSocialResponse(request, env) {
+  if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "POST" });
+  const reader = await readerHash(request, env, { required: true });
+  const input = await readJsonBody(request, 16 * 1024);
+  if (!isRecord(input) || Object.keys(input).some(key => !["storyId", "body"].includes(key))) throw new HttpError(400, "Invalid response request");
+  const storyId = typeof input.storyId === "string" ? input.storyId.trim() : "";
+  const body = typeof input.body === "string" ? input.body.trim() : "";
+  if (!/^[A-Za-z0-9._~-]{1,160}$/u.test(storyId) || !body || body.length > 1200) throw new HttpError(400, "Invalid response");
+  const db = requireDatabase(env);
+  const recent = await db.prepare(
+    "SELECT COUNT(*) AS count FROM story_responses WHERE reader_hash = ? AND created_at >= ?",
+  ).bind(reader, new Date(Date.now() - 60 * 60 * 1000).toISOString()).first();
+  if (Number(recent?.count || 0) >= 10) throw new HttpError(429, "Too many responses. Try again later.");
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+  await db.prepare(
+    "INSERT INTO story_responses (id, story_id, reader_hash, body, created_at) VALUES (?, ?, ?, ?, ?)",
+  ).bind(id, storyId, reader, body, now).run();
+  return jsonResponse(await storySocialData(request, env, storyId), 201);
+}
+
 async function handlePublicStories(request, env) {
   if (request.method !== "GET") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET" });
   const db = requireDatabase(env);
   const result = await db.prepare(
-    `SELECT id, title, summary, body, author, publication, topic, photo, photo_alt, published_at
+    `SELECT id, title, summary, body, author, publication, topic, photo, photo_alt, published_at,
+        (SELECT COUNT(*) FROM story_social_actions a WHERE a.story_id = editor_stories.id AND a.kind = 'applause') AS applause_count,
+        (SELECT COUNT(*) FROM story_social_actions a WHERE a.story_id = editor_stories.id AND a.kind = 'repost') AS repost_count,
+        (SELECT COUNT(*) FROM story_responses r WHERE r.story_id = editor_stories.id) AS response_count
      FROM editor_stories WHERE published = 1 AND managed_by = ? ORDER BY published_at DESC, updated_at DESC LIMIT 500`,
   ).bind(EDITOR_OWNER).all();
   return jsonResponse({ stories: (result.results || []).map(publicStory) });
@@ -417,6 +529,10 @@ export default {
 
     try {
       if (url.pathname === "/api/stories") return await handlePublicStories(request, env);
+      const socialStoryMatch = url.pathname.match(/^\/api\/social\/stories\/([A-Za-z0-9._~-]{1,160})$/u);
+      if (socialStoryMatch) return await handleSocialStory(request, env, socialStoryMatch[1]);
+      if (url.pathname === "/api/social/reactions") return await handleSocialReaction(request, env);
+      if (url.pathname === "/api/social/responses") return await handleSocialResponse(request, env);
       if (url.pathname === "/api/editor/login") return await handleLogin(request, env);
       if (url.pathname === "/api/editor/session") return await handleSession(request, env);
       if (url.pathname === "/api/editor/logout") return await handleLogout(request, env);
