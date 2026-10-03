@@ -1,3 +1,5 @@
+import { INDEX_HTML, STYLES_CSS, APP_JS } from "./static-content.js";
+
 const MAX_BODY_BYTES = 160 * 1024;
 const MAX_PASSWORD_BYTES = 1024;
 const SESSION_TTL_SECONDS = 8 * 60 * 60;
@@ -54,6 +56,29 @@ function jsonResponse(body, status = 200, extraHeaders = {}) {
     for (const headerValue of Array.isArray(value) ? value : [value]) headers.append(name, headerValue);
   }
   return new Response(JSON.stringify(body), { status, headers });
+}
+
+function bundledAssetResponse(request) {
+  const pathname = new URL(request.url).pathname;
+  let body = null;
+  let contentType = "";
+  if (pathname === "/index.html" || pathname === "/") {
+    body = INDEX_HTML;
+    contentType = "text/html; charset=utf-8";
+  } else if (pathname === "/styles.css") {
+    body = STYLES_CSS;
+    contentType = "text/css; charset=utf-8";
+  } else if (pathname === "/app.js") {
+    body = APP_JS;
+    contentType = "application/javascript; charset=utf-8";
+  } else {
+    return null;
+  }
+  const headers = new Headers({
+    "Content-Type": contentType,
+    "Cache-Control": "no-store",
+  });
+  return secureAssetResponse(new Response(request.method === "HEAD" ? null : body, { status: 200, headers }));
 }
 
 function secureAssetResponse(response) {
@@ -544,6 +569,8 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (!url.pathname.startsWith("/api/")) {
+      const bundled = bundledAssetResponse(request);
+      if (bundled) return bundled;
       const response = env.ASSETS ? await env.ASSETS.fetch(request) : new Response("Not found", { status: 404 });
       return secureAssetResponse(response);
     }
