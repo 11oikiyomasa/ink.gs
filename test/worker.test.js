@@ -130,6 +130,17 @@ class MemoryD1 {
     if (sql.startsWith("DELETE FROM editor_sessions WHERE token_hash")) {
       return { meta: { changes: Number(this.sessions.delete(values[0])) } };
     }
+    if (sql === "DELETE FROM story_social_actions WHERE story_id = ?") {
+      const storyId = values[0];
+      let changes = 0;
+      for (const [key, row] of this.socialActions) {
+        if (row.story_id === storyId) {
+          this.socialActions.delete(key);
+          changes++;
+        }
+      }
+      return { meta: { changes } };
+    }
     if (sql.startsWith("DELETE FROM story_social_actions WHERE story_id")) {
       const [storyId, readerHash, kind] = values;
       const key = [storyId, readerHash, kind].join("|");
@@ -139,6 +150,17 @@ class MemoryD1 {
       const [storyId, readerHash, kind, createdAt] = values;
       this.socialActions.set([storyId, readerHash, kind].join("|"), { story_id: storyId, reader_hash: readerHash, kind, created_at: createdAt });
       return { meta: { changes: 1 } };
+    }
+    if (sql === "DELETE FROM story_responses WHERE story_id = ?") {
+      const storyId = values[0];
+      let changes = 0;
+      for (const [key, row] of this.responses) {
+        if (row.story_id === storyId) {
+          this.responses.delete(key);
+          changes++;
+        }
+      }
+      return { meta: { changes } };
     }
     if (sql.startsWith("INSERT INTO story_responses")) {
       const [id, storyId, readerHash, body, createdAt] = values;
@@ -509,4 +531,38 @@ test("social activity rejects missing or unpublished stories", async () => {
     method: "POST", headers: withReader(), body: { storyId: draftId, kind: "applause" },
   }), env, {});
   assert.equal(denied.status, 404);
+  assert.equal(env.DB.socialActions.size, 0);
+
+  const responseDenied = await worker.fetch(request("/api/social/responses", {
+    method: "POST", headers: withReader(), body: { storyId: draftId, body: "should not persist" },
+  }), env, {});
+  assert.equal(responseDenied.status, 404);
+  assert.equal(env.DB.responses.size, 0);
+});
+
+
+test("deleting a story removes its social data", async () => {
+  const env = createEnv();
+  const editor = await signIn(env);
+  const created = await worker.fetch(request("/api/editor/stories", {
+    method: "POST", headers: withEditor(editor), body: storyInput,
+  }), env, {});
+  const storyId = (await created.json()).story.id;
+  const reacted = await worker.fetch(request("/api/social/reactions", {
+    method: "POST", headers: withReader(), body: { storyId, kind: "applause" },
+  }), env, {});
+  assert.equal(reacted.status, 200);
+  const responded = await worker.fetch(request("/api/social/responses", {
+    method: "POST", headers: withReader({}, "reader-test-0000000000000002"), body: { storyId, body: "keep the data clean" },
+  }), env, {});
+  assert.equal(responded.status, 201);
+  assert.equal(env.DB.socialActions.size, 1);
+  assert.equal(env.DB.responses.size, 1);
+
+  const removed = await worker.fetch(request("/api/editor/stories/" + storyId, {
+    method: "DELETE", headers: withEditor(editor),
+  }), env, {});
+  assert.equal(removed.status, 200);
+  assert.equal(env.DB.socialActions.size, 0);
+  assert.equal(env.DB.responses.size, 0);
 });
