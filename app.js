@@ -3,6 +3,14 @@
   'use strict';
 
   const storageKey = 'reading-room-demo-v1';
+  const defaultStoryFields = {
+    author: 'Site Editor',
+    publication: 'The Open Notebook',
+    topic: 'Writing',
+    photo: '/assets/writing-garden.jpg',
+    photoAlt: 'A quiet scene for reading',
+    published: true
+  };
   const API_BASE = (document.documentElement.dataset.apiBase || localStorage.getItem('reading-room-api-base') || '').replace(/\/+$/, '');
   const API_ENABLED = Boolean(API_BASE) || /\.workers\.dev$/iu.test(location.hostname);
   const originalArticles = {
@@ -205,15 +213,6 @@
   function isRecord(value) {
     return Boolean(value && typeof value === 'object' && !Array.isArray(value));
   }
-
-  const defaultStoryFields = {
-    author: 'Site Editor',
-    publication: 'The Open Notebook',
-    topic: 'Writing',
-    photo: '/assets/writing-garden.jpg',
-    photoAlt: 'A quiet scene for reading',
-    published: true
-  };
 
   function normalizeDraft(draft, index) {
     const source = isRecord(draft) ? draft : {};
