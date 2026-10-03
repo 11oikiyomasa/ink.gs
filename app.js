@@ -147,6 +147,7 @@
   const gamesDialog = document.querySelector('#games-dialog');
   const gamesClose = document.querySelector('#games-close');
   const gameRound = document.querySelector('#game-round');
+  const gameTotal = document.querySelector('#game-total');
   const gameScore = document.querySelector('#game-score');
   const gamePrompt = document.querySelector('#game-prompt');
   const gameOptions = document.querySelector('#game-options');
@@ -556,7 +557,7 @@
     writerList.replaceChildren(fragment);
   }
 
-  const gameState = { round: 0, score: 0, questions: [], current: null };
+  const gameState = { round: 0, score: 0, questions: [], current: null, answered: false };
   function startGame() {
     const source = allStoryData().filter(story => story.topic);
     const pool = [...source].sort(() => Math.random() - 0.5).slice(0, 5);
@@ -564,21 +565,32 @@
     gameState.score = 0;
     gameState.questions = pool;
     gameState.current = null;
+    gameState.answered = false;
     updateGame();
   }
 
   function updateGame() {
     if (!gameRound || !gameScore || !gamePrompt || !gameOptions) return;
+    const total = gameState.questions.length;
+    if (gameTotal) gameTotal.textContent = String(total || 0);
     gameScore.textContent = String(gameState.score);
-    if (gameState.round >= gameState.questions.length) {
-      gameRound.textContent = String(gameState.questions.length || 5);
-      gamePrompt.textContent = 'Session complete. Your score is ' + gameState.score + '/' + (gameState.questions.length || 5) + '.';
+    if (total === 0) {
+      gameRound.textContent = '0';
+      gamePrompt.textContent = 'There are not enough categorized stories to start a game.';
+      gameOptions.replaceChildren();
+      if (gameFeedback) gameFeedback.textContent = 'Add or publish stories with a topic, then try again.';
+      return;
+    }
+    if (gameState.round >= total) {
+      gameRound.textContent = String(total);
+      gamePrompt.textContent = 'Session complete. Your score is ' + gameState.score + '/' + total + '.';
       gameOptions.replaceChildren();
       if (gameFeedback) gameFeedback.textContent = 'Start over to play again.';
       return;
     }
     const story = gameState.questions[gameState.round];
     gameState.current = story;
+    gameState.answered = false;
     gameRound.textContent = String(gameState.round + 1);
     gamePrompt.textContent = 'Which topic fits “' + story.title + '”?';
     const topics = [...new Set(allStoryData().map(item => item.topic).filter(Boolean))];
@@ -1643,12 +1655,14 @@
       }
       if (target.dataset.gameTopic) {
         const current = gameState.current;
-        if (!current) return;
+        if (!current || gameState.answered) return;
+        gameState.answered = true;
+        gameOptions?.querySelectorAll('button').forEach(button => { button.disabled = true; });
         const correct = target.dataset.gameTopic === current.topic;
         gameState.score += correct ? 1 : 0;
         gameState.round += 1;
         if (gameFeedback) gameFeedback.textContent = correct ? 'Correct — ' + current.topic + '.' : 'Not quite. The topic is ' + current.topic + '.';
-        setTimeout(updateGame, 450);
+        setTimeout(updateGame, 500);
         return;
       }
       if (target.dataset.socialAction === 'applause') {
