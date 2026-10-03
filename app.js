@@ -43,7 +43,7 @@
     ]
   };
 
-  const stories = [...document.querySelectorAll('.story')].map((element, index) => {
+  let stories = [...document.querySelectorAll('.story')].map((element, index) => {
     const title = element.querySelector('h2')?.textContent?.trim() || ('Story ' + (index + 1));
     const id = element.dataset.storyId || slugify(title);
     element.dataset.storyId = id;
@@ -112,6 +112,36 @@
   const statsFinished = document.querySelector('#stats-finished');
   const statsInProgress = document.querySelector('#stats-in-progress');
   const statsMinutes = document.querySelector('#stats-minutes');
+  const feedStatus = document.querySelector('#feed-status');
+  const profileDialog = document.querySelector('#profile-dialog');
+  const profileForm = document.querySelector('#profile-form');
+  const profileName = document.querySelector('#profile-name');
+  const profileBio = document.querySelector('#profile-bio');
+  const profileFollowingCount = document.querySelector('#profile-following-count');
+  const profileSavedCount = document.querySelector('#profile-saved-count');
+  const profileFinishedCount = document.querySelector('#profile-finished-count');
+  const writersDialog = document.querySelector('#writers-dialog');
+  const writersClose = document.querySelector('#writers-close');
+  const writerSearch = document.querySelector('#writer-search');
+  const writerList = document.querySelector('#writer-list');
+  const gamesDialog = document.querySelector('#games-dialog');
+  const gamesClose = document.querySelector('#games-close');
+  const gameRound = document.querySelector('#game-round');
+  const gameScore = document.querySelector('#game-score');
+  const gamePrompt = document.querySelector('#game-prompt');
+  const gameOptions = document.querySelector('#game-options');
+  const gameFeedback = document.querySelector('#game-feedback');
+  const gameRestart = document.querySelector('#game-restart');
+  const readerSocial = document.querySelector('#reader-social');
+  const readerResponseCount = document.querySelector('#reader-response-count');
+  const readerResponseForm = document.querySelector('#reader-response-form');
+  const readerResponseInput = document.querySelector('#reader-response-input');
+  const readerResponseList = document.querySelector('#reader-response-list');
+  const readerApplaud = document.querySelector('#reader-applaud');
+  const readerRespond = document.querySelector('#reader-respond');
+  const readerRepost = document.querySelector('#reader-repost');
+  const readerRespondCancel = document.querySelector('#reader-respond-cancel');
+  const dynamicStoryRecords = new Map();
 
   let state = loadState();
   let currentStory = null;
@@ -140,7 +170,8 @@
       activeDraftId: null,
       membershipChanges: { bookmarks: {}, following: {} },
       progressUpdatedAt: {},
-      draftTombstones: {}
+      draftTombstones: {},
+      profile: { name: '', bio: '' }
     };
     try {
       const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
@@ -157,7 +188,11 @@
           following: isRecord(saved.membershipChanges?.following) ? saved.membershipChanges.following : {}
         },
         progressUpdatedAt: isRecord(saved.progressUpdatedAt) ? saved.progressUpdatedAt : {},
-        draftTombstones: isRecord(saved.draftTombstones) ? saved.draftTombstones : {}
+        draftTombstones: isRecord(saved.draftTombstones) ? saved.draftTombstones : {},
+        profile: {
+          name: typeof saved.profile?.name === 'string' ? saved.profile.name.slice(0, 60) : '',
+          bio: typeof saved.profile?.bio === 'string' ? saved.profile.bio.slice(0, 240) : ''
+        }
       };
     } catch {
       return fallback;
@@ -204,26 +239,32 @@
     state.progressUpdatedAt[id] = new Date().toISOString();
   }
 
+  function refreshStoriesCollection() {
+    stories = [...document.querySelectorAll('.story')];
+  }
+
   function storyData(element) {
     if (!element) return null;
     const id = element.dataset.storyId;
+    const remote = dynamicStoryRecords.get(id);
+    if (remote) return remote;
     const title = element.querySelector('h2')?.textContent?.trim() || '';
     const byline = element.querySelector('.byline')?.textContent?.trim() || '';
     const author = element.dataset.author || byline.split(' in ')[0] || 'Unknown author';
     const publication = byline.includes(' in ') ? byline.split(' in ').slice(1).join(' in ').trim() : '';
     const summary = element.querySelector('.story-summary')?.textContent?.trim() || '';
-    const meta = [...element.querySelectorAll('.story-meta .meta-left > span')].map(node => node.textContent.trim());
+    const meta = [...element.querySelectorAll('.story-meta .engagement-item')].map(node => node.textContent.trim());
     const readTime = (meta.find(text => /min read$/i.test(text)) || '').match(/(\d+)/)?.[1];
     const topic = element.querySelector('.topic-pill')?.textContent?.trim() || '';
     const photo = element.querySelector('.story-image')?.getAttribute('src') || '';
     const photoAlt = element.querySelector('.story-image')?.getAttribute('alt') || '';
     return {
       id, title, author, publication, summary, topic, photo, photoAlt,
-      body: originalArticles[id] || [
-        summary || 'This story is part of the sample reading room.',
-        'The full text is not available on the static demo yet.'
-      ],
-      readMinutes: Number(readTime || 0)
+      body: originalArticles[id] || [summary || 'This story is part of the sample reading room.'],
+      readMinutes: Number(readTime || 0),
+      applauseCount: 0,
+      repostCount: 0,
+      responseCount: 0
     };
   }
 
@@ -233,6 +274,244 @@
 
   function findStory(id) {
     return allStoryData().find(story => story.id === id) || null;
+  }
+
+
+  function formatCount(value) {
+    const count = Number(value || 0);
+    if (count < 1000) return String(count);
+    if (count < 1000000) return (count / 1000).toFixed(count >= 10000 ? 0 : 1).replace(/\.0$/u, '') + 'K';
+    return (count / 1000000).toFixed(1).replace(/\.0$/u, '') + 'M';
+  }
+
+  function createStoryElement(story) {
+    const article = document.createElement('article');
+    article.className = 'story';
+    article.dataset.author = story.author || 'Unknown author';
+    article.dataset.topics = [story.topic, ...(story.topics || [])].filter(Boolean).join(' ');
+    article.dataset.storyId = story.id;
+    const copy = document.createElement('div');
+    copy.className = 'story-copy';
+    const byline = document.createElement('div');
+    byline.className = 'byline';
+    const avatar = document.createElement('span');
+    avatar.className = 'mini-avatar';
+    avatar.textContent = String(story.author || 'U').split(/\s+/u).map(part => part[0]).join('').slice(0, 2).toUpperCase();
+    const bylineText = document.createElement('span');
+    bylineText.innerHTML = '<strong></strong>' + (story.publication ? ' in ' + story.publication : '');
+    bylineText.querySelector('strong').textContent = story.author || 'Unknown author';
+    byline.append(avatar, bylineText);
+    const title = document.createElement('h2');
+    title.textContent = story.title || 'Untitled story';
+    const summary = document.createElement('p');
+    summary.className = 'story-summary';
+    summary.textContent = story.summary || '';
+    const meta = document.createElement('div');
+    meta.className = 'story-meta story-engagement';
+    const engagement = document.createElement('div');
+    engagement.className = 'engagement-list';
+    const applause = document.createElement('button');
+    applause.type = 'button';
+    applause.className = 'engagement-item engagement-button';
+    applause.dataset.socialAction = 'applause';
+    applause.setAttribute('aria-label', 'Applause');
+    const responses = document.createElement('button');
+    responses.type = 'button';
+    responses.className = 'engagement-item engagement-button';
+    responses.dataset.socialAction = 'respond';
+    responses.setAttribute('aria-label', 'Responses');
+    const reposts = document.createElement('button');
+    reposts.type = 'button';
+    reposts.className = 'engagement-item engagement-button';
+    reposts.dataset.socialAction = 'repost';
+    reposts.setAttribute('aria-label', 'Reposts');
+    function setMetric(node, icon, value) {
+      node.replaceChildren();
+      const iconNode = document.createElement('span');
+      iconNode.className = 'engagement-icon';
+      iconNode.textContent = icon;
+      const valueNode = document.createElement('span');
+      valueNode.textContent = formatCount(value);
+      node.append(iconNode, valueNode);
+    }
+    setMetric(applause, '✦', story.applauseCount);
+    setMetric(responses, '◌', story.responseCount);
+    setMetric(reposts, '↗', story.repostCount);
+    engagement.append(applause, responses, reposts);
+    const topic = document.createElement('span');
+    topic.className = 'topic-pill';
+    topic.hidden = true;
+    topic.textContent = story.topic || 'Other';
+    const tools = document.createElement('div');
+    tools.className = 'story-tools';
+    const bookmark = document.createElement('button');
+    bookmark.className = 'bookmark';
+    bookmark.type = 'button';
+    bookmark.setAttribute('aria-label', 'Save ' + (story.title || 'story'));
+    bookmark.setAttribute('aria-pressed', 'false');
+    bookmark.textContent = '♧';
+    const more = document.createElement('button');
+    more.className = 'more';
+    more.type = 'button';
+    more.setAttribute('aria-label', 'More options');
+    more.textContent = '···';
+    tools.append(bookmark, more);
+    meta.append(engagement, topic, tools);
+    copy.append(byline, title, summary, meta);
+    const image = document.createElement('img');
+    image.className = 'story-image';
+    image.src = story.photo || '';
+    image.alt = story.photoAlt || story.title || '';
+    article.append(copy, image);
+    return article;
+  }
+
+  function renderRemoteStories(remoteStories) {
+    const container = document.querySelector('#stories');
+    if (!container) return;
+    const seen = new Set(stories.map(element => element.dataset.storyId));
+    for (const story of remoteStories) {
+      if (!story?.id || seen.has(story.id)) continue;
+      dynamicStoryRecords.set(story.id, {
+        id: story.id,
+        title: story.title || 'Untitled story',
+        author: story.author || 'Unknown author',
+        publication: story.publication || '',
+        summary: story.summary || '',
+        topic: story.topic || 'Other',
+        photo: story.photo || '',
+        photoAlt: story.photoAlt || story.photo_alt || '',
+        body: Array.isArray(story.body) ? story.body : String(story.body || '').split(/\n\s*\n/u).filter(Boolean),
+        readMinutes: Number(story.readMinutes || 1),
+        applauseCount: Number(story.applauseCount || 0),
+        repostCount: Number(story.repostCount || 0),
+        responseCount: Number(story.responseCount || 0)
+      });
+      const element = createStoryElement(dynamicStoryRecords.get(story.id));
+      container.prepend(element);
+      seen.add(story.id);
+    }
+    refreshStoriesCollection();
+    installImageFallbacks();
+    refreshBookmarkButtons();
+    renderCurrentView();
+  }
+
+  async function loadPublicStories() {
+    try {
+      const data = await apiRequest('/api/stories', { method: 'GET', headers: {} });
+      const remoteStories = Array.isArray(data.stories) ? data.stories : [];
+      renderRemoteStories(remoteStories);
+      if (feedStatus) {
+        feedStatus.hidden = true;
+        feedStatus.textContent = '';
+      }
+    } catch {
+      if (feedStatus) {
+        feedStatus.hidden = true;
+        feedStatus.textContent = '';
+      }
+    }
+  }
+
+  function openProfile() {
+    if (!profileDialog) return;
+    if (profileName) profileName.value = state.profile?.name || '';
+    if (profileBio) profileBio.value = state.profile?.bio || '';
+    updateProfileSummary();
+    if (typeof profileDialog.showModal === 'function') profileDialog.showModal();
+    else profileDialog.setAttribute('open', '');
+  }
+
+  function updateProfileSummary() {
+    if (profileFollowingCount) profileFollowingCount.textContent = String(state.following.length);
+    if (profileSavedCount) profileSavedCount.textContent = String(state.bookmarks.length);
+    if (profileFinishedCount) profileFinishedCount.textContent = String(allStoryData().filter(story => state.progress[story.id]?.finished).length);
+  }
+
+  function renderWriterList() {
+    if (!writerList) return;
+    const query = (writerSearch?.value || '').trim().toLowerCase();
+    const map = new Map();
+    for (const story of allStoryData()) {
+      if (!story.author) continue;
+      const key = story.author;
+      const row = map.get(key) || { author: story.author, publication: story.publication, stories: 0 };
+      row.stories++;
+      if (!row.publication) row.publication = story.publication;
+      map.set(key, row);
+    }
+    const fragment = document.createDocumentFragment();
+    const rows = [...map.values()].filter(row => !query || [row.author, row.publication].join(' ').toLowerCase().includes(query)).sort((a,b) => a.author.localeCompare(b.author));
+    if (!rows.length) {
+      const empty = document.createElement('p');
+      empty.className = 'draft-empty';
+      empty.textContent = 'No writers match that search.';
+      fragment.append(empty);
+    }
+    for (const row of rows) {
+      const item = document.createElement('div');
+      item.className = 'writer-row';
+      const info = document.createElement('div');
+      info.className = 'writer-row-info';
+      const name = document.createElement('strong');
+      name.textContent = row.author;
+      const meta = document.createElement('span');
+      meta.textContent = (row.publication || 'ink.gs') + ' · ' + row.stories + (row.stories === 1 ? ' story' : ' stories');
+      info.append(name, meta);
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'composer-button primary';
+      button.dataset.writerAction = 'toggle';
+      button.dataset.writerName = row.author;
+      const following = state.following.includes(row.author);
+      button.textContent = following ? 'Following' : 'Follow';
+      button.setAttribute('aria-pressed', String(following));
+      item.append(info, button);
+      fragment.append(item);
+    }
+    writerList.replaceChildren(fragment);
+  }
+
+  const gameState = { round: 0, score: 0, questions: [], current: null };
+  function startGame() {
+    const source = allStoryData().filter(story => story.topic);
+    const pool = [...source].sort(() => Math.random() - 0.5).slice(0, 5);
+    gameState.round = 0;
+    gameState.score = 0;
+    gameState.questions = pool;
+    gameState.current = null;
+    updateGame();
+  }
+
+  function updateGame() {
+    if (!gameRound || !gameScore || !gamePrompt || !gameOptions) return;
+    gameScore.textContent = String(gameState.score);
+    if (gameState.round >= gameState.questions.length) {
+      gameRound.textContent = String(gameState.questions.length || 5);
+      gamePrompt.textContent = 'Session complete. Your score is ' + gameState.score + '/' + (gameState.questions.length || 5) + '.';
+      gameOptions.replaceChildren();
+      if (gameFeedback) gameFeedback.textContent = 'Start over to play again.';
+      return;
+    }
+    const story = gameState.questions[gameState.round];
+    gameState.current = story;
+    gameRound.textContent = String(gameState.round + 1);
+    gamePrompt.textContent = 'Which topic fits “' + story.title + '”?';
+    const topics = [...new Set(allStoryData().map(item => item.topic).filter(Boolean))];
+    const choices = [story.topic, ...topics.filter(topic => topic !== story.topic).sort(() => Math.random() - 0.5).slice(0, 3)]
+      .sort(() => Math.random() - 0.5);
+    const fragment = document.createDocumentFragment();
+    choices.forEach(topic => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'game-option';
+      button.dataset.gameTopic = topic;
+      button.textContent = topic;
+      fragment.append(button);
+    });
+    gameOptions.replaceChildren(fragment);
+    if (gameFeedback) gameFeedback.textContent = '';
   }
 
   function setBookmark(id, present, announce = true) {
@@ -389,6 +668,9 @@
     if (readerProgressFill) readerProgressFill.style.width = (progress.finished ? 100 : Math.max(0, Math.min(1, Number(progress.ratio) || 0)) * 100) + '%';
     refreshBookmarkButtons();
     refreshFollowButton();
+    if (readerRead) readerRead.textContent = state.progress[id]?.finished ? 'Finished' : 'Mark as finished';
+    if (readerSocial) readerSocial.hidden = true;
+    loadReaderSocial();
     if (typeof reader.showModal === 'function') reader.showModal();
     else reader.setAttribute('open', '');
   }
@@ -853,6 +1135,123 @@
     }
   }
 
+
+  function readerIdentity() {
+    const key = 'ink.gs-reader-id-v1';
+    try {
+      let id = localStorage.getItem(key);
+      if (!id) {
+        id = crypto.randomUUID() + '-' + Math.random().toString(36).slice(2, 10);
+        localStorage.setItem(key, id);
+      }
+      return id;
+    } catch {
+      return 'fallback-reader-0000000000000000';
+    }
+  }
+
+  function socialHeaders(extra = {}) {
+    return { 'X-Reader-ID': readerIdentity(), ...extra };
+  }
+
+  function updateReaderSocial(data) {
+    const counts = data?.counts || {};
+    if (readerApplaud) {
+      readerApplaud.textContent = 'Applaud' + (Number(counts.applause || 0) ? ' · ' + formatCount(counts.applause) : '');
+      readerApplaud.setAttribute('aria-pressed', String(Boolean(data?.me?.applauded)));
+    }
+    if (readerRepost) {
+      readerRepost.textContent = 'Repost' + (Number(counts.reposts || 0) ? ' · ' + formatCount(counts.reposts) : '');
+      readerRepost.setAttribute('aria-pressed', String(Boolean(data?.me?.reposted)));
+    }
+    if (readerResponseCount) readerResponseCount.textContent = String(counts.responses || 0) + ' ' + (Number(counts.responses || 0) === 1 ? 'response' : 'responses');
+    if (readerResponseList) {
+      const fragment = document.createDocumentFragment();
+      const rows = Array.isArray(data?.responses) ? data.responses : [];
+      if (!rows.length) {
+        const empty = document.createElement('p');
+        empty.className = 'draft-empty';
+        empty.textContent = 'No responses yet.';
+        fragment.append(empty);
+      }
+      rows.forEach(row => {
+        const item = document.createElement('article');
+        item.className = 'reader-response';
+        const body = document.createElement('p');
+        body.textContent = row.body;
+        const date = document.createElement('time');
+        const parsed = new Date(row.createdAt);
+        date.textContent = Number.isNaN(parsed.getTime()) ? '' : parsed.toLocaleString();
+        item.append(body, date);
+        fragment.append(item);
+      });
+      readerResponseList.replaceChildren(fragment);
+    }
+  }
+
+  async function loadReaderSocial() {
+    if (!currentStory || !readerSocial) return;
+    if (!API_BASE && location.hostname.endsWith('.github.io')) {
+      readerSocial.hidden = false;
+      updateReaderSocial({ counts: { applause: 0, reposts: 0, responses: 0 }, responses: [] });
+      return;
+    }
+    try {
+      const data = await apiRequest('/api/social/stories/' + encodeURIComponent(currentStory.id), {
+        method: 'GET',
+        headers: socialHeaders()
+      });
+      readerSocial.hidden = false;
+      updateReaderSocial(data);
+    } catch {
+      readerSocial.hidden = true;
+    }
+  }
+
+  async function toggleReaction(kind) {
+    if (!currentStory) return;
+    try {
+      const data = await apiRequest('/api/social/reactions', {
+        method: 'POST',
+        headers: socialHeaders(),
+        body: JSON.stringify({ storyId: currentStory.id, kind })
+      });
+      updateReaderSocial(data);
+      showToast(kind === 'applause' ? (data.me.applauded ? 'Applause added.' : 'Applause removed.') : (data.me.reposted ? 'Reposted.' : 'Repost removed.'));
+    } catch (error) {
+      showToast('Could not update reaction: ' + error.message);
+    }
+  }
+
+  async function submitResponse(event) {
+    event.preventDefault();
+    if (!currentStory || !readerResponseInput) return;
+    const body = readerResponseInput.value.trim();
+    if (!body) {
+      showToast('Write a response first.');
+      return;
+    }
+    try {
+      const data = await apiRequest('/api/social/responses', {
+        method: 'POST',
+        headers: socialHeaders(),
+        body: JSON.stringify({ storyId: currentStory.id, body })
+      });
+      readerResponseInput.value = '';
+      updateReaderSocial(data);
+      showToast('Response posted.');
+    } catch (error) {
+      showToast('Could not post response: ' + error.message);
+    }
+  }
+
+  function openResponseComposer() {
+    if (!readerSocial) return;
+    readerSocial.hidden = false;
+    readerResponseInput?.focus();
+    readerSocial.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
   function placeholderDataUri(topic = 'Story') {
     const palette = {
       Technology: ['#15304a', '#5e88a8'],
@@ -1026,6 +1425,70 @@
         return;
       }
 
+      if (target.id === 'profile-button') {
+        event.preventDefault();
+        openProfile();
+        return;
+      }
+      if (target.id === 'writers-button') {
+        event.preventDefault();
+        renderWriterList();
+        if (typeof writersDialog?.showModal === 'function') writersDialog.showModal(); else writersDialog?.setAttribute('open', '');
+        return;
+      }
+      if (target.id === 'games-button') {
+        event.preventDefault();
+        startGame();
+        if (typeof gamesDialog?.showModal === 'function') gamesDialog.showModal(); else gamesDialog?.setAttribute('open', '');
+        return;
+      }
+      if (target.dataset.writerAction === 'toggle') {
+        const author = target.dataset.writerName;
+        if (author) setFollowing(author, !state.following.includes(author));
+        renderWriterList();
+        return;
+      }
+      if (target.dataset.gameTopic) {
+        const current = gameState.current;
+        if (!current) return;
+        const correct = target.dataset.gameTopic === current.topic;
+        gameState.score += correct ? 1 : 0;
+        gameState.round += 1;
+        if (gameFeedback) gameFeedback.textContent = correct ? 'Correct — ' + current.topic + '.' : 'Not quite. The topic is ' + current.topic + '.';
+        setTimeout(updateGame, 450);
+        return;
+      }
+      if (target.dataset.socialAction === 'applause') {
+        openReader(target.closest('.story')?.dataset.storyId);
+        setTimeout(() => toggleReaction('applause'), 0);
+        return;
+      }
+      if (target.dataset.socialAction === 'repost') {
+        openReader(target.closest('.story')?.dataset.storyId);
+        setTimeout(() => toggleReaction('repost'), 0);
+        return;
+      }
+      if (target.dataset.socialAction === 'respond') {
+        openReader(target.closest('.story')?.dataset.storyId);
+        setTimeout(openResponseComposer, 0);
+        return;
+      }
+      if (target.id === 'reader-applaud') {
+        toggleReaction('applause');
+        return;
+      }
+      if (target.id === 'reader-repost') {
+        toggleReaction('repost');
+        return;
+      }
+      if (target.id === 'reader-respond') {
+        openResponseComposer();
+        return;
+      }
+      if (target.id === 'reader-respond-cancel') {
+        if (readerSocial) readerSocial.hidden = true;
+        return;
+      }
       if (target.id === 'close-editor-login') {
         if (editorLoginDialog?.open) editorLoginDialog.close();
         return;
@@ -1128,6 +1591,25 @@
 
     readerScroll?.addEventListener('scroll', updateReaderProgress, { passive: true });
 
+    profileForm?.addEventListener('submit', event => {
+      event.preventDefault();
+      state.profile = {
+        name: (profileName?.value || '').trim().slice(0, 60),
+        bio: (profileBio?.value || '').trim().slice(0, 240)
+      };
+      persistState();
+      updateProfileSummary();
+      showToast('Profile saved on this device.');
+      profileDialog?.close();
+    });
+    profileCancel?.addEventListener('click', () => profileDialog?.close());
+    document.querySelector('#profile-close')?.addEventListener('click', () => profileDialog?.close());
+    writersClose?.addEventListener('click', () => writersDialog?.close());
+    gamesClose?.addEventListener('click', () => gamesDialog?.close());
+    gameRestart?.addEventListener('click', startGame);
+    writerSearch?.addEventListener('input', renderWriterList);
+    readerResponseForm?.addEventListener('submit', submitResponse);
+    readerRespondCancel?.addEventListener('click', () => { if (readerSocial) readerSocial.hidden = true; });
     editorLoginForm?.addEventListener('submit', loginEditor);
 
     [composer, editorLoginDialog, reader].forEach(dialog => {
@@ -1168,9 +1650,11 @@
   updateDraftCount();
   renderDraftList();
   renderStats();
+  updateProfileSummary();
   renderCurrentView();
   updateEditorUi();
   wireEvents();
+  loadPublicStories();
   trySession();
   handleHash();
 })();
