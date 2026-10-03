@@ -749,6 +749,7 @@
     refreshFollowButton();
     if (readerRead) readerRead.textContent = state.progress[id]?.finished ? 'Finished' : 'Mark as finished';
     if (readerSocial) readerSocial.hidden = true;
+    updateSocialActionAvailability();
     loadReaderSocial();
     if (typeof reader.showModal === 'function') reader.showModal();
     else reader.setAttribute('open', '');
@@ -1279,6 +1280,21 @@
     return { 'X-Reader-ID': readerIdentity(), ...extra };
   }
 
+  function socialAvailable() {
+    return Boolean(currentStory && API_ENABLED && dynamicStoryRecords.has(currentStory.id));
+  }
+
+  function updateSocialActionAvailability() {
+    const available = socialAvailable();
+    [readerApplaud, readerRespond, readerRepost].forEach(button => {
+      if (!button) return;
+      button.disabled = !available;
+      button.setAttribute('aria-disabled', String(!available));
+      button.title = available ? '' : 'Available for published online stories on the Worker app.';
+    });
+    if (readerResponseForm) readerResponseForm.hidden = !available;
+  }
+
   function updateReaderSocial(data) {
     const counts = data?.counts || {};
     if (readerApplaud) {
@@ -1290,7 +1306,10 @@
       readerRepost.setAttribute('aria-pressed', String(Boolean(data?.me?.reposted)));
     }
     if (readerResponseCount) readerResponseCount.textContent = String(counts.responses || 0) + ' ' + (Number(counts.responses || 0) === 1 ? 'response' : 'responses');
-    if (currentStory) updateStoryCardSocial(currentStory.id, data);
+    if (currentStory) {
+      updateStoryCardSocial(currentStory.id, data);
+      updateSocialActionAvailability();
+    }
     if (readerResponseList) {
       const fragment = document.createDocumentFragment();
       const rows = Array.isArray(data?.responses) ? data.responses : [];
@@ -1317,9 +1336,9 @@
 
   async function loadReaderSocial() {
     if (!currentStory || !readerSocial) return;
-    if (!API_ENABLED) {
-      readerSocial.hidden = false;
-      updateReaderSocial({ counts: { applause: 0, reposts: 0, responses: 0 }, responses: [] });
+    updateSocialActionAvailability();
+    if (!socialAvailable()) {
+      readerSocial.hidden = true;
       return;
     }
     try {
@@ -1336,6 +1355,10 @@
 
   async function toggleReaction(kind) {
     if (!currentStory) return;
+    if (!socialAvailable()) {
+      showToast('Engagement is available for published online stories on the Worker app.');
+      return;
+    }
     try {
       const data = await apiRequest('/api/social/reactions', {
         method: 'POST',
@@ -1352,6 +1375,10 @@
   async function submitResponse(event) {
     event.preventDefault();
     if (!currentStory || !readerResponseInput) return;
+    if (!socialAvailable()) {
+      showToast('Responses are available for published online stories on the Worker app.');
+      return;
+    }
     const body = readerResponseInput.value.trim();
     if (!body) {
       showToast('Write a response first.');
@@ -1373,6 +1400,10 @@
 
   function openResponseComposer() {
     if (!readerSocial) return;
+    if (!socialAvailable()) {
+      showToast('Responses are available for published online stories on the Worker app.');
+      return;
+    }
     readerSocial.hidden = false;
     readerResponseInput?.focus();
     readerSocial.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
