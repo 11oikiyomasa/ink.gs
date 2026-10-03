@@ -32,7 +32,7 @@
     <div class="top-actions">
       <div class="search-box" aria-label="Search stories"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10.8" cy="10.8" r="6.4"></circle><path d="m15.5 15.5 4.2 4.2"></path></svg><input id="search" type="search" placeholder="Search" autocomplete="off" aria-label="Search stories" /><button class="search-toggle" id="search-toggle" type="button" aria-label="Open search" aria-expanded="false"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.4"></circle><path d="m15.5 15.5 4.2 4.2"></path></svg></button><button class="search-clear" id="search-clear" type="button" aria-label="Clear search">×</button></div>
       <button class="text-action write-action" id="write-button" type="button" aria-label="Write" aria-haspopup="dialog" aria-controls="composer"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m14.8 5.2 4 4L8 20H4v-4z"></path><path d="m12.9 7.1 4 4"></path></svg><span>Write</span></button>
-      <button class="text-action sync-action" id="sync-button" type="button" title="Manually merge this device’s reading data with your private account" aria-label="Sync reading data">Sync</button>
+      <button class="text-action sync-action" id="sync-button" type="button" title="Refresh published online stories" aria-label="Refresh published online stories">Refresh</button>
       <button class="text-action" id="editor-login-button" type="button">Sign in</button>
       <button class="get-started" data-toast="Welcome — this sample page is ready for you.">Get started</button>
       <span class="avatar" aria-label="Reader profile">R</span>
@@ -329,7 +329,24 @@
     <p class="game-feedback" id="game-feedback" role="status" aria-live="polite"></p>
     <button class="composer-button primary" id="game-restart" type="button">Start over</button>
   </dialog>
-  <div class="toast" role="status" aria-live="polite"></div>
+  <footer class="site-footer" aria-label="Site information">
+    <section id="about">
+      <p class="eyebrow">About</p>
+      <h2>ink.gs</h2>
+      <p>A reading-room prototype for exploring stories, publishing workflows, local reading state, and lightweight social interaction.</p>
+    </section>
+    <section id="help">
+      <p class="eyebrow">Help</p>
+      <h2>Using the site</h2>
+      <p>Open a story to read and save progress. Use Profile for browser-local preferences, Find writers to follow authors represented in the feed, and Games for a short topic-matching activity. Editor publishing requires the Cloudflare Worker runtime.</p>
+    </section>
+    <section id="terms">
+      <p class="eyebrow">Terms</p>
+      <h2>Prototype terms</h2>
+      <p>Stories shown as local samples are demonstration content. Published online stories, reactions, and responses are stored by the Worker according to the project configuration. Do not enter confidential information into public responses.</p>
+    </section>
+  </footer>
+    <div class="toast" role="status" aria-live="polite"></div>
   <script type="module" src="app.js"></script>
 </body>
 </html>
