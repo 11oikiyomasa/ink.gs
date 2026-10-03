@@ -969,9 +969,9 @@
       showToast('Signed in to the editor.');
       openComposer();
     } catch (error) {
-      editorLoginError.textContent = API_BASE
+      editorLoginError.textContent = API_ENABLED
         ? 'Sign-in failed: ' + error.message
-        : 'GitHub Pages is static. Connect the Cloudflare Worker API to enable editor sign-in.';
+        : 'GitHub Pages is static. Open the Cloudflare Worker app to enable editor sign-in.';
     }
   }
 
@@ -1135,7 +1135,7 @@
   }
 
   async function deleteOnlineStory(id) {
-    if (!API_BASE || !editorAuthenticated || !id) return;
+    if (!API_ENABLED || !editorAuthenticated || !id) return;
     try {
       await apiRequest('/api/editor/stories/' + encodeURIComponent(id), {
         method: 'DELETE',
