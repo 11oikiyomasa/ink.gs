@@ -15,6 +15,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Check JavaScript syntax
+        run: |
+          node --check app.js
+          node --check src/worker.js
       - name: Run tests
         run: npm test
       - name: Build static assets
