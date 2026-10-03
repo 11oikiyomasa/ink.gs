@@ -51,6 +51,13 @@ class MemoryD1 {
       const key = [storyId, readerHash, kind].join("|");
       return this.socialActions.has(key) ? { ok: 1 } : null;
     }
+    if (sql.startsWith("SELECT EXISTS(SELECT 1 FROM story_social_actions")) {
+      const [storyA, readerA, storyB, readerB] = values;
+      return {
+        applauded: Number(this.socialActions.has([storyA, readerA, "applause"].join("|"))),
+        reposted: Number(this.socialActions.has([storyB, readerB, "repost"].join("|"))),
+      };
+    }
     if (sql.startsWith("SELECT (SELECT COUNT(*) FROM story_social_actions")) {
       const [storyA, storyB, storyC] = values;
       const applause = [...this.socialActions.values()].filter(row => row.story_id === storyA && row.kind === "applause").length;
@@ -92,7 +99,7 @@ class MemoryD1 {
     if (sql.startsWith("SELECT id, body, created_at FROM story_responses")) {
       return { results: [...this.responses.values()].filter(row => row.story_id === values[0]).sort((a, b) => b.created_at.localeCompare(a.created_at)).map(row => ({ ...row })) };
     }
-    if (sql.startsWith("SELECT id, title, summary, body, author, publication, topic, photo, photo_alt, published_at FROM editor_stories")) {
+    if (sql.startsWith("SELECT id, title, summary, body, author, publication, topic, photo, photo_alt, published_at, (SELECT COUNT(*) FROM story_social_actions")) {
       return { results: [...this.stories.values()].filter((row) => row.managed_by === values[0] && row.published === 1).map((row) => ({ ...row })) };
     }
     if (sql.startsWith("SELECT id, title, summary, body, author, publication, topic, photo, photo_alt, published, published_at, updated_at FROM editor_stories")) {
