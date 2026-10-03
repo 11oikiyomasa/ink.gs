@@ -1559,8 +1559,11 @@
 
       if (target.id === 'sync-button') {
         event.preventDefault();
-        if (API_ENABLED) loadOnlineStories().then(() => showToast('Online content synced.')).catch(() => {});
-        else showToast('Nothing to sync on static GitHub Pages.');
+        if (!API_ENABLED) {
+          showToast('Published online stories require the Cloudflare Worker app.');
+          return;
+        }
+        Promise.all([loadPublicStories(), loadOnlineStories()]).then(() => showToast('Published stories refreshed.')).catch(() => {});
         return;
       }
 
