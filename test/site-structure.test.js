@@ -45,3 +45,19 @@ test("mobile reader and menu hooks stay wired", () => {
   assert.match(js, /readerSummary/u);
   assert.match(js, /mobile-drawer-close/u);
 });
+
+
+test("dynamic reader stories and remote-only actions keep accessibility hooks", () => {
+  assert.match(js, /title\.className = 'story-title-button'/u);
+  assert.match(js, /title\.setAttribute\('tabindex', '0'\)/u);
+  assert.match(js, /function socialAvailable\(\)/u);
+  assert.match(js, /Engagement is available for published online stories/u);
+  assert.match(js, /function readStorageValue\(key\)/u);
+  assert.match(js, /This story link is malformed/u);
+});
+
+test("editor authentication controls are actually revealed only after sign-in", () => {
+  assert.match(js, /querySelectorAll\('\.editor-auth-only'\)/u);
+  assert.match(js, /element\.hidden = !editorAuthenticated/u);
+  assert.match(js, /editingOnlineStoryId = null/u);
+});
