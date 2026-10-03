@@ -61,3 +61,11 @@ test("editor authentication controls are actually revealed only after sign-in", 
   assert.match(js, /element\.hidden = !editorAuthenticated/u);
   assert.match(js, /editingOnlineStoryId = null/u);
 });
+
+
+test("games prevent duplicate answers and expose a truthful round total", () => {
+  assert.match(html, /id=["']game-total["']/u);
+  assert.match(js, /answered: false/u);
+  assert.match(js, /if \(!current \|\| gameState\.answered\) return/u);
+  assert.match(js, /button\.disabled = true/u);
+});
