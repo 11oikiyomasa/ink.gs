@@ -46,6 +46,11 @@ class MemoryD1 {
       const row = this.attempts.get(values[0]);
       return row ? { ...row } : null;
     }
+    if (sql.startsWith("SELECT 1 FROM editor_stories WHERE id = ? AND published = 1")) {
+      const [storyId, managedBy] = values;
+      const row = this.stories.get(storyId);
+      return row?.managed_by === managedBy && row.published === 1 ? { ok: 1 } : null;
+    }
     if (sql.startsWith("SELECT 1 FROM story_social_actions")) {
       const [storyId, readerHash, kind] = values;
       const key = [storyId, readerHash, kind].join("|");
@@ -424,36 +429,49 @@ function withReader(extra = {}, readerId = "reader-test-0000000000000001") {
   return headers;
 }
 
+async function seedPublicStory(env) {
+  const editor = await signIn(env);
+  const result = await worker.fetch(request("/api/editor/stories", {
+    method: "POST",
+    headers: withEditor(editor),
+    body: storyInput
+  }), env, {});
+  assert.equal(result.status, 201);
+  return (await result.json()).story.id;
+}
+
 test("public social state starts empty and reactions persist per reader", async () => {
   const env = createEnv();
-  const initial = await worker.fetch(request("/api/social/stories/test-story", { headers: withReader() }), env, {});
+  const storyId = await seedPublicStory(env);
+  const initial = await worker.fetch(request("/api/social/stories/" + storyId, { headers: withReader() }), env, {});
   assert.equal(initial.status, 200);
   assert.deepEqual((await initial.json()).counts, { applause: 0, reposts: 0, responses: 0 });
 
   const applaud = await worker.fetch(request("/api/social/reactions", {
-    method: "POST", headers: withReader(), body: { storyId: "test-story", kind: "applause" },
+    method: "POST", headers: withReader(), body: { storyId, kind: "applause" },
   }), env, {});
   assert.equal(applaud.status, 200);
   assert.equal((await applaud.json()).me.applauded, true);
 
-  const sameReader = await worker.fetch(request("/api/social/stories/test-story", { headers: withReader() }), env, {});
+  const sameReader = await worker.fetch(request("/api/social/stories/" + storyId, { headers: withReader() }), env, {});
   const sameData = await sameReader.json();
   assert.equal(sameData.counts.applause, 1);
   assert.equal(sameData.me.applauded, true);
 
-  const otherReader = await worker.fetch(request("/api/social/stories/test-story", { headers: withReader({}, "reader-test-0000000000000002") }), env, {});
+  const otherReader = await worker.fetch(request("/api/social/stories/" + storyId, { headers: withReader({}, "reader-test-0000000000000002") }), env, {});
   assert.equal((await otherReader.json()).me.applauded, false);
 
   const unreact = await worker.fetch(request("/api/social/reactions", {
-    method: "POST", headers: withReader(), body: { storyId: "test-story", kind: "applause" },
+    method: "POST", headers: withReader(), body: { storyId, kind: "applause" },
   }), env, {});
   assert.equal((await unreact.json()).counts.applause, 0);
 });
 
 test("responses are stored and returned as plain text", async () => {
   const env = createEnv();
+  const storyId = await seedPublicStory(env);
   const result = await worker.fetch(request("/api/social/responses", {
-    method: "POST", headers: withReader(), body: { storyId: "test-story", body: "A useful thought." },
+    method: "POST", headers: withReader(), body: { storyId, body: "A useful thought." },
   }), env, {});
   assert.equal(result.status, 201);
   const data = await result.json();
@@ -464,11 +482,11 @@ test("responses are stored and returned as plain text", async () => {
 test("social mutations reject malformed reader identity and payloads", async () => {
   const env = createEnv();
   const shortReader = await worker.fetch(request("/api/social/reactions", {
-    method: "POST", headers: withReader({}, "short"), body: { storyId: "test-story", kind: "applause" },
+    method: "POST", headers: withReader({}, "short"), body: { storyId, kind: "applause" },
   }), env, {});
   assert.equal(shortReader.status, 400);
   const badKind = await worker.fetch(request("/api/social/reactions", {
-    method: "POST", headers: withReader(), body: { storyId: "test-story", kind: "like" },
+    method: "POST", headers: withReader(), body: { storyId, kind: "like" },
   }), env, {});
   assert.equal(badKind.status, 400);
 });
