@@ -22,6 +22,8 @@ class MemoryD1 {
   stories = new Map();
   sessions = new Map();
   attempts = new Map();
+  socialActions = new Map();
+  responses = new Map();
 
   prepare(sql) {
     const database = this;
@@ -43,6 +45,26 @@ class MemoryD1 {
     if (sql.startsWith("SELECT failures, window_started_at FROM editor_login_attempts")) {
       const row = this.attempts.get(values[0]);
       return row ? { ...row } : null;
+    }
+    if (sql.startsWith("SELECT 1 FROM story_social_actions")) {
+      const [storyId, readerHash, kind] = values;
+      const key = [storyId, readerHash, kind].join("|");
+      return this.socialActions.has(key) ? { ok: 1 } : null;
+    }
+    if (sql.startsWith("SELECT (SELECT COUNT(*) FROM story_social_actions")) {
+      const [storyA, storyB, storyC] = values;
+      const applause = [...this.socialActions.values()].filter(row => row.story_id === storyA && row.kind === "applause").length;
+      const reposts = [...this.socialActions.values()].filter(row => row.story_id === storyB && row.kind === "repost").length;
+      const responses = [...this.responses.values()].filter(row => row.story_id === storyC).length;
+      return { applause, reposts, responses };
+    }
+    if (sql.startsWith("SELECT COUNT(*) AS count FROM story_responses")) {
+      const [readerHash, cutoff] = values;
+      const count = [...this.responses.values()].filter(row => row.reader_hash === readerHash && row.created_at >= cutoff).length;
+      return { count };
+    }
+    if (sql.startsWith("SELECT id, body, created_at FROM story_responses")) {
+      throw new Error("Response list must use all()");
     }
     if (sql.startsWith("SELECT id, published_at FROM editor_stories")) {
       const [id, managedBy] = values;
@@ -67,6 +89,9 @@ class MemoryD1 {
   }
 
   async all(sql, values) {
+    if (sql.startsWith("SELECT id, body, created_at FROM story_responses")) {
+      return { results: [...this.responses.values()].filter(row => row.story_id === values[0]).sort((a, b) => b.created_at.localeCompare(a.created_at)).map(row => ({ ...row })) };
+    }
     if (sql.startsWith("SELECT id, title, summary, body, author, publication, topic, photo, photo_alt, published_at FROM editor_stories")) {
       return { results: [...this.stories.values()].filter((row) => row.managed_by === values[0] && row.published === 1).map((row) => ({ ...row })) };
     }
@@ -92,6 +117,21 @@ class MemoryD1 {
     }
     if (sql.startsWith("DELETE FROM editor_sessions WHERE token_hash")) {
       return { meta: { changes: Number(this.sessions.delete(values[0])) } };
+    }
+    if (sql.startsWith("DELETE FROM story_social_actions WHERE story_id")) {
+      const [storyId, readerHash, kind] = values;
+      const key = [storyId, readerHash, kind].join("|");
+      return { meta: { changes: Number(this.socialActions.delete(key)) } };
+    }
+    if (sql.startsWith("INSERT INTO story_social_actions")) {
+      const [storyId, readerHash, kind, createdAt] = values;
+      this.socialActions.set([storyId, readerHash, kind].join("|"), { story_id: storyId, reader_hash: readerHash, kind, created_at: createdAt });
+      return { meta: { changes: 1 } };
+    }
+    if (sql.startsWith("INSERT INTO story_responses")) {
+      const [id, storyId, readerHash, body, createdAt] = values;
+      this.responses.set(id, { id, story_id: storyId, reader_hash: readerHash, body, created_at: createdAt });
+      return { meta: { changes: 1 } };
     }
     if (sql.startsWith("DELETE FROM editor_login_attempts WHERE ip_hash")) {
       return { meta: { changes: Number(this.attempts.delete(values[0])) } };
@@ -369,4 +409,59 @@ test("oversized and malformed API inputs fail before storage", async () => {
   });
   assert.equal((await worker.fetch(invalidJson, env, {})).status, 400);
   assert.equal(env.DB.sessions.size, 0);
+});
+
+function withReader(extra = {}, readerId = "reader-test-0000000000000001") {
+  const headers = new Headers(extra);
+  headers.set("X-Reader-ID", readerId);
+  return headers;
+}
+
+test("public social state starts empty and reactions persist per reader", async () => {
+  const env = createEnv();
+  const initial = await worker.fetch(request("/api/social/stories/test-story", { headers: withReader() }), env, {});
+  assert.equal(initial.status, 200);
+  assert.deepEqual((await initial.json()).counts, { applause: 0, reposts: 0, responses: 0 });
+
+  const applaud = await worker.fetch(request("/api/social/reactions", {
+    method: "POST", headers: withReader(), body: { storyId: "test-story", kind: "applause" },
+  }), env, {});
+  assert.equal(applaud.status, 200);
+  assert.equal((await applaud.json()).me.applauded, true);
+
+  const sameReader = await worker.fetch(request("/api/social/stories/test-story", { headers: withReader() }), env, {});
+  const sameData = await sameReader.json();
+  assert.equal(sameData.counts.applause, 1);
+  assert.equal(sameData.me.applauded, true);
+
+  const otherReader = await worker.fetch(request("/api/social/stories/test-story", { headers: withReader({}, "reader-test-0000000000000002") }), env, {});
+  assert.equal((await otherReader.json()).me.applauded, false);
+
+  const unreact = await worker.fetch(request("/api/social/reactions", {
+    method: "POST", headers: withReader(), body: { storyId: "test-story", kind: "applause" },
+  }), env, {});
+  assert.equal((await unreact.json()).counts.applause, 0);
+});
+
+test("responses are stored and returned as plain text", async () => {
+  const env = createEnv();
+  const result = await worker.fetch(request("/api/social/responses", {
+    method: "POST", headers: withReader(), body: { storyId: "test-story", body: "A useful thought." },
+  }), env, {});
+  assert.equal(result.status, 201);
+  const data = await result.json();
+  assert.equal(data.counts.responses, 1);
+  assert.equal(data.responses[0].body, "A useful thought.");
+});
+
+test("social mutations reject malformed reader identity and payloads", async () => {
+  const env = createEnv();
+  const shortReader = await worker.fetch(request("/api/social/reactions", {
+    method: "POST", headers: withReader({}, "short"), body: { storyId: "test-story", kind: "applause" },
+  }), env, {});
+  assert.equal(shortReader.status, 400);
+  const badKind = await worker.fetch(request("/api/social/reactions", {
+    method: "POST", headers: withReader(), body: { storyId: "test-story", kind: "like" },
+  }), env, {});
+  assert.equal(badKind.status, 400);
 });
