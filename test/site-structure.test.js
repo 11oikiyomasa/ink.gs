@@ -1,7 +1,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile, readFileSync } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 
 const root = new URL("../", import.meta.url);
 const html = await readFile(new URL("index.html", root), "utf8");
@@ -9,6 +9,7 @@ const css = await readFile(new URL("styles.css", root), "utf8");
 const js = await readFile(new URL("app.js", root), "utf8");
 const workerJs = await readFile(new URL("src/worker.js", root), "utf8");
 const staticContentJs = await readFile(new URL("src/static-content.js", root), "utf8");
+const wranglerConfig = await readFile(new URL("wrangler.jsonc", root), "utf8");
 
 test("homepage keeps external presentation and behavior modules", () => {
   assert.equal((html.match(/<style\b/gi) || []).length, 0);
@@ -93,6 +94,5 @@ test("Worker serves the canonical frontend bundle", () => {
 });
 
 test("frontend requests through Worker routing stay canonical", () => {
-  const wrangler = readFileSync(new URL("wrangler.jsonc", root), "utf8");
-  assert.match(wrangler, /"run_worker_first": true/u);
+  assert.match(wranglerConfig, /"run_worker_first": true/u);
 });
