@@ -31,12 +31,12 @@ test("homepage IDs are unique and the ink.gs brand is present", () => {
   assert.match(html, /class=["']brand-name["'][^>]*>ink\.gs<\/a|class=["']brand-name["'][^>]*>ink\.gs<\/span|class=["']brand-name["'][^>]*>ink\.gs</u);
 });
 
-test("story images have text alternatives and the fallback path remains intact", () => {
+test("story images have text alternatives and no production asset dependency", () => {
   const images = [...html.matchAll(/<img\b[^>]*class=["'][^"']*\bstory-image\b[^"']*["'][^>]*>/gi)].map((match) => match[0]);
   assert.equal(images.length, 6);
   images.forEach((image) => {
     assert.match(image, /\balt=["'][^"']+["']/iu);
-    assert.match(image, /\bsrc=["']assets\//iu);
+    assert.match(image, /\bsrc=["']data:image\/svg\+xml/iu);
   });
   assert.match(js, /function installImageFallbacks\(\)/u);
   assert.match(js, /addEventListener\('error'/u);
