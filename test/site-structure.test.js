@@ -7,6 +7,7 @@ const root = new URL("../", import.meta.url);
 const html = await readFile(new URL("index.html", root), "utf8");
 const css = await readFile(new URL("styles.css", root), "utf8");
 const js = await readFile(new URL("app.js", root), "utf8");
+const awaitRead = async (path) => readFile(new URL(path, root), "utf8");
 
 test("homepage keeps external presentation and behavior modules", () => {
   assert.equal((html.match(/<style\b/gi) || []).length, 0);
@@ -77,4 +78,15 @@ test("utility links resolve to real site information sections", () => {
   assert.match(html, /id=["']terms["']/u);
   assert.match(html, /title=["']Refresh published online stories["']/u);
   assert.match(js, /Published stories refreshed\./u);
+});
+
+test("Worker serves the canonical frontend bundle", () => {
+  const worker = awaitRead("src/worker.js");
+  const bundled = awaitRead("src/static-content.js");
+  assert.match(worker, /from ["']\.\/static-content\.js["']/u);
+  assert.match(worker, /function bundledAssetResponse\(request\)/u);
+  assert.match(worker, /pathname === ["']\/app\.js["']/u);
+  assert.match(bundled, /export const INDEX_HTML =/u);
+  assert.match(bundled, /export const STYLES_CSS =/u);
+  assert.match(bundled, /export const APP_JS =/u);
 });
