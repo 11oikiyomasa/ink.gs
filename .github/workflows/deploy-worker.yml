@@ -41,3 +41,13 @@ jobs:
           printf '%s' "$SOCIAL_SECRET" | wrangler secret put SOCIAL_SECRET --config wrangler.jsonc
       - name: Deploy Worker
         run: wrangler deploy --config wrangler.jsonc
+      - name: Smoke test Worker
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 2             "https://medium-inspired-site.andregsman.workers.dev/api/stories"             -o /tmp/stories.json
+          python3 - <<'PY'
+          import json
+          with open("/tmp/stories.json", "r", encoding="utf-8") as handle:
+              payload = json.load(handle)
+          assert isinstance(payload.get("stories"), list), payload
+          print("Worker API OK; published stories:", len(payload["stories"]))
+          PY
