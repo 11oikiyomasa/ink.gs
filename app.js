@@ -1065,6 +1065,7 @@
       editingOnlineStoryId = story?.id || null;
       showToast(payload.published ? 'Story published online.' : 'Story saved online.');
       await loadOnlineStories();
+      await loadPublicStories();
     } catch (error) {
       showToast('Could not publish: ' + error.message);
     }
@@ -1143,6 +1144,7 @@
       });
       showToast('Online story deleted.');
       await loadOnlineStories();
+      await loadPublicStories();
     } catch (error) {
       showToast('Could not delete: ' + error.message);
     }
