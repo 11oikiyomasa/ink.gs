@@ -485,6 +485,12 @@ test("public social state starts empty and reactions persist per reader", async 
   assert.equal(sameData.counts.applause, 1);
   assert.equal(sameData.me.applauded, true);
 
+  const publicStories = await worker.fetch(request("/api/stories"), env, {});
+  const publicStory = (await publicStories.json()).stories.find((story) => story.id === storyId);
+  assert.equal(publicStory.applauseCount, 1);
+  assert.equal(publicStory.repostCount, 0);
+  assert.equal(publicStory.responseCount, 0);
+
   const otherReader = await worker.fetch(request("/api/social/stories/" + storyId, { headers: withReader({}, "reader-test-0000000000000002") }), env, {});
   assert.equal((await otherReader.json()).me.applauded, false);
 
