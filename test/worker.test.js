@@ -415,6 +415,17 @@ test("story validation rejects client-supplied ownership and unsafe photo paths"
   assert.equal(env.DB.stories.size, 0);
 });
 
+test("browser same-origin metadata is accepted without Origin", async () => {
+  const env = createEnv();
+  const editor = await signIn(env);
+  const headers = withEditor({ ...editor, csrfToken: editor.csrfToken }, { "Sec-Fetch-Site": "same-origin" });
+  headers.delete("Origin");
+  const response = await worker.fetch(request("/api/editor/stories", {
+    method: "POST", headers, body: storyInput,
+  }), env, {});
+  assert.equal(response.status, 201);
+});
+
 test("CSRF, cross-origin, and missing-Origin editor writes are rejected", async () => {
   const env = createEnv();
   const editor = await signIn(env);
