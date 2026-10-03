@@ -420,9 +420,12 @@ test("browser same-origin metadata is accepted without Origin", async () => {
   const editor = await signIn(env);
   const headers = withEditor({ ...editor, csrfToken: editor.csrfToken }, { "Sec-Fetch-Site": "same-origin" });
   headers.delete("Origin");
-  const response = await worker.fetch(request("/api/editor/stories", {
-    method: "POST", headers, body: storyInput,
-  }), env, {});
+  const rawRequest = new Request(`${ORIGIN}/api/editor/stories`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(storyInput),
+  });
+  const response = await worker.fetch(rawRequest, env, {});
   assert.equal(response.status, 201);
 });
 
