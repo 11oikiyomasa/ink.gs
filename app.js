@@ -262,7 +262,7 @@
     return {
       id, title, author, publication, summary, topic, photo, photoAlt,
       body: originalArticles[id] || [summary || 'This story is part of the sample reading room.'],
-      readMinutes: Number(readTime || 0),
+      readMinutes: Math.max(1, Number(readTime || 0), Math.ceil((originalArticles[id] || [summary]).join(' ').split(/\s+/u).filter(Boolean).length / 220)),
       applauseCount: 0,
       repostCount: 0,
       responseCount: 0
@@ -537,6 +537,8 @@
     recordMembershipChange('following', author, present);
     persistState();
     refreshFollowButton();
+    updateProfileSummary();
+    renderWriterList();
     if (announce) showToast(present ? 'Now following ' + author + '.' : 'Unfollowed ' + author + '.');
   }
 
