@@ -151,13 +151,26 @@ async function verifyPassword(password, encodedHash) {
 }
 
 function originMatches(request, { required = false } = {}) {
+  const expectedOrigin = new URL(request.url).origin;
   const origin = request.headers.get("Origin");
-  if (!origin) return !required;
-  try {
-    return new URL(origin).origin === new URL(request.url).origin;
-  } catch {
-    return false;
+  if (origin) {
+    try {
+      return new URL(origin).origin === expectedOrigin;
+    } catch {
+      return false;
+    }
   }
+  if (!required) return true;
+  if (request.headers.get("Sec-Fetch-Site") === "same-origin") return true;
+  const referer = request.headers.get("Referer");
+  if (referer) {
+    try {
+      return new URL(referer).origin === expectedOrigin;
+    } catch {
+      return false;
+    }
+  }
+  return false;
 }
 
 function cookieValue(request, name) {
