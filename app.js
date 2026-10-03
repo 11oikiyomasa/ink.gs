@@ -11,7 +11,15 @@
     photoAlt: 'A quiet scene for reading',
     published: true
   };
-  const API_BASE = (document.documentElement.dataset.apiBase || localStorage.getItem('reading-room-api-base') || '').replace(/\/+$/, '');
+  function readStorageValue(key) {
+    try {
+      return localStorage.getItem(key) || '';
+    } catch {
+      return '';
+    }
+  }
+
+  const API_BASE = (document.documentElement.dataset.apiBase || readStorageValue('reading-room-api-base') || '').replace(/\/+$/, '');
   const API_ENABLED = Boolean(API_BASE) || /\.workers\.dev$/iu.test(location.hostname);
   const originalArticles = {
     'the-quiet-craft-of-paying-attention': [
@@ -322,6 +330,10 @@
     if (story.publication) bylineText.append(document.createTextNode(' in ' + story.publication));
     byline.append(avatar, bylineText);
     const title = document.createElement('h2');
+    title.className = 'story-title-button';
+    title.setAttribute('role', 'button');
+    title.setAttribute('tabindex', '0');
+    title.setAttribute('aria-label', 'Read ' + (story.title || 'Untitled story'));
     title.textContent = story.title || 'Untitled story';
     const summary = document.createElement('p');
     summary.className = 'story-summary';
@@ -419,18 +431,27 @@
   }
 
   async function loadPublicStories() {
+    if (!API_ENABLED) {
+      if (feedStatus) {
+        feedStatus.hidden = false;
+        feedStatus.textContent = 'Showing local sample stories. Open the Worker app to load published online stories.';
+      }
+      return;
+    }
     try {
       const data = await apiRequest('/api/stories', { method: 'GET', headers: {} });
       const remoteStories = Array.isArray(data.stories) ? data.stories : [];
       renderRemoteStories(remoteStories);
       if (feedStatus) {
-        feedStatus.hidden = true;
-        feedStatus.textContent = '';
+        feedStatus.hidden = false;
+        feedStatus.textContent = remoteStories.length
+          ? remoteStories.length + (remoteStories.length === 1 ? ' published online story loaded.' : ' published online stories loaded.')
+          : 'No published online stories yet. Local sample stories remain available.';
       }
-    } catch {
+    } catch (error) {
       if (feedStatus) {
-        feedStatus.hidden = true;
-        feedStatus.textContent = '';
+        feedStatus.hidden = false;
+        feedStatus.textContent = 'Online stories are temporarily unavailable. Local stories remain available.';
       }
     }
   }
@@ -721,7 +742,9 @@
     if (!progress.finished && Number(progress.ratio) > 0) {
       if (readerLabel) readerLabel.textContent = Math.round(Number(progress.ratio) * 100) + '% read';
     }
-    if (readerProgressFill) readerProgressFill.style.width = (progress.finished ? 100 : Math.max(0, Math.min(1, Number(progress.ratio) || 0)) * 100) + '%';
+    const percent = Math.round((progress.finished ? 1 : Math.max(0, Math.min(1, Number(progress.ratio) || 0))) * 100);
+    if (readerProgressFill) readerProgressFill.style.width = percent + '%';
+    if (readerProgress) readerProgress.setAttribute('aria-valuenow', String(percent));
     refreshBookmarkButtons();
     refreshFollowButton();
     if (readerRead) readerRead.textContent = state.progress[id]?.finished ? 'Finished' : 'Mark as finished';
@@ -748,7 +771,9 @@
       finished: Boolean(previous.finished)
     };
     recordProgressChange(currentStory.id);
-    if (readerProgressFill) readerProgressFill.style.width = ((state.progress[currentStory.id].finished ? 1 : ratio) * 100) + '%';
+    const percent = Math.round((state.progress[currentStory.id].finished ? 1 : ratio) * 100);
+    if (readerProgressFill) readerProgressFill.style.width = percent + '%';
+    if (readerProgress) readerProgress.setAttribute('aria-valuenow', String(percent));
     clearTimeout(progressSaveTimer);
     progressSaveTimer = setTimeout(() => {
       persistState();
@@ -762,6 +787,7 @@
     recordProgressChange(currentStory.id);
     persistState();
     if (readerProgressFill) readerProgressFill.style.width = '100%';
+    if (readerProgress) readerProgress.setAttribute('aria-valuenow', '100');
     if (readerRead) readerRead.textContent = 'Finished';
     renderStats();
     showToast('Story marked as finished.');
@@ -1234,12 +1260,18 @@
     try {
       let id = localStorage.getItem(key);
       if (!id) {
-        id = crypto.randomUUID() + '-' + Math.random().toString(36).slice(2, 10);
+        const bytes = new Uint8Array(24);
+        if (crypto?.getRandomValues) crypto.getRandomValues(bytes);
+        else {
+          for (let index = 0; index < bytes.length; index++) bytes[index] = Math.floor(Math.random() * 256);
+        }
+        id = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
         localStorage.setItem(key, id);
       }
       return id;
     } catch {
-      return 'fallback-reader-0000000000000000';
+      const fallback = 'fallback-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      return fallback.slice(0, 128);
     }
   }
 
@@ -1720,7 +1752,12 @@
 
   function handleHash() {
     const match = window.location.hash.match(/^#story=(.+)$/);
-    if (match) openReader(decodeURIComponent(match[1]));
+    if (!match) return;
+    try {
+      openReader(decodeURIComponent(match[1]));
+    } catch {
+      showToast('This story link is malformed.');
+    }
   }
 
   stories.forEach(element => {
