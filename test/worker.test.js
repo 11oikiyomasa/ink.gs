@@ -51,6 +51,11 @@ class MemoryD1 {
       const row = this.stories.get(storyId);
       return row?.managed_by === managedBy && row.published === 1 ? { ok: 1 } : null;
     }
+    if (sql.startsWith("SELECT 1 FROM editor_stories WHERE id = ? AND managed_by = ?")) {
+      const [storyId, managedBy] = values;
+      const row = this.stories.get(storyId);
+      return row?.managed_by === managedBy ? { ok: 1 } : null;
+    }
     if (sql.startsWith("SELECT 1 FROM story_social_actions")) {
       const [storyId, readerHash, kind] = values;
       const key = [storyId, readerHash, kind].join("|");
