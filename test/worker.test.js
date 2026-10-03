@@ -110,7 +110,16 @@ class MemoryD1 {
       return { results: [...this.responses.values()].filter(row => row.story_id === values[0]).sort((a, b) => b.created_at.localeCompare(a.created_at)).map(row => ({ ...row })) };
     }
     if (sql.startsWith("SELECT id, title, summary, body, author, publication, topic, photo, photo_alt, published_at, (SELECT COUNT(*) FROM story_social_actions")) {
-      return { results: [...this.stories.values()].filter((row) => row.managed_by === values[0] && row.published === 1).map((row) => ({ ...row })) };
+      return {
+        results: [...this.stories.values()]
+          .filter((row) => row.managed_by === values[0] && row.published === 1)
+          .map((row) => ({
+            ...row,
+            applause_count: [...this.socialActions.values()].filter((action) => action.story_id === row.id && action.kind === "applause").length,
+            repost_count: [...this.socialActions.values()].filter((action) => action.story_id === row.id && action.kind === "repost").length,
+            response_count: [...this.responses.values()].filter((response) => response.story_id === row.id).length,
+          })),
+      };
     }
     if (sql.startsWith("SELECT id, title, summary, body, author, publication, topic, photo, photo_alt, published, published_at, updated_at FROM editor_stories")) {
       return { results: [...this.stories.values()].filter((row) => row.managed_by === values[0]).map((row) => ({ ...row })) };
