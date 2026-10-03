@@ -481,6 +481,7 @@ test("responses are stored and returned as plain text", async () => {
 
 test("social mutations reject malformed reader identity and payloads", async () => {
   const env = createEnv();
+  const storyId = await seedPublicStory(env);
   const shortReader = await worker.fetch(request("/api/social/reactions", {
     method: "POST", headers: withReader({}, "short"), body: { storyId, kind: "applause" },
   }), env, {});
