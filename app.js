@@ -397,6 +397,7 @@
       seen.add(story.id);
     }
     refreshStoriesCollection();
+    wireStorySocialControls();
     installImageFallbacks();
     refreshBookmarkButtons();
     renderCurrentView();
@@ -522,6 +523,34 @@
     });
     gameOptions.replaceChildren(fragment);
     if (gameFeedback) gameFeedback.textContent = '';
+  }
+
+  function wireStorySocialControls() {
+    stories.forEach(element => {
+      const items = [...element.querySelectorAll('.story-engagement .engagement-item')];
+      const actions = ['applause', 'respond', 'repost'];
+      items.slice(0, 3).forEach((item, index) => {
+        if (item.matches('button')) return;
+        item.dataset.socialAction = actions[index];
+        item.setAttribute('role', 'button');
+        item.setAttribute('tabindex', '0');
+      });
+    });
+  }
+
+  function updateStoryCardSocial(storyId, data) {
+    const element = stories.find(item => item.dataset.storyId === storyId);
+    if (!element) return;
+    const items = element.querySelectorAll('.story-engagement .engagement-item');
+    const counts = data?.counts || {};
+    const values = [counts.applause, counts.responses, counts.reposts];
+    items.forEach((item, index) => {
+      if (values[index] === undefined) return;
+      const valueNode = item.querySelector('.engagement-icon + span');
+      if (valueNode) valueNode.textContent = formatCount(values[index]);
+      else if (item.lastElementChild) item.lastElementChild.textContent = formatCount(values[index]);
+      item.setAttribute('aria-label', (index === 0 ? 'Applause: ' : index === 1 ? 'Responses: ' : 'Reposts: ') + formatCount(values[index]));
+    });
   }
 
   function setBookmark(id, present, announce = true) {
@@ -1180,6 +1209,7 @@
       readerRepost.setAttribute('aria-pressed', String(Boolean(data?.me?.reposted)));
     }
     if (readerResponseCount) readerResponseCount.textContent = String(counts.responses || 0) + ' ' + (Number(counts.responses || 0) === 1 ? 'response' : 'responses');
+    if (currentStory) updateStoryCardSocial(currentStory.id, data);
     if (readerResponseList) {
       const fragment = document.createDocumentFragment();
       const rows = Array.isArray(data?.responses) ? data.responses : [];
@@ -1661,6 +1691,7 @@
   });
 
   installImageFallbacks();
+  wireStorySocialControls();
   refreshBookmarkButtons();
   updateDraftCount();
   renderDraftList();
