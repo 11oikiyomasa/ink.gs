@@ -410,6 +410,12 @@ a {
   background: var(--bg-hover);
 }
 
+.follow-empty {
+  padding: 8px 10px;
+  color: #6f6f6f;
+  font-size: 11px;
+}
+
 .follow-avatar {
   width: 24px;
   height: 24px;
@@ -2621,4 +2627,10 @@ main {
   outline: 1px solid #8a8a8a;
   outline-offset: 3px;
   border-radius: 3px;
+}
+
+
+.reader-action:disabled {
+  opacity: .45;
+  cursor: not-allowed;
 }
