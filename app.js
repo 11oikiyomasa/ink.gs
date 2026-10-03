@@ -4,6 +4,7 @@
 
   const storageKey = 'reading-room-demo-v1';
   const API_BASE = (document.documentElement.dataset.apiBase || localStorage.getItem('reading-room-api-base') || '').replace(/\/+$/, '');
+  const API_ENABLED = Boolean(API_BASE) || /\.workers\.dev$/iu.test(location.hostname);
   const originalArticles = {
     'the-quiet-craft-of-paying-attention': [
       'On the first Monday in May, I took the same twenty-minute walk I always take and left my headphones at home. Without a podcast filling the gaps, the walk seemed to lengthen. I noticed a bakery opening its blue shutters, a neighbor carrying a basil plant, and the particular patch of afternoon light that lands on the corner wall.',
@@ -121,6 +122,7 @@
   const profileFollowingCount = document.querySelector('#profile-following-count');
   const profileSavedCount = document.querySelector('#profile-saved-count');
   const profileFinishedCount = document.querySelector('#profile-finished-count');
+  const profileAvatar = document.querySelector('.avatar');
   const writersDialog = document.querySelector('#writers-dialog');
   const writersClose = document.querySelector('#writers-close');
   const writerSearch = document.querySelector('#writer-search');
@@ -430,6 +432,11 @@
     if (profileFollowingCount) profileFollowingCount.textContent = String(state.following.length);
     if (profileSavedCount) profileSavedCount.textContent = String(state.bookmarks.length);
     if (profileFinishedCount) profileFinishedCount.textContent = String(allStoryData().filter(story => state.progress[story.id]?.finished).length);
+    if (profileAvatar) {
+      const initials = (state.profile?.name || 'Reader').trim().split(/\s+/u).map(part => part[0]).join('').slice(0, 2).toUpperCase();
+      profileAvatar.textContent = initials || 'R';
+      profileAvatar.setAttribute('aria-label', state.profile?.name ? 'Reader profile: ' + state.profile.name : 'Reader profile');
+    }
   }
 
   function renderWriterList() {
@@ -923,6 +930,7 @@
   }
 
   async function trySession() {
+    if (!API_ENABLED) { updateEditorUi(); return false; }
     try {
       const data = await apiRequest('/api/editor/session', { method: 'GET', headers: {} });
       editorAuthenticated = Boolean(data.authenticated);
@@ -1032,8 +1040,8 @@
   }
 
   async function publishOnline() {
-    if (!API_BASE) {
-      showToast('GitHub Pages has no /api backend. Use the Cloudflare Worker URL for online publishing.');
+    if (!API_ENABLED) {
+      showToast('Online publishing is available on the Cloudflare Worker app.');
       return;
     }
     if (!editorAuthenticated) {
@@ -1064,7 +1072,7 @@
 
   async function loadOnlineStories() {
     if (!onlineStoryList) return;
-    if (!API_BASE) {
+    if (!API_ENABLED) {
       onlineStoryList.replaceChildren();
       onlineStoryCount.textContent = '0';
       const empty = document.createElement('p');
@@ -1196,7 +1204,7 @@
 
   async function loadReaderSocial() {
     if (!currentStory || !readerSocial) return;
-    if (!API_BASE && location.hostname.endsWith('.github.io')) {
+    if (!API_ENABLED) {
       readerSocial.hidden = false;
       updateReaderSocial({ counts: { applause: 0, reposts: 0, responses: 0 }, responses: [] });
       return;
@@ -1359,7 +1367,7 @@
 
       if (target.id === 'sync-button') {
         event.preventDefault();
-        if (API_BASE) loadOnlineStories().then(() => showToast('Online content synced.')).catch(() => {});
+        if (API_ENABLED) loadOnlineStories().then(() => showToast('Online content synced.')).catch(() => {});
         else showToast('Nothing to sync on static GitHub Pages.');
         return;
       }
