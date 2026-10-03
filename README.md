@@ -51,8 +51,16 @@ npx --yes wrangler@latest dev
 
 ## Deployment notes
 
-`wrangler.jsonc` binds the Worker to the existing D1 database `medium-inspired-site-state` (`dd86809c-6ce0-4dd2-a8bb-f5d9d840a5b9`). The editor API requires the `EDITOR_PASSWORD_HASH` Worker secret; the raw editor password is not part of the source. The `deploy` package script builds static assets and invokes Wrangler to publish, so it changes the remote service and is not a local check.
+`wrangler.jsonc` binds the Worker to the existing D1 database `medium-inspired-site-state` (`dd86809c-6ce0-4dd2-a8bb-f5d9d840a5b9`). The Worker serves the built frontend through the `ASSETS` binding and exposes the D1-backed API on the same origin, so the Worker URL is the canonical runtime for dynamic stories, editor publishing, and public social interactions. GitHub Pages remains a static mirror: local reading progress, bookmarks, following, drafts, profile, writer discovery, and games still work there, but remote CMS/auth/social APIs require the Worker runtime.
 
-The current public Worker URL is <https://medium-inspired-site.andregsman.workers.dev>. The latest reported live smoke tests reached Cloudflare but returned **403 / error 1010**. The public endpoint is therefore **not claimed to be healthy or fully verified**. No live requests, remote D1 migrations, or deployment were performed while creating this archive. Before any future deployment, verify the intended Cloudflare account and database, the migration state, and the editor password hash secret.
+The repository contains a deployment workflow at `.github/workflows/deploy-worker.yml`. It expects these GitHub Actions secrets:
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `EDITOR_PASSWORD_HASH`
+- `SOCIAL_SECRET`
 
-The CMS serves only published rows from `editor_stories` publicly; editor listing and writes require an authenticated session and CSRF/same-origin checks. The older `owner_state` table is retained by migration 0001 and is separate from the CMS tables; this project does not import browser-local bookmarks, follows, reading progress, or drafts into D1.
+The workflow builds assets, applies remote D1 migrations, sets Worker secrets, deploys, and then smoke-tests `/api/stories`. The raw editor password is never committed to the repository.
+
+The CMS serves only published rows from `editor_stories` publicly; editor listing and writes require an authenticated session and CSRF/same-origin checks. Public reactions and responses are stored in D1 using a keyed anonymous reader fingerprint. The older `owner_state` table is retained by migration 0001 and is separate from the CMS tables; this project does not import browser-local bookmarks, follows, reading progress, or drafts into D1.
+
+Before enabling the Worker deployment workflow, verify that the intended Cloudflare account owns the named D1 database and that the four required GitHub Actions secrets are present. Once those prerequisites exist, the workflow is the verification gate for the production Worker.
