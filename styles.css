@@ -2612,3 +2612,13 @@ main {
   .reader-social { width: calc(100% - 28px); margin-left: 14px; margin-right: 14px; }
   .reader-social-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
 }
+
+.story-engagement .engagement-item[data-social-action] {
+  cursor: pointer;
+  user-select: none;
+}
+.story-engagement .engagement-item[data-social-action]:focus-visible {
+  outline: 1px solid #8a8a8a;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
