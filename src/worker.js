@@ -363,6 +363,10 @@ async function readerHash(request, env, { required = false } = {}) {
 
 async function storySocialData(request, env, storyId) {
   const db = requireDatabase(env);
+  const story = await db.prepare(
+    "SELECT 1 FROM editor_stories WHERE id = ? AND published = 1 AND managed_by = ?",
+  ).bind(storyId, EDITOR_OWNER).first();
+  if (!story) throw new HttpError(404, "Story not found");
   const reader = await readerHash(request, env);
   const counts = await db.prepare(
     `SELECT
