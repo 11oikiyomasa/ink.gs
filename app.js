@@ -139,6 +139,7 @@
   const profileSavedCount = document.querySelector('#profile-saved-count');
   const profileFinishedCount = document.querySelector('#profile-finished-count');
   const profileAvatar = document.querySelector('.avatar');
+  const railFollowing = document.querySelector('#rail-following');
   const writersDialog = document.querySelector('#writers-dialog');
   const writersClose = document.querySelector('#writers-close');
   const writerSearch = document.querySelector('#writer-search');
@@ -465,7 +466,42 @@
     else profileDialog.setAttribute('open', '');
   }
 
+  function renderFollowingRail() {
+    if (!railFollowing) return;
+    const fragment = document.createDocumentFragment();
+    const followed = [...new Set(state.following)].sort((a, b) => a.localeCompare(b));
+    if (!followed.length) {
+      const empty = document.createElement('span');
+      empty.className = 'follow-empty';
+      empty.textContent = 'No followed writers yet.';
+      fragment.append(empty);
+    } else {
+      followed.slice(0, 5).forEach(author => {
+        const row = document.createElement('div');
+        row.className = 'follow-row';
+        const avatar = document.createElement('span');
+        avatar.className = 'follow-avatar';
+        avatar.textContent = author.split(/\s+/u).map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'U';
+        const name = document.createElement('span');
+        name.textContent = author;
+        const dot = document.createElement('span');
+        dot.className = 'follow-dot';
+        dot.setAttribute('aria-hidden', 'true');
+        row.append(avatar, name, dot);
+        fragment.append(row);
+      });
+      if (followed.length > 5) {
+        const more = document.createElement('span');
+        more.className = 'follow-empty';
+        more.textContent = '+' + (followed.length - 5) + ' more';
+        fragment.append(more);
+      }
+    }
+    railFollowing.replaceChildren(fragment);
+  }
+
   function updateProfileSummary() {
+    renderFollowingRail();
     if (profileFollowingCount) profileFollowingCount.textContent = String(state.following.length);
     if (profileSavedCount) profileSavedCount.textContent = String(state.bookmarks.length);
     if (profileFinishedCount) profileFinishedCount.textContent = String(allStoryData().filter(story => state.progress[story.id]?.finished).length);
