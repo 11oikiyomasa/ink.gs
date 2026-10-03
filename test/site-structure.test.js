@@ -93,6 +93,8 @@ test("Worker serves the canonical frontend bundle", () => {
   assert.match(bundled, /export const APP_JS =/u);
 });
 
-test("frontend requests through Worker routing stay canonical", () => {
-  assert.match(wranglerConfig, /"run_worker_first": true/u);
+test("frontend requests are owned by the Worker runtime", () => {
+  assert.doesNotMatch(wranglerConfig, /"assets"\s*:/u);
+  assert.match(wranglerConfig, /"main":\s*"src\/worker\.js"/u);
+  assert.match(workerJs, /function bundledAssetResponse\(request\)/u);
 });
