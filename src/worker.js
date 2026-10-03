@@ -484,6 +484,33 @@ async function handleSocialResponse(request, env) {
   return jsonResponse(await storySocialData(request, env, storyId), 201);
 }
 
+async function handleHealth(env) {
+  let database = false;
+  let editorAuth = false;
+  let social = false;
+  try {
+    await requireDatabase(env).prepare("SELECT 1").first();
+    database = true;
+  } catch {}
+  try {
+    requireEditorPasswordHash(env);
+    editorAuth = true;
+  } catch {}
+  try {
+    socialSecret(env);
+    social = true;
+  } catch {}
+  const ok = database && editorAuth && social;
+  return jsonResponse({
+    ok,
+    services: {
+      database,
+      editorAuth,
+      social,
+    },
+  }, ok ? 200 : 503);
+}
+
 async function handlePublicStories(request, env) {
   if (request.method !== "GET") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET" });
   const db = requireDatabase(env);
@@ -577,6 +604,7 @@ export default {
     if (!originMatches(request)) return jsonResponse({ error: "cross_origin_request_denied" }, 403);
 
     try {
+      if (url.pathname === "/api/health") return await handleHealth(env);
       if (url.pathname === "/api/stories") return await handlePublicStories(request, env);
       const socialStoryMatch = url.pathname.match(/^\/api\/social\/stories\/([A-Za-z0-9._~-]{1,160})$/u);
       if (socialStoryMatch) return await handleSocialStory(request, env, socialStoryMatch[1]);
