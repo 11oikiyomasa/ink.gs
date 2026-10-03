@@ -1,7 +1,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readFileSync } from "node:fs/promises";
 
 const root = new URL("../", import.meta.url);
 const html = await readFile(new URL("index.html", root), "utf8");
@@ -90,4 +90,9 @@ test("Worker serves the canonical frontend bundle", () => {
   assert.match(bundled, /export const INDEX_HTML =/u);
   assert.match(bundled, /export const STYLES_CSS =/u);
   assert.match(bundled, /export const APP_JS =/u);
+});
+
+test("frontend requests through Worker routing stay canonical", () => {
+  const wrangler = readFileSync(new URL("wrangler.jsonc", root), "utf8");
+  assert.match(wrangler, /"run_worker_first": true/u);
 });
