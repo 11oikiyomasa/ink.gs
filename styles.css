@@ -2634,3 +2634,8 @@ main {
   opacity: .45;
   cursor: not-allowed;
 }
+
+.game-option:disabled {
+  opacity: .6;
+  cursor: default;
+}
