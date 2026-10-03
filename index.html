@@ -57,7 +57,7 @@
         <button class="rail-link" data-view="Reading list">
           <span class="rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 4.5h12v16l-6-4-6 4z"></path></svg></span><span>Library</span>
         </button>
-        <button class="rail-link" data-toast="Profile settings will live here in a later pass.">
+        <button class="rail-link" id="profile-button">
           <span class="rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"></circle><path d="M4.6 20c.8-3.8 3.3-5.7 7.4-5.7s6.6 1.9 7.4 5.7"></path></svg></span><span>Profile</span>
         </button>
         <button class="rail-link" id="manage-stories-button">
@@ -69,7 +69,7 @@
 
         <hr class="rail-divider" />
 
-        <button class="rail-link rail-link-with-badge" data-toast="Games are a placeholder for a future ink.gs side project.">
+        <button class="rail-link rail-link-with-badge" id="games-button">
           <span><span class="rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 8h.01M12 8h.01M16 8h.01M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"></path></svg></span><span>Games</span></span>
           <span class="beta">Beta</span>
         </button>
@@ -86,7 +86,7 @@
           <div class="follow-row"><span class="follow-avatar cyan">Li</span><span>Libera Global AI</span></div>
         </div>
 
-        <button class="rail-link" data-toast="Writer discovery will be connected to the topic graph.">
+        <button class="rail-link" id="writers-button">
           <span class="rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg></span><span>Find writers and publications to follow.</span>
         </button>
       </nav>
@@ -104,7 +104,8 @@
         <button class="tab selected" role="tab" aria-selected="true" data-view="For you">For you</button>
         <button class="tab" role="tab" aria-selected="false" data-view="Following">Activity</button>
       </div>
-      <section id="stories" aria-label="Recommended stories">
+      <p class="feed-status" id="feed-status" role="status" aria-live="polite" hidden></p>
+       <section id="stories" aria-label="Recommended stories">
         <article class="story" data-author="Mara Ellis" data-topics="Creativity Writing Mindfulness">
           <div class="story-copy">
             <div class="byline"><span class="mini-avatar">ME</span><span><strong>Mara Ellis</strong> in The Open Notebook</span></div>
@@ -288,10 +289,49 @@
       <div class="reader-actions-group">
         <button class="reader-action" id="reader-bookmark" type="button" aria-pressed="false">Save story</button>
         <button class="reader-action" id="reader-follow" type="button" aria-pressed="false">Follow writer</button>
+        <button class="reader-action" id="reader-applaud" type="button" aria-pressed="false">Applaud</button>
+        <button class="reader-action" id="reader-respond" type="button">Respond</button>
+        <button class="reader-action" id="reader-repost" type="button" aria-pressed="false">Repost</button>
         <button class="reader-action reader-share" id="reader-share" type="button" aria-label="Share story link" title="Share story link"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="m8.6 10.6 6.8-4.1M8.6 13.4l6.8 4.1"></path></svg><span>Share</span></button>
       </div>
       <button class="reader-action primary" id="reader-read" type="button">Mark as finished</button>
+      </div>
+    <section class="reader-social" id="reader-social" hidden aria-label="Story responses">
+      <div class="reader-social-heading"><strong id="reader-response-count">0 responses</strong><span>Join the conversation</span></div>
+      <form class="reader-response-form" id="reader-response-form">
+        <label class="visually-hidden" for="reader-response-input">Write a response</label>
+        <textarea id="reader-response-input" maxlength="1200" rows="4" placeholder="Write a thoughtful response..."></textarea>
+        <div class="reader-response-actions"><button class="reader-action" id="reader-respond-cancel" type="button">Cancel</button><button class="reader-action primary" type="submit">Post response</button></div>
+      </form>
+      <div class="reader-response-list" id="reader-response-list" aria-live="polite"></div>
+    </section>
     </div>
+  </dialog>
+
+  <dialog class="utility-dialog" id="profile-dialog" aria-labelledby="profile-title">
+    <div class="utility-dialog-head"><div><p class="eyebrow">Reader</p><h2 id="profile-title">Your profile</h2><p>Saved locally on this device. It is not an account yet.</p></div><button class="utility-dialog-close" id="profile-close" type="button" aria-label="Close profile">×</button></div>
+    <form class="profile-form" id="profile-form">
+      <label>Display name<input id="profile-name" maxlength="60" autocomplete="nickname" placeholder="Your name"></label>
+      <label>Bio<textarea id="profile-bio" maxlength="240" rows="4" placeholder="A few words about what you like to read."></textarea></label>
+      <div class="profile-summary"><span><strong id="profile-following-count">0</strong> following</span><span><strong id="profile-saved-count">0</strong> saved</span><span><strong id="profile-finished-count">0</strong> finished</span></div>
+      <div class="utility-dialog-actions"><button class="composer-button" id="profile-cancel" type="button">Cancel</button><button class="composer-button primary" type="submit">Save profile</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="utility-dialog" id="writers-dialog" aria-labelledby="writers-title">
+    <div class="utility-dialog-head"><div><p class="eyebrow">Discover</p><h2 id="writers-title">Find writers</h2><p>Search writers already represented in ink.gs and follow them from one place.</p></div><button class="utility-dialog-close" id="writers-close" type="button" aria-label="Close writer discovery">×</button></div>
+    <label class="writer-search-label" for="writer-search">Search writers</label>
+    <input class="writer-search" id="writer-search" type="search" placeholder="Name or publication" autocomplete="off">
+    <div class="writer-list" id="writer-list" aria-live="polite"></div>
+  </dialog>
+
+  <dialog class="utility-dialog game-dialog" id="games-dialog" aria-labelledby="games-title">
+    <div class="utility-dialog-head"><div><p class="eyebrow">Games</p><h2 id="games-title">Ink Match</h2><p>Match a topic to its story before the timer runs out.</p></div><button class="utility-dialog-close" id="games-close" type="button" aria-label="Close games">×</button></div>
+    <div class="game-stats"><span>Round <strong id="game-round">1</strong>/5</span><span>Score <strong id="game-score">0</strong></span></div>
+    <div class="game-prompt" id="game-prompt">Loading...</div>
+    <div class="game-options" id="game-options"></div>
+    <p class="game-feedback" id="game-feedback" role="status" aria-live="polite"></p>
+    <button class="composer-button primary" id="game-restart" type="button">Start over</button>
   </dialog>
   <div class="toast" role="status" aria-live="polite"></div>
   <script type="module" src="app.js"></script>
