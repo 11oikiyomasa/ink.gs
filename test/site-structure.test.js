@@ -82,6 +82,12 @@ test("utility links resolve to real site information sections", () => {
   assert.match(js, /Published stories refreshed\./u);
 });
 
+test("Worker API calls use the current Worker origin", () => {
+  assert.match(js, /configuredApiBase/u);
+  assert.match(js, /\.workers\.dev.*location\.origin/u);
+  assert.match(js, /const API_BASE = \/\\.workers\\.dev\$/iu);
+});
+
 test("Worker serves the canonical frontend bundle", () => {
   const worker = workerJs;
   const bundled = staticContentJs;
