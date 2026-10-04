@@ -148,6 +148,7 @@
   const statsMinutes = document.querySelector('#stats-minutes');
   const feedStatus = document.querySelector('#feed-status');
   const feedSkeleton = document.querySelector('#feed-skeleton');
+  const storiesContainer = document.querySelector('#stories');
   const profileDialog = document.querySelector('#profile-dialog');
   const profileForm = document.querySelector('#profile-form');
   const profileName = document.querySelector('#profile-name');
