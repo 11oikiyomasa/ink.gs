@@ -289,8 +289,9 @@
     if (remote) return remote;
     const title = element.querySelector('h2')?.textContent?.trim() || '';
     const byline = element.querySelector('.byline')?.textContent?.trim() || '';
-    const author = element.dataset.author || byline.split(' in ')[0] || 'Unknown author';
-    const publication = byline.includes(' in ') ? byline.split(' in ').slice(1).join(' in ').trim() : '';
+    const author = element.dataset.author || element.querySelector('.byline-main strong')?.textContent?.trim() || byline.split(' in ')[0] || 'Unknown author';
+    const publicationMeta = element.querySelector('.byline-meta')?.textContent?.trim() || '';
+    const publication = publicationMeta ? publicationMeta.split(/\s+·\s+/u)[0] : (byline.includes(' in ') ? byline.split(' in ').slice(1).join(' in ').trim() : '');
     const summary = element.querySelector('.story-summary')?.textContent?.trim() || '';
     const meta = [...element.querySelectorAll('.story-meta .engagement-item')].map(node => node.textContent.trim());
     const readTime = (meta.find(text => /min read$/i.test(text)) || '').match(/(\d+)/)?.[1];
@@ -301,8 +302,8 @@
     let body = [summary || 'This story is available in the online reading room.'];
     if (element.dataset.body) {
       try {
-        const parsedBody = JSON.parse(element.dataset.body);
-        if (Array.isArray(parsedBody) && parsedBody.length) body = parsedBody;
+        const parsedBody = element.dataset.body.split(/\s*\|\|\s*/u).filter(Boolean);
+        if (parsedBody.length) body = parsedBody;
       } catch {}
     }
     return {
