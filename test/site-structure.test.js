@@ -63,6 +63,17 @@ test("composer preview shares the reader rich-block renderer", () => {
   assert.ok(js.includes("renderStoryBlocks(readerBody, data.body)"));
 });
 
+test("reader Listen and More actions are functional and wired", () => {
+  assert.ok(html.includes('id="reader-listen"'));
+  assert.ok(html.includes('id="reader-more"'));
+  assert.ok(html.includes('id="reader-more-menu"'));
+  assert.ok(js.includes("function toggleReaderListen()"));
+  assert.ok(js.includes("function toggleReaderMore()"));
+  assert.ok(js.includes("window.speechSynthesis"));
+  assert.ok(js.includes("copyText(currentStoryUrl(), 'Story link copied.')"));
+  assert.ok(css.includes(".reader-more-menu"));
+});
+
 test("reader supports topic chips and safe pull-quote rendering", () => {
   assert.ok(html.includes('id="reader-topics"'));
   assert.ok(js.includes("text.startsWith('> ')"));
