@@ -63,6 +63,13 @@ test("composer preview shares the reader rich-block renderer", () => {
   assert.ok(js.includes("renderStoryBlocks(readerBody, data.body)"));
 });
 
+test("reader speech control handles native TTS startup and failure states", () => {
+  assert.ok(html.includes('id="reader-listen"'));
+  assert.ok(js.includes("window.speechSynthesis.getVoices"));
+  assert.ok(js.includes("window.speechSynthesis.resume?.()"));
+  assert.ok(js.includes("Text-to-speech is unavailable in this browser."));
+});
+
 test("reader Listen and More actions are functional and wired", () => {
   assert.ok(html.includes('id="reader-listen"'));
   assert.ok(html.includes('id="reader-more"'));
