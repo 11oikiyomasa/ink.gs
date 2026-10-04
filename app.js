@@ -775,6 +775,30 @@
     if (statsFinished) statsFinished.textContent = String(finished);
     if (statsInProgress) statsInProgress.textContent = String(inProgress);
     if (statsMinutes) statsMinutes.textContent = String(minutes);
+    refreshProgressBadges();
+  }
+
+  function refreshProgressBadges() {
+    stories.forEach(element => {
+      const id = element.dataset.storyId;
+      const progress = state.progress[id];
+      const tools = element.querySelector('.story-tools');
+      if (!tools) return;
+      let badge = element.querySelector('.story-status');
+      const percent = progress ? Math.round(Math.max(0, Math.min(1, Number(progress.ratio) || 0)) * 100) : 0;
+      const label = progress?.finished ? 'Finished' : (percent >= 2 && percent < 100 ? percent + '% read' : '');
+      if (!label) {
+        badge?.remove();
+        return;
+      }
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'story-status';
+        tools.before(badge);
+      }
+      badge.classList.toggle('finished', Boolean(progress?.finished));
+      if (badge.textContent !== label) badge.textContent = label;
+    });
   }
 
   function currentViewMatches(element) {
@@ -807,10 +831,141 @@
     if (feedView) feedView.hidden = view === 'Stats';
     if (statsView) statsView.hidden = view !== 'Stats';
     if (emptyState) {
+      emptyState.textContent = emptyMessage(view, Boolean(query || topic));
       emptyState.classList.toggle('show', view !== 'Stats' && visible === 0);
       emptyState.hidden = view === 'Stats' || visible !== 0;
     }
+    renderViewHeading(view);
+    announceResults(view, visible, Boolean(query || topic));
     renderStats();
+  }
+
+  const viewCopy = {
+    'For you': { eyebrow: 'Home', title: 'For you', lede: 'Stories and ideas picked for your next great read.' },
+    'Following': { eyebrow: 'Activity', title: 'Following', lede: 'Stories from the writers you follow.' },
+    'Reading list': { eyebrow: 'Library', title: 'Your library', lede: 'Stories you saved in this browser.' }
+  };
+
+  function renderViewHeading(view) {
+    const copy = viewCopy[view];
+    if (!copy) return;
+    const welcome = document.querySelector('.welcome');
+    if (!welcome) return;
+    const eyebrow = welcome.querySelector('.eyebrow');
+    const title = welcome.querySelector('#welcome-title');
+    const lede = welcome.querySelector('p:last-child');
+    if (eyebrow) eyebrow.textContent = copy.eyebrow;
+    if (title) title.textContent = copy.title;
+    if (lede && lede !== eyebrow) lede.textContent = copy.lede;
+    document.title = 'ink.gs — ' + copy.title;
+  }
+
+  function emptyMessage(view, filtered) {
+    if (!filtered && view === 'Reading list') return 'Nothing saved yet. Use the bookmark on any story to keep it here.';
+    if (!filtered && view === 'Following') {
+      return state.following.length
+        ? 'The writers you follow have no stories here yet.'
+        : 'You are not following anyone yet. Use “Find writers” in the menu to start.';
+    }
+    return 'No stories match that yet. Try another search.';
+  }
+
+  let resultsStatus = null;
+  function announceResults(view, visible, filtered) {
+    if (view === 'Stats' || !feedView) return;
+    if (!resultsStatus) {
+      resultsStatus = document.createElement('p');
+      resultsStatus.className = 'visually-hidden';
+      resultsStatus.id = 'results-status';
+      resultsStatus.setAttribute('role', 'status');
+      resultsStatus.setAttribute('aria-live', 'polite');
+      document.querySelector('#feed-status')?.after(resultsStatus);
+    }
+    resultsStatus.textContent = filtered
+      ? (visible === 1 ? '1 story found.' : visible + ' stories found.')
+      : '';
+  }
+
+  /* Story card menu: one shared popover so cards stay light. */
+  let storyMenu = null;
+  let storyMenuTrigger = null;
+
+  function closeStoryMenu(restoreFocus = false) {
+    if (!storyMenu) return;
+    storyMenu.hidden = true;
+    storyMenuTrigger?.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) storyMenuTrigger?.focus();
+    storyMenuTrigger = null;
+  }
+
+  function storyUrlFor(id) {
+    const url = new URL(window.location.href);
+    url.hash = 'story=' + encodeURIComponent(id);
+    return url.toString();
+  }
+
+  function openStoryMenu(trigger) {
+    const element = trigger.closest('.story');
+    const data = storyData(element);
+    if (!data) return;
+    if (storyMenu && !storyMenu.hidden && storyMenuTrigger === trigger) {
+      closeStoryMenu(true);
+      return;
+    }
+    closeStoryMenu();
+    if (!storyMenu) {
+      storyMenu = document.createElement('div');
+      storyMenu.className = 'story-menu';
+      storyMenu.setAttribute('role', 'menu');
+      storyMenu.hidden = true;
+      storyMenu.addEventListener('keydown', event => {
+        const items = [...storyMenu.querySelectorAll('[role="menuitem"]')];
+        const index = items.indexOf(document.activeElement);
+        if (event.key === 'ArrowDown') { event.preventDefault(); items[(index + 1) % items.length]?.focus(); }
+        else if (event.key === 'ArrowUp') { event.preventDefault(); items[(index - 1 + items.length) % items.length]?.focus(); }
+        else if (event.key === 'Home') { event.preventDefault(); items[0]?.focus(); }
+        else if (event.key === 'End') { event.preventDefault(); items[items.length - 1]?.focus(); }
+        else if (event.key === 'Escape') { event.preventDefault(); closeStoryMenu(true); }
+        else if (event.key === 'Tab') closeStoryMenu();
+      });
+      document.body.append(storyMenu);
+    }
+
+    const saved = state.bookmarks.includes(data.id);
+    const following = state.following.includes(data.author);
+    const actions = [
+      ['Read story', () => openReader(data.id)],
+      [saved ? 'Remove from reading list' : 'Save to reading list', () => setBookmark(data.id, !saved)],
+      ['Copy story link', () => copyText(storyUrlFor(data.id), 'Story link copied.')]
+    ];
+    if (data.author && data.author !== 'Unknown author') {
+      actions.push([(following ? 'Unfollow ' : 'Follow ') + data.author, () => setFollowing(data.author, !following)]);
+    }
+    storyMenu.replaceChildren(...actions.map(([label, run]) => {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.setAttribute('role', 'menuitem');
+      item.textContent = label;
+      item.addEventListener('click', () => {
+        closeStoryMenu();
+        run();
+      });
+      return item;
+    }));
+
+    storyMenu.hidden = false;
+    storyMenuTrigger = trigger;
+    trigger.setAttribute('aria-haspopup', 'menu');
+    trigger.setAttribute('aria-expanded', 'true');
+    const rect = trigger.getBoundingClientRect();
+    const width = storyMenu.offsetWidth;
+    const height = storyMenu.offsetHeight;
+    const left = Math.max(8, Math.min(window.innerWidth - width - 8, rect.right - width));
+    const below = rect.bottom + 6;
+    const top = below + height > window.innerHeight - 8 ? Math.max(8, rect.top - height - 6) : below;
+    storyMenu.style.left = left + 'px';
+    storyMenu.style.top = top + 'px';
+    storyMenu.querySelector('[role="menuitem"]')?.focus();
   }
 
   function setView(view) {
@@ -1763,7 +1918,21 @@
     document.querySelector('.mobile-drawer-close')?.addEventListener('click', () => toggleMobileMenu(false));
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape' && document.body.classList.contains('menu-open')) toggleMobileMenu(false);
+      const typing = event.target.closest?.('input, textarea, select, [contenteditable="true"]');
+      const modalOpen = document.querySelector('dialog[open]');
+      if (event.key === '/' && !typing && !modalOpen && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        searchBox?.classList.add('search-open');
+        searchToggle?.setAttribute('aria-expanded', 'true');
+        search?.focus();
+        search?.select();
+      }
     });
+    document.addEventListener('pointerdown', event => {
+      if (storyMenu && !storyMenu.hidden && !event.target.closest('.story-menu, .more')) closeStoryMenu();
+    });
+    window.addEventListener('scroll', () => closeStoryMenu(), { passive: true });
+    window.addEventListener('resize', () => closeStoryMenu());
 
     document.addEventListener('click', event => {
       if (document.body.classList.contains('menu-open') &&
@@ -1805,9 +1974,8 @@
       }
 
       if (target.matches('.more')) {
-        const story = target.closest('.story');
-        const data = storyData(story);
-        if (data) showToast(data.title + ' · ' + data.readMinutes + ' min read');
+        event.preventDefault();
+        openStoryMenu(target);
         return;
       }
 
