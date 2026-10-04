@@ -166,8 +166,10 @@ test("utility links resolve to real site information sections", () => {
 
 test("Worker API calls use the current Worker origin", () => {
   assert.match(js, /configuredApiBase/u);
-  assert.ok(js.includes("location.origin"));
-  assert.ok(js.includes("const API_BASE = /\\.workers\\.dev$/iu.test(location.hostname) ? location.origin : configuredApiBase;"));
+  assert.match(js, /productionHostnames/u);
+  assert.match(js, /andregsman\.eu\.org/u);
+  assert.match(js, /const API_BASE = isWorkerHost \? location.origin : configuredApiBase;/u);
+  assert.match(js, /const API_ENABLED = isWorkerHost \|\| Boolean\(configuredApiBase\);/u);
 });
 
 test("Worker serves the canonical frontend bundle", () => {
