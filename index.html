@@ -23,10 +23,19 @@
         <button class="text-action write-action" id="write-button" type="button" aria-label="Write" aria-haspopup="dialog" aria-controls="composer">Write</button>
         <button class="text-action sync-action" id="sync-button" type="button" title="Refresh published online stories" aria-label="Refresh published online stories">Refresh</button>
         <button class="text-action editor-action" id="editor-login-button" type="button" title="Open the publishing editor">Sign in</button>
-        <span class="avatar" aria-label="Reader profile">R</span>
+        <button class="avatar" id="profile-button-top" type="button" aria-label="Open reader profile">R</button>
       </div>
     </div>
   </header>
+
+  <a class="open-app-bar" href="#membership" aria-label="Open ink.gs in app">
+    <span>Open in app</span><span aria-hidden="true">↗</span>
+  </a>
+  <div class="promotion-banner" role="region" aria-label="Membership promotion">
+    <span>Access to everything. Now 30% off.</span>
+    <a href="#membership">Upgrade now</a>
+  </div>
+
   <div class="layout" id="home">
     <aside class="left-rail" aria-label="Main navigation">
       <div class="rail-mobile-head"><span class="rail-mobile-brand">ink.gs</span><button class="mobile-drawer-close" type="button" aria-label="Close menu">×</button></div>
@@ -54,9 +63,32 @@
           <div class="welcome-mark" aria-hidden="true"><span>INK</span><span>GS</span></div>
         </section>
         <div class="feed-toolbar">
-          <div class="tabs" role="tablist" aria-label="Story feed"><button class="tab selected" role="tab" aria-selected="true" data-view="For you">For you</button><button class="tab" role="tab" aria-selected="false" data-view="Following">Following</button></div>
+          <div class="tabs" role="tablist" aria-label="Story feed"><button class="tab selected" role="tab" aria-selected="true" data-view="For you">For you</button><button class="tab" role="tab" aria-selected="false" data-view="Following">Activity</button></div>
           <p class="feed-status" id="feed-status" role="status" aria-live="polite" hidden></p>
         </div>
+        <section id="feed-skeleton" class="feed-skeleton" aria-label="Loading stories" aria-hidden="true">
+          <div class="skeleton-story">
+            <div class="skeleton-copy">
+              <span class="skeleton-line skeleton-meta"></span>
+              <span class="skeleton-line skeleton-title wide"></span>
+              <span class="skeleton-line skeleton-title medium"></span>
+              <span class="skeleton-line skeleton-text wide"></span>
+              <span class="skeleton-line skeleton-text short"></span>
+              <div class="skeleton-actions"><span></span><span></span><span></span><span></span></div>
+            </div>
+            <span class="skeleton-thumb" aria-hidden="true"></span>
+          </div>
+          <div class="skeleton-story">
+            <div class="skeleton-copy">
+              <span class="skeleton-line skeleton-meta"></span>
+              <span class="skeleton-line skeleton-title wide"></span>
+              <span class="skeleton-line skeleton-text medium"></span>
+              <span class="skeleton-line skeleton-text short"></span>
+              <div class="skeleton-actions"><span></span><span></span><span></span></div>
+            </div>
+            <span class="skeleton-thumb" aria-hidden="true"></span>
+          </div>
+        </section>
         <section id="stories" class="story-feed" aria-label="Recommended stories">
       </section>
         <button class="load-more" id="load-more-stories" type="button" hidden>Load more stories</button>
@@ -169,7 +201,7 @@
     <div class="reader-scroll" id="reader-scroll" tabindex="0">
       <article class="reader-article">
         <div class="reader-chips" id="reader-topics" aria-label="Story attributes">
-          <span class="reader-chip reader-chip-accent">Editorial story</span>
+          <span class="reader-chip reader-chip-accent">Member-only</span>
           <span class="reader-chip" id="reader-topic">Story</span>
         </div>
         <h2 class="reader-title" id="reader-title"></h2>
@@ -268,5 +300,20 @@
   </footer>
   <div class="toast" role="status" aria-live="polite"></div>
   <script type="module" src="app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const topProfile = document.querySelector('#profile-button-top');
+      const drawerProfile = document.querySelector('#profile-button');
+      topProfile?.addEventListener('click', () => drawerProfile?.click());
+      const skeleton = document.querySelector('#feed-skeleton');
+      const stories = document.querySelector('#stories');
+      const showSkeletonPreview = new URLSearchParams(location.search).get('loading') === '1';
+      if (showSkeletonPreview && skeleton && stories) {
+        skeleton.setAttribute('aria-hidden', 'false');
+        skeleton.dataset.loading = 'true';
+        stories.hidden = true;
+      }
+    });
+  </script>
 </body>
 </html>
