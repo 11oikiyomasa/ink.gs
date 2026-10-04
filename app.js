@@ -298,10 +298,17 @@
     const topics = [...new Set((element.dataset.topics || topic).split(/\s+/u).map(value => value.trim()).filter(Boolean))];
     const photo = element.querySelector('.story-image')?.getAttribute('src') || '';
     const photoAlt = element.querySelector('.story-image')?.getAttribute('alt') || '';
+    let body = [summary || 'This story is available in the online reading room.'];
+    if (element.dataset.body) {
+      try {
+        const parsedBody = JSON.parse(element.dataset.body);
+        if (Array.isArray(parsedBody) && parsedBody.length) body = parsedBody;
+      } catch {}
+    }
     return {
       id, title, author, publication, summary, topic, topics, photo, photoAlt,
       publishedAt: element.dataset.publishedAt || '',
-      body: [summary || 'This story is available in the online reading room.'],
+      body,
       readMinutes: Math.max(1, Number(readTime || 0), Math.ceil(summary.split(/\s+/u).filter(Boolean).length / 220)),
       applauseCount: 0,
       repostCount: 0,
@@ -319,8 +326,6 @@
 
   function presentationPhoto(photo, topic) {
     if (!photo) return '';
-    if (photo.startsWith('data:')) return photo;
-    if (photo.startsWith('/assets/')) return placeholderDataUri(topic);
     return photo;
   }
 
@@ -340,6 +345,20 @@
     return (count / 1000000).toFixed(1).replace(/\.0$/u, '') + 'M';
   }
 
+  function iconSvg(name) {
+    const paths = {
+      clap: '<path d="M9 12.6 5.8 9.4a1.9 1.9 0 0 0-2.7 2.7l5.6 5.6a4.7 4.7 0 0 0 6.6 0l2.1-2.1a4.8 4.8 0 0 0 .8-5.7l-1.8-3.1"/><path d="m8 10.6 2.2-2.2a2 2 0 0 1 2.8 0l2.9 2.9"/><path d="m6.6 8.4 1.5-1.5a1.8 1.8 0 0 1 2.6 0l4.1 4.1"/><path d="m11.2 6.5 1-1a1.8 1.8 0 0 1 2.6 0l3.4 3.4"/>',
+      comment: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.8 3.5.8-3.5H6.5A2.5 2.5 0 0 1 4 12.5z"/>',
+      repost: '<path d="m7 7 3-3 3 3"/><path d="M10 4v9a4 4 0 0 0 4 4h4"/><path d="m17 14 3 3-3 3"/>'
+    };
+    const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('viewBox','0 0 24 24');
+    svg.setAttribute('aria-hidden','true');
+    svg.setAttribute('focusable','false');
+    svg.innerHTML = paths[name] || paths.comment;
+    return svg;
+  }
+
   function createStoryElement(story) {
     const article = document.createElement('article');
     article.className = 'story';
@@ -347,6 +366,7 @@
     article.dataset.publishedAt = story.publishedAt || story.published_at || '';
     article.dataset.topics = [story.topic, ...(story.topics || [])].filter(Boolean).join(' ');
     article.dataset.storyId = story.id;
+    article.dataset.verified = story.verified ? 'true' : 'false';
     const copy = document.createElement('div');
     copy.className = 'story-copy';
     const byline = document.createElement('div');
@@ -355,10 +375,27 @@
     avatar.className = 'mini-avatar';
     avatar.textContent = String(story.author || 'U').split(/\s+/u).map(part => part[0]).join('').slice(0, 2).toUpperCase();
     const bylineText = document.createElement('span');
+    const authorLine = document.createElement('span');
+    authorLine.className = 'byline-main';
     const authorStrong = document.createElement('strong');
     authorStrong.textContent = story.author || 'Unknown author';
-    bylineText.append(authorStrong);
-    if (story.publication) bylineText.append(document.createTextNode(' in ' + story.publication));
+    authorLine.append(authorStrong);
+    if (story.verified) {
+      const verified = document.createElement('span');
+      verified.className = 'byline-verified';
+      verified.textContent = '✓';
+      verified.setAttribute('aria-label','Verified');
+      authorLine.append(verified);
+    }
+    bylineText.append(authorLine);
+    const publicationLine = document.createElement('span');
+    publicationLine.className = 'byline-meta';
+    const parts = [];
+    if (story.publication) parts.push(story.publication);
+    const published = story.publishedAt || story.published_at;
+    if (published) parts.push(formatPublishedDate(published));
+    publicationLine.textContent = parts.join(' · ');
+    bylineText.append(publicationLine);
     byline.append(avatar, bylineText);
     const title = document.createElement('h2');
     title.className = 'story-title-button';
@@ -392,14 +429,14 @@
       node.replaceChildren();
       const iconNode = document.createElement('span');
       iconNode.className = 'engagement-icon';
-      iconNode.textContent = icon;
+      iconNode.append(iconSvg(icon));
       const valueNode = document.createElement('span');
       valueNode.textContent = formatCount(value);
       node.append(iconNode, valueNode);
     }
-    setMetric(applause, '✦', story.applauseCount);
-    setMetric(responses, '◌', story.responseCount);
-    setMetric(reposts, '↗', story.repostCount);
+    setMetric(applause, 'clap', story.applauseCount);
+    setMetric(responses, 'comment', story.responseCount);
+    setMetric(reposts, 'repost', story.repostCount);
     engagement.append(applause, responses, reposts);
     const topic = document.createElement('span');
     topic.className = 'topic-pill';
