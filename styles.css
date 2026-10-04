@@ -2914,6 +2914,16 @@ main {
   content: "✦";
 }
 
+.reader-chip-topic {
+  color: #d7d7d7;
+}
+
+.reader-chip-topic::after {
+  margin-left: 9px;
+  color: #777;
+  content: "+";
+}
+
 .reader-title {
   margin: 0 0 17px;
   color: #f7f7f7;
