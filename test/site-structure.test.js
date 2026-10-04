@@ -43,6 +43,11 @@ test("story images have text alternatives and no production asset dependency", (
 });
 
 
+test("reader body explicitly uses a serif presentation", () => {
+  assert.match(html, /class=["']reader-body["'][^>]*style=["'][^"']*font-family:\s*Georgia/u);
+  assert.match(css, /\.reader-body\s*\{[\s\S]*?font-family:\s*Georgia/u);
+});
+
 test("reader keeps editorial article hierarchy and honest mobile controls", () => {
   assert.ok(html.includes('id="reader-publication"'));
   assert.ok(html.includes('id="reader-meta"'));
