@@ -112,6 +112,7 @@
           <img class="story-image" src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201200%20800%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20stop-color%3D%22%234f3842%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23c18b9f%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%221200%22%20height%3D%22800%22%20fill%3D%22url(%23g)%22%2F%3E%3Ccircle%20cx%3D%22960%22%20cy%3D%22180%22%20r%3D%22150%22%20fill%3D%22%23fff%22%20opacity%3D%22.08%22%2F%3E%3Cpath%20d%3D%22M0%20640%20C220%20520%20410%20730%20620%20600%20S980%20470%201200%20620%20V800%20H0Z%22%20fill%3D%22%23000%22%20opacity%3D%22.14%22%2F%3E%3C%2Fsvg%3E" alt="A collage of street scenes and city landmarks" />
         </article>
       </section>
+        <button class="load-more" id="load-more-stories" type="button" hidden>Load more stories</button>
         <p class="empty-state" id="empty-state">No stories match that yet. Try another search.</p>
       </div>
       <section class="stats-view" id="stats-view" aria-labelledby="stats-title" hidden>
@@ -162,6 +163,7 @@
       <section class="online-library" id="online-library" aria-label="Online stories" hidden>
         <div class="online-library-heading"><h3>Online stories</h3><span class="composer-status" id="online-story-count"></span></div>
         <div class="online-story-list" id="online-story-list" aria-live="polite"></div>
+        <button class="load-more load-more-online" id="load-more-online-stories" type="button" hidden>Load more stories</button>
       </section>
       <label class="visually-hidden" for="draft-title">Story title</label>
       <input class="composer-title" id="draft-title" type="text" maxlength="120" placeholder="Title" autocomplete="off" />
