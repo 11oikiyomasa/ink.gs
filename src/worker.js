@@ -28,6 +28,9 @@ const ALLOWED_PHOTOS = new Set([
   "/assets/writing-garden.jpg",
 ]);
 const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+const STORY_PAGE_DEFAULT = 24;
+const STORY_PAGE_MAX = 50;
 
 class HttpError extends Error {
   constructor(status, message, headers = {}) {
@@ -524,17 +527,64 @@ async function handleHealth(env) {
   }, ok ? 200 : 503);
 }
 
+function parseStoryPageCursor(url, kind) {
+  const raw = url.searchParams.get("cursor");
+  if (!raw) return null;
+  const bytes = base64UrlToBytes(raw);
+  if (!bytes) throw new HttpError(400, "Invalid story cursor");
+  let value;
+  try {
+    value = JSON.parse(decoder.decode(bytes));
+  } catch {
+    throw new HttpError(400, "Invalid story cursor");
+  }
+  if (!Array.isArray(value) || value.length !== 2 || typeof value[0] !== "string" || !/^[0-9a-f-]{36}$/iu.test(value[1])) {
+    throw new HttpError(400, "Invalid story cursor");
+  }
+  if (kind === "public" && !value[0]) throw new HttpError(400, "Invalid story cursor");
+  return value;
+}
+
+function storyPageLimit(url) {
+  const raw = url.searchParams.get("limit");
+  if (raw == null || raw === "") return STORY_PAGE_DEFAULT;
+  const limit = Number(raw);
+  if (!Number.isInteger(limit) || limit < 1) throw new HttpError(400, "Invalid story page size");
+  return Math.min(limit, STORY_PAGE_MAX);
+}
+
+function makeStoryCursor(value) {
+  return bytesToBase64Url(encoder.encode(JSON.stringify(value)));
+}
+
 async function handlePublicStories(request, env) {
   if (request.method !== "GET") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET" });
   const db = requireDatabase(env);
+  const url = new URL(request.url);
+  const limit = storyPageLimit(url);
+  const cursor = parseStoryPageCursor(url, "public");
+  const cursorSql = cursor ? " AND (published_at < ? OR (published_at = ? AND id < ?))" : "";
+  const bindings = cursor
+    ? [EDITOR_OWNER, cursor[0], cursor[0], cursor[1], limit + 1]
+    : [EDITOR_OWNER, limit + 1];
   const result = await db.prepare(
     `SELECT id, title, summary, body, author, publication, topic, photo, photo_alt, published_at,
         (SELECT COUNT(*) FROM story_social_actions a WHERE a.story_id = editor_stories.id AND a.kind = 'applause') AS applause_count,
         (SELECT COUNT(*) FROM story_social_actions a WHERE a.story_id = editor_stories.id AND a.kind = 'repost') AS repost_count,
         (SELECT COUNT(*) FROM story_responses r WHERE r.story_id = editor_stories.id) AS response_count
-     FROM editor_stories WHERE published = 1 AND managed_by = ? ORDER BY published_at DESC, updated_at DESC LIMIT 500`,
-  ).bind(EDITOR_OWNER).all();
-  return jsonResponse({ stories: (result.results || []).map(publicStory) });
+     FROM editor_stories
+     WHERE published = 1 AND managed_by = ?${cursorSql}
+     ORDER BY published_at DESC, id DESC
+     LIMIT ${limit + 1}`,
+  ).bind(...bindings).all();
+  const rows = result.results || [];
+  const hasMore = rows.length > limit;
+  const stories = hasMore ? rows.slice(0, limit) : rows;
+  const last = stories.at(-1);
+  return jsonResponse({
+    stories: stories.map(publicStory),
+    nextCursor: hasMore && last ? makeStoryCursor([last.published_at, last.id]) : null,
+  });
 }
 
 async function handleEditorStories(request, env) {
@@ -545,11 +595,28 @@ async function handleEditorStories(request, env) {
 
   if (url.pathname === "/api/editor/stories") {
     if (request.method === "GET") {
+      const url = new URL(request.url);
+      const limit = storyPageLimit(url);
+      const cursor = parseStoryPageCursor(url, "editor");
+      const cursorSql = cursor ? " AND (updated_at < ? OR (updated_at = ? AND id < ?))" : "";
+      const bindings = cursor
+        ? [EDITOR_OWNER, cursor[0], cursor[0], cursor[1], limit + 1]
+        : [EDITOR_OWNER, limit + 1];
       const result = await db.prepare(
         `SELECT id, title, summary, body, author, publication, topic, photo, photo_alt, published, published_at, updated_at
-         FROM editor_stories WHERE managed_by = ? ORDER BY updated_at DESC LIMIT 500`,
-      ).bind(EDITOR_OWNER).all();
-      return jsonResponse({ stories: (result.results || []).map(editorStory) });
+         FROM editor_stories
+         WHERE managed_by = ?${cursorSql}
+         ORDER BY updated_at DESC, id DESC
+         LIMIT ${limit + 1}`,
+      ).bind(...bindings).all();
+      const rows = result.results || [];
+      const hasMore = rows.length > limit;
+      const stories = hasMore ? rows.slice(0, limit) : rows;
+      const last = stories.at(-1);
+      return jsonResponse({
+        stories: stories.map(editorStory),
+        nextCursor: hasMore && last ? makeStoryCursor([last.updated_at, last.id]) : null,
+      });
     }
     if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET, POST" });
     const story = normalizeStory(await readJsonBody(request));
