@@ -24,6 +24,7 @@ class MemoryD1 {
   attempts = new Map();
   socialActions = new Map();
   responses = new Map();
+  credentials = new Map();
 
   prepare(sql) {
     const database = this;
@@ -45,6 +46,10 @@ class MemoryD1 {
     }
     if (sql.startsWith("SELECT failures, window_started_at FROM editor_login_attempts")) {
       const row = this.attempts.get(values[0]);
+      return row ? { ...row } : null;
+    }
+    if (sql.startsWith("SELECT password_hash FROM editor_credentials")) {
+      const row = this.credentials.get(values[0]);
       return row ? { ...row } : null;
     }
     if (sql.startsWith("SELECT 1 FROM editor_stories WHERE id = ? AND published = 1")) {
@@ -89,6 +94,11 @@ class MemoryD1 {
       const row = this.stories.get(id);
       return row?.managed_by === managedBy ? { id: row.id, published_at: row.published_at } : null;
     }
+    if (sql.startsWith("INSERT INTO editor_credentials")) {
+      const [owner, password_hash, updated_at] = values;
+      this.credentials.set(owner, { owner, password_hash, updated_at });
+      return { owner, password_hash, updated_at };
+    }
     if (sql.startsWith("INSERT INTO editor_stories")) {
       const [id, title, summary, body, author, publication, topic, photo, photo_alt, published, published_at, managed_by, created_at, updated_at] = values;
       const row = { id, title, summary, body, author, publication, topic, photo, photo_alt, published, published_at, managed_by, created_at, updated_at };
@@ -132,6 +142,11 @@ class MemoryD1 {
     if (sql.startsWith("INSERT INTO editor_sessions")) {
       const [token_hash, csrf_hash, expires_at, created_at] = values;
       this.sessions.set(token_hash, { csrf_hash, expires_at, created_at });
+      return { meta: { changes: 1 } };
+    }
+    if (sql.startsWith("INSERT INTO editor_credentials")) {
+      const [owner, password_hash, updated_at] = values;
+      this.credentials.set(owner, { owner, password_hash, updated_at });
       return { meta: { changes: 1 } };
     }
     if (sql.startsWith("DELETE FROM editor_sessions WHERE expires_at")) {
@@ -459,6 +474,26 @@ test("delete removes only an editor-managed story and unknown IDs are not affect
   assert.equal(removed.status, 200);
   assert.equal(env.DB.stories.has(id), false);
   assert.equal((await (await worker.fetch(request("/api/stories"), env, {})).json()).stories.length, 0);
+});
+
+test("editor can change the password from an authenticated session", async () => {
+  const env = createEnv();
+  const editor = await signIn(env);
+  const changed = await worker.fetch(request("/api/editor/password", {
+    method: "POST",
+    headers: withEditor(editor),
+    body: { currentPassword: correctPassword, newPassword: "test-only-new-editor-password" },
+  }), env, {});
+  assert.equal(changed.status, 200);
+  assert.deepEqual(await changed.json(), { ok: true });
+  assert.equal(env.DB.sessions.size, 1);
+
+  const oldLogin = await signIn(env, { password: correctPassword, ip: "203.0.113.11" });
+  assert.equal(oldLogin.response.status, 401);
+
+  const newLogin = await signIn(env, { password: "test-only-new-editor-password", ip: "203.0.113.12" });
+  assert.equal(newLogin.response.status, 200);
+  assert.match(env.DB.credentials.get("site-editor")?.password_hash || "", /^pbkdf2-sha256\$310000\$/u);
 });
 
 test("logout revokes the session; the old cookies cannot mutate content", async () => {
