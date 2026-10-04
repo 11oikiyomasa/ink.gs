@@ -27,6 +27,7 @@
       'On the first Monday in May, I took the same twenty-minute walk I always take and left my headphones at home. Without a podcast filling the gaps, the walk seemed to lengthen. I noticed a bakery opening its blue shutters, a neighbor carrying a basil plant, and the particular patch of afternoon light that lands on the corner wall.',
       'I used to think attention was something you spent, like a battery. The day asked for so much of it that I tried to conserve what was left. But attention turned out to behave more like a path: the more often I returned to the ordinary details around me, the easier it became to find my way back. Nothing on that route was new. My way of meeting it was.',
       'Now I keep a small notebook by the door. I write down one thing I would have missed if I had hurried. It is not a productivity system, and the notes do not need to become anything. They are simply proof that a day can hold more than its loudest task.',
+      '> Attention becomes a place you return to, not a task you finish. — Mara Ellis',
       'The walk still takes twenty minutes. It just feels like a place I have arrived.'
     ],
     'make-your-tools-a-little-less-impressive': [
@@ -82,6 +83,7 @@
   const readerKicker = document.querySelector('#reader-kicker');
   const readerPublication = document.querySelector('#reader-publication');
   const readerFollowPublication = document.querySelector('#reader-follow-publication');
+  const readerTopics = document.querySelector('#reader-topics');
   const readerTitle = document.querySelector('#reader-title');
   const readerByline = document.querySelector('#reader-byline');
   const readerSummary = document.querySelector('#reader-summary');
@@ -308,10 +310,11 @@
     const meta = [...element.querySelectorAll('.story-meta .engagement-item')].map(node => node.textContent.trim());
     const readTime = (meta.find(text => /min read$/i.test(text)) || '').match(/(\d+)/)?.[1];
     const topic = element.querySelector('.topic-pill')?.textContent?.trim() || '';
+    const topics = [...new Set((element.dataset.topics || topic).split(/\s+/u).map(value => value.trim()).filter(Boolean))];
     const photo = element.querySelector('.story-image')?.getAttribute('src') || '';
     const photoAlt = element.querySelector('.story-image')?.getAttribute('alt') || '';
     return {
-      id, title, author, publication, summary, topic, photo, photoAlt,
+      id, title, author, publication, summary, topic, topics, photo, photoAlt,
       publishedAt: element.dataset.publishedAt || '',
       body: originalArticles[id] || [summary || 'This story is part of the sample reading room.'],
       readMinutes: Math.max(1, Number(readTime || 0), Math.ceil((originalArticles[id] || [summary]).join(' ').split(/\s+/u).filter(Boolean).length / 220)),
@@ -454,6 +457,9 @@
         publication: story.publication || '',
         summary: story.summary || '',
         topic: story.topic || 'Other',
+        topics: Array.isArray(story.topics)
+          ? story.topics.filter(value => typeof value === 'string').slice(0, 8)
+          : [story.topic || 'Other'],
         photo: story.photo || '',
         photoAlt: story.photoAlt || story.photo_alt || '',
         publishedAt: story.publishedAt || story.published_at || '',
@@ -853,12 +859,46 @@
         readerImage.hidden = true;
       }
     }
+    if (readerTopics) {
+      const accent = readerTopics.querySelector('.reader-chip-accent');
+      readerTopics.replaceChildren();
+      if (accent) readerTopics.append(accent);
+      const topics = Array.isArray(data.topics) && data.topics.length ? data.topics : [data.topic || 'Story'];
+      topics.slice(0, 5).forEach(topic => {
+        const chip = document.createElement('span');
+        chip.className = 'reader-chip reader-chip-topic';
+        chip.textContent = topic;
+        readerTopics.append(chip);
+      });
+    }
+
     if (readerBody) {
-      readerBody.replaceChildren(...data.body.map(paragraphText => {
+      const fragment = document.createDocumentFragment();
+      data.body.forEach(blockText => {
+        const text = String(blockText || '').trim();
+        if (!text) return;
+        if (text.startsWith('> ')) {
+          const quote = document.createElement('blockquote');
+          const quoteText = text.slice(2).trim();
+          const splitAttribution = quoteText.lastIndexOf(' — ');
+          const quoteCopy = splitAttribution > 0 ? quoteText.slice(0, splitAttribution).trim() : quoteText;
+          const attribution = splitAttribution > 0 ? quoteText.slice(splitAttribution + 3).trim() : '';
+          const p = document.createElement('p');
+          p.textContent = quoteCopy;
+          quote.append(p);
+          if (attribution) {
+            const cite = document.createElement('cite');
+            cite.textContent = '— ' + attribution;
+            quote.append(cite);
+          }
+          fragment.append(quote);
+          return;
+        }
         const p = document.createElement('p');
-        p.textContent = paragraphText;
-        return p;
-      }));
+        p.textContent = text;
+        fragment.append(p);
+      });
+      readerBody.replaceChildren(fragment);
     }
     const progress = state.progress[id] || { ratio: 0, finished: false };
     if (!progress.finished && Number(progress.ratio) > 0) {
