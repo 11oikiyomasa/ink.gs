@@ -1621,11 +1621,13 @@ main {
   }
 
   .search-box {
-    width: 34px;
+    position: relative;
+    width: 38px;
     height: 42px;
     padding: 0;
     background: transparent;
     border: 0;
+    overflow: visible;
   }
 
   .search-box > svg,
@@ -1639,19 +1641,92 @@ main {
   }
 
   .search-toggle {
-    width: 35px;
-    height: 35px;
+    width: 38px;
+    height: 38px;
     display: grid;
     place-items: center;
     padding: 0;
     border: 0;
+    border-radius: 50%;
     background: transparent;
     color: #cfcfcf;
+    cursor: pointer;
+  }
+
+  .search-toggle:hover {
+    background: #242424;
+    color: #fff;
   }
 
   .search-toggle svg {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .search-box.search-open {
+    position: absolute;
+    left: max(24px, 6vw);
+    right: max(24px, 6vw);
+    top: 50%;
+    z-index: 70;
+    width: auto;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    transform: translateY(-50%);
+    border: 1px solid #464646;
+    border-radius: 26px;
+    background: #2a2a2a;
+    box-shadow: 0 12px 32px rgb(0 0 0 / 35%);
+  }
+
+  .search-box.search-open > svg {
+    display: block;
+    width: 22px;
+    height: 22px;
+    flex: 0 0 auto;
+    margin-right: 9px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .search-box.search-open input {
+    display: block !important;
+    min-width: 0;
+    flex: 1 1 auto;
+    color: var(--text);
+    font-size: 16px;
+  }
+
+  .search-box.search-open .search-toggle {
+    display: none;
+  }
+
+  .search-box.search-open .search-clear {
+    width: 34px;
+    height: 34px;
+    display: grid !important;
+    place-items: center;
+    flex: 0 0 auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #bdbdbd;
+    font-size: 25px;
+    cursor: pointer;
+  }
+
+  .search-box.search-open .search-clear:hover {
+    color: #fff;
   }
 
   .avatar {
@@ -1668,6 +1743,14 @@ main {
     gap: 10px;
     font-size: 20px;
     white-space: nowrap;
+  }
+
+  .feed-status {
+    margin: 0;
+    padding: 14px 0 0;
+    color: #8f8f8f;
+    font-size: 13px;
+    line-height: 1.35;
   }
 
   .membership-banner span:not(.badge) {
@@ -1874,13 +1957,13 @@ main {
     grid-template-columns: minmax(0, 1fr) 144px;
     gap: 24px;
     min-height: 0;
-    padding: 71px 0 64px;
+    padding: 36px 0 50px;
   }
 
   .byline {
     gap: 10px;
-    margin-bottom: 24px;
-    font-size: 17px;
+    margin-bottom: 18px;
+    font-size: 16px;
   }
 
   .mini-avatar {
@@ -1892,16 +1975,16 @@ main {
 
   .story h2 {
     max-width: 100%;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     font-size: 35px;
-    line-height: 1.18;
+    line-height: 1.16;
     letter-spacing: -.9px;
   }
 
   .story-summary {
     max-width: 100%;
-    font-size: 22px;
-    line-height: 1.38;
+    font-size: 20px;
+    line-height: 1.4;
     color: #aaa;
     display: -webkit-box;
     -webkit-box-orient: vertical;
@@ -1916,13 +1999,13 @@ main {
   }
 
   .story-meta.story-engagement {
-    margin-top: 31px;
+    margin-top: 24px;
     gap: 15px;
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .engagement-list {
-    gap: 20px;
+    gap: 16px;
   }
 
   .engagement-item {
@@ -1939,8 +2022,8 @@ main {
 
   .bookmark,
   .more {
-    width: 38px;
-    height: 38px;
+    width: 42px;
+    height: 42px;
   }
 
   .bookmark::before {
@@ -1950,7 +2033,7 @@ main {
   }
 
   .more {
-    font-size: 20px;
+    font-size: 21px;
   }
 
   .toast {
