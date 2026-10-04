@@ -157,6 +157,17 @@ class MemoryD1 {
       }
       return { meta: { changes } };
     }
+    if (sql.startsWith("DELETE FROM editor_sessions WHERE token_hash !=")) {
+      const keepToken = values[0];
+      let changes = 0;
+      for (const key of [...this.sessions.keys()]) {
+        if (key !== keepToken) {
+          this.sessions.delete(key);
+          changes++;
+        }
+      }
+      return { meta: { changes } };
+    }
     if (sql.startsWith("DELETE FROM editor_sessions WHERE token_hash")) {
       return { meta: { changes: Number(this.sessions.delete(values[0])) } };
     }
@@ -313,7 +324,7 @@ test("public homepage and story reads need no editor session and receive securit
   assert.match(homepage.headers.get("content-security-policy"), /frame-ancestors 'none'/u);
   const response = await worker.fetch(request("/api/stories"), env, {});
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { stories: [] });
+  assert.deepEqual(await response.json(), { stories: [], nextCursor: null });
 });
 
 test("all unauthenticated story mutations and private editor listing are denied", async () => {
