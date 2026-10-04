@@ -44,9 +44,18 @@ class MemoryD1 {
       const row = this.sessions.get(values[0]);
       return row ? { ...row } : null;
     }
-    if (sql.startsWith("SELECT failures, window_started_at FROM editor_login_attempts")) {
-      const row = this.attempts.get(values[0]);
-      return row ? { ...row } : null;
+    if (sql.startsWith("INSERT INTO editor_login_attempts")) {
+      const ipHash = values[0];
+      const now = values[1];
+      const cutoff = values[2];
+      const maximum = values[5];
+      const previous = this.attempts.get(ipHash);
+      if (previous && previous.window_started_at > cutoff && previous.failures >= maximum) return null;
+      const row = !previous || previous.window_started_at <= cutoff
+        ? { failures: 1, window_started_at: now }
+        : { failures: previous.failures + 1, window_started_at: previous.window_started_at };
+      this.attempts.set(ipHash, row);
+      return { failures: row.failures };
     }
     if (sql.startsWith("SELECT password_hash FROM editor_credentials")) {
       const row = this.credentials.get(values[0]);
@@ -210,13 +219,6 @@ class MemoryD1 {
     }
     if (sql.startsWith("DELETE FROM editor_login_attempts WHERE ip_hash")) {
       return { meta: { changes: Number(this.attempts.delete(values[0])) } };
-    }
-    if (sql.startsWith("INSERT INTO editor_login_attempts")) {
-      const [ipHash, now, cutoff] = values;
-      const previous = this.attempts.get(ipHash);
-      if (!previous || previous.window_started_at <= cutoff) this.attempts.set(ipHash, { failures: 1, window_started_at: now });
-      else this.attempts.set(ipHash, { failures: previous.failures + 1, window_started_at: previous.window_started_at });
-      return { meta: { changes: 1 } };
     }
     if (sql.startsWith("DELETE FROM editor_stories")) {
       const [id, managedBy] = values;
@@ -530,6 +532,16 @@ test("password attempts are rate-limited per keyed IP fingerprint", async () => 
   assert.equal(env.DB.attempts.size, 1);
   const fingerprint = [...env.DB.attempts.keys()][0];
   assert.doesNotMatch(fingerprint, /198\.51\.100/u);
+});
+
+test("concurrent password guesses cannot bypass the per-IP attempt limit", async () => {
+  const env = createEnv();
+  const results = await Promise.all(Array.from({ length: 12 }, () =>
+    signIn(env, { password: "not-the-password", ip: "198.51.100.45" })
+  ));
+  assert.equal(results.filter(({ response }) => response.status === 401).length, 5);
+  assert.equal(results.filter(({ response }) => response.status === 429).length, 7);
+  assert.equal(env.DB.attempts.size, 1);
 });
 
 test("oversized and malformed API inputs fail before storage", async () => {

@@ -1,0 +1,64 @@
+name: "Bug report"
+description: "Report a reproducible problem with ink.gs."
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please describe the issue clearly. Do not include passwords, tokens, or other secrets.
+  - type: textarea
+    id: description
+    attributes:
+      label: Problem
+      description: What happened?
+      placeholder: "When I use ..."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshot or error details
+      description: Remove any private information before sharing.
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Impact
+      options:
+        - "Critical — app unavailable"
+        - "High — core publishing/reading flow affected"
+        - "Medium — workaround exists"
+        - "Low — minor issue"
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: |
+        - OS/device:
+        - Browser/version:
+        - Viewport width:
+        - Local/static or Worker runtime:

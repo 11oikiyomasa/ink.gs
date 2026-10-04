@@ -297,11 +297,16 @@ async function handleLogin(request, env) {
   const ipHash = await hmacHex(encodedHash, ip);
   const now = Math.floor(Date.now() / 1000);
   const attempt = await db.prepare(
-    "SELECT failures, window_started_at FROM editor_login_attempts WHERE ip_hash = ?",
-  ).bind(ipHash).first();
-  const withinWindow = attempt && now - Number(attempt.window_started_at) < LOGIN_WINDOW_SECONDS;
-  const failures = withinWindow ? Number(attempt.failures) : 0;
-  if (failures >= MAX_LOGIN_FAILURES) {
+    `INSERT INTO editor_login_attempts (ip_hash, failures, window_started_at)
+     VALUES (?, 1, ?)
+     ON CONFLICT(ip_hash) DO UPDATE SET
+       failures = CASE WHEN editor_login_attempts.window_started_at <= ? THEN 1 ELSE editor_login_attempts.failures + 1 END,
+       window_started_at = CASE WHEN editor_login_attempts.window_started_at <= ? THEN excluded.window_started_at ELSE editor_login_attempts.window_started_at END
+     WHERE editor_login_attempts.window_started_at <= ? OR editor_login_attempts.failures < ?
+     RETURNING failures`,
+  ).bind(ipHash, now, now - LOGIN_WINDOW_SECONDS, now - LOGIN_WINDOW_SECONDS,
+    now - LOGIN_WINDOW_SECONDS, MAX_LOGIN_FAILURES).first();
+  if (!attempt) {
     throw new HttpError(429, "Too many sign-in attempts. Try again in 15 minutes.", { "Retry-After": String(LOGIN_WINDOW_SECONDS) });
   }
 
@@ -312,13 +317,6 @@ async function handleLogin(request, env) {
     throw new HttpError(503, "Editor sign-in is not configured");
   }
   if (!matched) {
-    await db.prepare(
-      `INSERT INTO editor_login_attempts (ip_hash, failures, window_started_at)
-       VALUES (?, 1, ?)
-       ON CONFLICT(ip_hash) DO UPDATE SET
-         failures = CASE WHEN editor_login_attempts.window_started_at <= ? THEN 1 ELSE editor_login_attempts.failures + 1 END,
-         window_started_at = CASE WHEN editor_login_attempts.window_started_at <= ? THEN excluded.window_started_at ELSE editor_login_attempts.window_started_at END`,
-    ).bind(ipHash, now, now - LOGIN_WINDOW_SECONDS, now - LOGIN_WINDOW_SECONDS).run();
     return jsonResponse({ error: "Sign-in failed" }, 401);
   }
 
