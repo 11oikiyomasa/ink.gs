@@ -1,4 +1,4 @@
-# ink.gs — personal publishing site source archive
+# ndregsman.eu.org — INK personal publishing site source archive
 
 This archive contains the homepage, the Cloudflare Worker API, D1 migrations, tests, and the configuration/scripts needed to build and run the project. The homepage is split into semantic HTML, an external stylesheet, and an external application module. It references six local photo paths and includes client-side image fallbacks, so the photo source directory is optional. It contains no local editor password/hash, Cloudflare API token, or other credential.
 
