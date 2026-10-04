@@ -91,6 +91,16 @@
   const storyPhotoAlt = document.querySelector('#story-photo-alt');
   const storyPublished = document.querySelector('#story-published');
   const manageStoriesButton = document.querySelector('#manage-stories-button');
+  const editorSettingsButton = document.querySelector('#editor-settings-button');
+  const editorSettingsDialog = document.querySelector('#editor-settings-dialog');
+  const editorSettingsClose = document.querySelector('#editor-settings-close');
+  const editorSettingsCancel = document.querySelector('#editor-settings-cancel');
+  const editorPasswordForm = document.querySelector('#editor-password-form');
+  const editorCurrentPassword = document.querySelector('#editor-current-password');
+  const editorNewPassword = document.querySelector('#editor-new-password');
+  const editorConfirmPassword = document.querySelector('#editor-confirm-password');
+  const editorPasswordError = document.querySelector('#editor-password-error');
+  const editorPasswordSubmit = document.querySelector('#editor-password-submit');
   const editorLoginDialogClose = document.querySelector('#close-editor-login');
   const composerClose = document.querySelector('#close-composer');
   const readerClose = document.querySelector('#reader-close');
@@ -1534,6 +1544,32 @@
     }
   }
 
+  async function changeEditorPassword(event) {
+    event.preventDefault();
+    if (!editorAuthenticated || !editorPasswordForm) return;
+    editorPasswordError.textContent = '';
+    if (!editorCurrentPassword?.value || !editorNewPassword?.value || !editorConfirmPassword?.value) return;
+    if (editorNewPassword.value.length < 10) { editorPasswordError.textContent = 'New password must be at least 10 characters.'; editorNewPassword.focus(); return; }
+    if (editorNewPassword.value !== editorConfirmPassword.value) { editorPasswordError.textContent = 'New passwords do not match.'; editorConfirmPassword.focus(); return; }
+    if (editorPasswordSubmit) editorPasswordSubmit.disabled = true;
+    try {
+      await apiRequest('/api/editor/password', { method: 'POST', headers: editorCsrfToken ? { 'X-CSRF-Token': editorCsrfToken } : {}, body: JSON.stringify({ currentPassword: editorCurrentPassword.value, newPassword: editorNewPassword.value }) });
+      editorCurrentPassword.value = ''; editorNewPassword.value = ''; editorConfirmPassword.value = '';
+      if (editorSettingsDialog?.open) editorSettingsDialog.close();
+      showToast('Editor password changed.');
+    } catch (error) {
+      editorPasswordError.textContent = error.message || 'Password change failed.';
+      if (error.status === 401) editorCurrentPassword.focus();
+    } finally { if (editorPasswordSubmit) editorPasswordSubmit.disabled = false; }
+  }
+
+  function openEditorSettings() {
+    if (!editorAuthenticated || !editorSettingsDialog) { if (!editorAuthenticated) openLogin(); return; }
+    editorPasswordError.textContent = '';
+    editorCurrentPassword.value = ''; editorNewPassword.value = ''; editorConfirmPassword.value = '';
+    if (typeof editorSettingsDialog.showModal === 'function') editorSettingsDialog.showModal(); else editorSettingsDialog.setAttribute('open', '');
+    setTimeout(() => editorCurrentPassword?.focus(), 0);
+  }
   async function logoutEditor() {
     try {
       await apiRequest('/api/editor/logout', {
@@ -2095,6 +2131,12 @@
         return;
       }
 
+      if (target.id === 'editor-settings-button') {
+        event.preventDefault();
+        openEditorSettings();
+        return;
+      }
+
       if (target.id === 'manage-stories-button') {
         event.preventDefault();
         if (!editorAuthenticated) {
@@ -2347,8 +2389,11 @@
     readerResponseForm?.addEventListener('submit', submitResponse);
     readerRespondCancel?.addEventListener('click', () => { if (readerSocial) readerSocial.hidden = true; });
     editorLoginForm?.addEventListener('submit', loginEditor);
+    editorPasswordForm?.addEventListener('submit', changeEditorPassword);
+    editorSettingsClose?.addEventListener('click', () => editorSettingsDialog?.close());
+    editorSettingsCancel?.addEventListener('click', () => editorSettingsDialog?.close());
 
-    [composer, editorLoginDialog, reader].forEach(dialog => {
+    [composer, editorLoginDialog, editorSettingsDialog, reader].forEach(dialog => {
       dialog?.addEventListener('cancel', event => {
         if (dialog === composer) saveDraft(false);
       });
