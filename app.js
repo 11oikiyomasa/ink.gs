@@ -11,6 +11,96 @@
     photoAlt: 'A quiet scene for reading',
     published: true
   };
+
+  const LOCAL_STORIES = [
+    {
+      id: 'india-month',
+      author: 'Mira Sen',
+      publication: 'The Open Notebook',
+      topic: 'Philosophy',
+      topics: ['Philosophy', 'Travel', 'Self', 'India', 'Health'],
+      publishedAt: '2026-08-24',
+      title: 'I Spent A Month In India. I Won’t Be Back',
+      summary: 'I was always the country I wanted to visit the most. A month there changed what I thought I was looking for.',
+      body: [
+        'India made me slower.',
+        'For a month I let the country decide the pace of my days. I travelled without trying to conquer every landmark, and I noticed how much of my attention had been spent elsewhere.',
+        'The places were memorable, but the quieter changes stayed with me longer: longer conversations, less certainty, and a little more patience with being out of control.',
+        'I still want to go back. Not because the trip was perfect, but because it made the familiar parts of my life look new again.'
+      ],
+      readMinutes: 5,
+      applauseCount: 27,
+      responseCount: 8,
+      repostCount: 3,
+      photo: '/assets/train-journal.jpeg',
+      photoAlt: 'A traveller’s journal and train window in India',
+      verified: true
+    },
+    {
+      id: 'notebook-you-never-show',
+      author: 'Jon Bell',
+      publication: 'A Field Guide',
+      topic: 'Self',
+      topics: ['Self', 'Writing', 'Philosophy'],
+      publishedAt: '2026-08-21',
+      title: 'On keeping a notebook you never show anyone',
+      summary: 'The private page is where half-formed ideas get permission to exist before they become anything else.',
+      body: [
+        'A notebook is useful partly because nobody is waiting for it to become good.',
+        'I keep one for the thoughts that are too early to publish and too useful to forget. Most pages are ordinary. A few are honest.',
+        'The point is not to archive a perfect version of yourself. It is to leave yourself somewhere to return.'
+      ],
+      readMinutes: 8,
+      applauseCount: 54,
+      responseCount: 12,
+      repostCount: 4,
+      photo: '/assets/notebook.jpg',
+      photoAlt: 'Notebook open on a desk'
+    },
+    {
+      id: 'neighborhood',
+      author: 'Rina Joseph',
+      publication: 'Civic Life',
+      topic: 'Life',
+      topics: ['Life', 'Travel', 'Culture'],
+      publishedAt: '2026-08-18',
+      title: 'How a block becomes a neighborhood',
+      summary: 'The invisible work of belonging happens in tiny, repeated encounters that rarely make the news.',
+      body: [
+        'A neighborhood begins as a set of addresses and becomes something else.',
+        'People learn the shortcut, the shopkeeper learns your name, and a bench becomes the place where someone waits every afternoon.',
+        'The change is gradual enough to miss while you are living through it.'
+      ],
+      readMinutes: 6,
+      applauseCount: 31,
+      responseCount: 6,
+      repostCount: 2,
+      photo: '/assets/city-scenes.jpg',
+      photoAlt: 'Street scene at dusk',
+      verified: true
+    },
+    {
+      id: 'kinder-plan',
+      author: 'Noor Ali',
+      publication: 'New Rhythm',
+      topic: 'Self',
+      topics: ['Self', 'Health', 'Mindfulness'],
+      publishedAt: '2026-08-15',
+      title: 'A kinder way to make a plan',
+      summary: 'A useful plan leaves enough room for the person making it to actually live through the day.',
+      body: [
+        'A plan can be useful without being a promise that the day will obey it.',
+        'The kinder version leaves room for energy, interruptions, and the fact that other people exist.',
+        'I started writing three things I could do instead of ten things I should do. The list got smaller. The day got easier.'
+      ],
+      readMinutes: 5,
+      applauseCount: 18,
+      responseCount: 4,
+      repostCount: 1,
+      photo: '/assets/forest-wellness.jpg',
+      photoAlt: 'Quiet forest scene'
+    }
+  ];
   function readStorageValue(key) {
     try {
       return localStorage.getItem(key) || '';
@@ -24,6 +114,7 @@
   const isWorkerHost = /\.workers\.dev$/iu.test(location.hostname) || productionHostnames.has(location.hostname);
   const API_BASE = isWorkerHost ? location.origin : configuredApiBase;
   const API_ENABLED = isWorkerHost || Boolean(configuredApiBase);
+  const loadingPreview = new URLSearchParams(location.search).get('loading') === '1';
   let stories = [...document.querySelectorAll('.story')].map((element, index) => {
     const title = element.querySelector('h2')?.textContent?.trim() || ('Story ' + (index + 1));
     const id = element.dataset.storyId || slugify(title);
@@ -169,6 +260,7 @@
   let publicStoryLoading = false;
   let editorStoryCursor = null;
   let editorStoryLoading = false;
+  let lastMenuFocus = null;
 
   function slugify(value) {
     return value.toLowerCase()
@@ -289,23 +381,32 @@
     if (remote) return remote;
     const title = element.querySelector('h2')?.textContent?.trim() || '';
     const byline = element.querySelector('.byline')?.textContent?.trim() || '';
-    const author = element.dataset.author || byline.split(' in ')[0] || 'Unknown author';
-    const publication = byline.includes(' in ') ? byline.split(' in ').slice(1).join(' in ').trim() : '';
+    const author = element.dataset.author || element.querySelector('.byline-main strong')?.textContent?.trim() || byline.split(' in ')[0] || 'Unknown author';
+    const publicationMeta = element.querySelector('.byline-meta')?.textContent?.trim() || '';
+    const publication = publicationMeta ? publicationMeta.split(/\s+·\s+/u)[0] : (byline.includes(' in ') ? byline.split(' in ').slice(1).join(' in ').trim() : '');
     const summary = element.querySelector('.story-summary')?.textContent?.trim() || '';
     const meta = [...element.querySelectorAll('.story-meta .engagement-item')].map(node => node.textContent.trim());
     const readTime = (meta.find(text => /min read$/i.test(text)) || '').match(/(\d+)/)?.[1];
     const topic = element.querySelector('.topic-pill')?.textContent?.trim() || '';
+    const applauseCount = Number(element.dataset.applauseCount || 0);
+    const responseCount = Number(element.dataset.responseCount || 0);
+    const repostCount = Number(element.dataset.repostCount || 0);
     const topics = [...new Set((element.dataset.topics || topic).split(/\s+/u).map(value => value.trim()).filter(Boolean))];
     const photo = element.querySelector('.story-image')?.getAttribute('src') || '';
     const photoAlt = element.querySelector('.story-image')?.getAttribute('alt') || '';
+    let body = [summary || 'This story is available in the online reading room.'];
+    if (element.dataset.body) {
+      const parsedBody = element.dataset.body.split(/\s*\|\|\s*/u).filter(Boolean);
+      if (parsedBody.length) body = parsedBody;
+    }
     return {
       id, title, author, publication, summary, topic, topics, photo, photoAlt,
       publishedAt: element.dataset.publishedAt || '',
-      body: [summary || 'This story is available in the online reading room.'],
+      body,
       readMinutes: Math.max(1, Number(readTime || 0), Math.ceil(summary.split(/\s+/u).filter(Boolean).length / 220)),
-      applauseCount: 0,
-      repostCount: 0,
-      responseCount: 0
+      applauseCount,
+      repostCount,
+      responseCount
     };
   }
 
@@ -319,8 +420,6 @@
 
   function presentationPhoto(photo, topic) {
     if (!photo) return '';
-    if (photo.startsWith('data:')) return photo;
-    if (photo.startsWith('/assets/')) return placeholderDataUri(topic);
     return photo;
   }
 
@@ -340,6 +439,20 @@
     return (count / 1000000).toFixed(1).replace(/\.0$/u, '') + 'M';
   }
 
+  function iconSvg(name) {
+    const paths = {
+      clap: '<path d="M9 12.6 5.8 9.4a1.9 1.9 0 0 0-2.7 2.7l5.6 5.6a4.7 4.7 0 0 0 6.6 0l2.1-2.1a4.8 4.8 0 0 0 .8-5.7l-1.8-3.1"/><path d="m8 10.6 2.2-2.2a2 2 0 0 1 2.8 0l2.9 2.9"/><path d="m6.6 8.4 1.5-1.5a1.8 1.8 0 0 1 2.6 0l4.1 4.1"/><path d="m11.2 6.5 1-1a1.8 1.8 0 0 1 2.6 0l3.4 3.4"/>',
+      comment: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.8 3.5.8-3.5H6.5A2.5 2.5 0 0 1 4 12.5z"/>',
+      repost: '<path d="m7 7 3-3 3 3"/><path d="M10 4v9a4 4 0 0 0 4 4h4"/><path d="m17 14 3 3-3 3"/>'
+    };
+    const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('viewBox','0 0 24 24');
+    svg.setAttribute('aria-hidden','true');
+    svg.setAttribute('focusable','false');
+    svg.innerHTML = paths[name] || paths.comment;
+    return svg;
+  }
+
   function createStoryElement(story) {
     const article = document.createElement('article');
     article.className = 'story';
@@ -347,6 +460,11 @@
     article.dataset.publishedAt = story.publishedAt || story.published_at || '';
     article.dataset.topics = [story.topic, ...(story.topics || [])].filter(Boolean).join(' ');
     article.dataset.storyId = story.id;
+    article.dataset.verified = story.verified ? 'true' : 'false';
+    article.dataset.body = (Array.isArray(story.body) ? story.body : [story.body || story.summary || '']).filter(Boolean).join('||');
+    article.dataset.applauseCount = String(story.applauseCount || 0);
+    article.dataset.responseCount = String(story.responseCount || 0);
+    article.dataset.repostCount = String(story.repostCount || 0);
     const copy = document.createElement('div');
     copy.className = 'story-copy';
     const byline = document.createElement('div');
@@ -355,10 +473,27 @@
     avatar.className = 'mini-avatar';
     avatar.textContent = String(story.author || 'U').split(/\s+/u).map(part => part[0]).join('').slice(0, 2).toUpperCase();
     const bylineText = document.createElement('span');
+    const authorLine = document.createElement('span');
+    authorLine.className = 'byline-main';
     const authorStrong = document.createElement('strong');
     authorStrong.textContent = story.author || 'Unknown author';
-    bylineText.append(authorStrong);
-    if (story.publication) bylineText.append(document.createTextNode(' in ' + story.publication));
+    authorLine.append(authorStrong);
+    if (story.verified) {
+      const verified = document.createElement('span');
+      verified.className = 'byline-verified';
+      verified.textContent = '✓';
+      verified.setAttribute('aria-label','Verified');
+      authorLine.append(verified);
+    }
+    bylineText.append(authorLine);
+    const publicationLine = document.createElement('span');
+    publicationLine.className = 'byline-meta';
+    const parts = [];
+    if (story.publication) parts.push(story.publication);
+    const published = story.publishedAt || story.published_at;
+    if (published) parts.push(formatPublishedDate(published));
+    publicationLine.textContent = parts.join(' · ');
+    bylineText.append(publicationLine);
     byline.append(avatar, bylineText);
     const title = document.createElement('h2');
     title.className = 'story-title-button';
@@ -392,14 +527,14 @@
       node.replaceChildren();
       const iconNode = document.createElement('span');
       iconNode.className = 'engagement-icon';
-      iconNode.textContent = icon;
+      iconNode.append(iconSvg(icon));
       const valueNode = document.createElement('span');
       valueNode.textContent = formatCount(value);
       node.append(iconNode, valueNode);
     }
-    setMetric(applause, '✦', story.applauseCount);
-    setMetric(responses, '◌', story.responseCount);
-    setMetric(reposts, '↗', story.repostCount);
+    setMetric(applause, 'clap', story.applauseCount);
+    setMetric(responses, 'comment', story.responseCount);
+    setMetric(reposts, 'repost', story.repostCount);
     engagement.append(applause, responses, reposts);
     const topic = document.createElement('span');
     topic.className = 'topic-pill';
@@ -476,9 +611,25 @@
     loadMoreStoriesButton.textContent = publicStoryLoading ? 'Loading…' : 'Load more stories';
   }
 
+  function setFeedSkeleton(visible) {
+    const skeleton = document.querySelector('#feed-skeleton');
+    if (!skeleton) return;
+    skeleton.dataset.loading = visible ? 'true' : 'false';
+  }
+
+  function ensureLocalStories() {
+    const container = document.querySelector('#stories');
+    if (!container || container.children.length) return;
+    const fragment = document.createDocumentFragment();
+    LOCAL_STORIES.forEach(story => fragment.append(createStoryElement(story)));
+    container.append(fragment);
+    refreshStoriesCollection();
+  }
+
   async function loadPublicStories({ append = false } = {}) {
     if (!API_ENABLED) {
       publicStoryCursor = null;
+      setFeedSkeleton(false);
       updatePublicLoadMoreState();
       if (feedStatus) {
         feedStatus.hidden = false;
@@ -487,6 +638,7 @@
       return false;
     }
     if (publicStoryLoading) return false;
+    if (!append) setFeedSkeleton(true);
     if (append && !publicStoryCursor) return true;
     publicStoryLoading = true;
     updatePublicLoadMoreState();
@@ -514,6 +666,7 @@
       return false;
     } finally {
       publicStoryLoading = false;
+      setFeedSkeleton(false);
       updatePublicLoadMoreState();
     }
   }
@@ -1960,12 +2113,21 @@
   function toggleMobileMenu(force) {
     const rail = document.querySelector('.left-rail');
     const toggle = document.querySelector('#menu-toggle');
+    const close = document.querySelector('.mobile-drawer-close');
     if (!rail || !toggle) return;
     const open = typeof force === 'boolean' ? force : !rail.classList.contains('mobile-open');
+    if (open) lastMenuFocus = document.activeElement;
     rail.classList.toggle('mobile-open', open);
     document.body.classList.toggle('menu-open', open);
     toggle.setAttribute('aria-expanded', String(open));
     toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    rail.setAttribute('aria-hidden', String(!open));
+    if (open) {
+      window.setTimeout(() => close?.focus(), 0);
+    } else if (lastMenuFocus instanceof HTMLElement) {
+      window.setTimeout(() => lastMenuFocus?.focus?.(), 0);
+      lastMenuFocus = null;
+    }
   }
 
   function wireEvents() {
@@ -1976,7 +2138,26 @@
     });
     document.querySelector('.mobile-drawer-close')?.addEventListener('click', () => toggleMobileMenu(false));
     document.addEventListener('keydown', event => {
-      if (event.key === 'Escape' && document.body.classList.contains('menu-open')) toggleMobileMenu(false);
+      if (event.key === 'Escape' && document.body.classList.contains('menu-open')) {
+        event.preventDefault();
+        toggleMobileMenu(false);
+        return;
+      }
+      if (event.key === 'Tab' && document.body.classList.contains('menu-open')) {
+        const rail = document.querySelector('.left-rail.mobile-open');
+        const focusables = rail ? [...rail.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])')] : [];
+        if (focusables.length) {
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
+        }
+      }
       const typing = event.target.closest?.('input, textarea, select, [contenteditable="true"]');
       const modalOpen = document.querySelector('dialog[open]');
       if (event.key === '/' && !typing && !modalOpen && !event.metaKey && !event.ctrlKey && !event.altKey) {
@@ -2156,12 +2337,12 @@
         return;
       }
 
-      if (target.id === 'profile-button') {
+      if (target.id === 'profile-button-top' || target.id === 'profile-button') {
         event.preventDefault();
         openProfile();
         return;
       }
-      if (target.id === 'writers-button') {
+      if (target.id === 'writers-button' || target.id === 'suggestions-button') {
         event.preventDefault();
         renderWriterList();
         if (typeof writersDialog?.showModal === 'function') writersDialog.showModal(); else writersDialog?.setAttribute('open', '');
@@ -2431,6 +2612,7 @@
     }
   });
 
+  ensureLocalStories();
   installImageFallbacks();
   wireStorySocialControls();
   refreshBookmarkButtons();
@@ -2441,7 +2623,13 @@
   renderCurrentView();
   updateEditorUi();
   wireEvents();
-  loadPublicStories();
+  if (loadingPreview) {
+    setFeedSkeleton(true);
+    const storiesContainer = document.querySelector('#stories');
+    if (storiesContainer) storiesContainer.hidden = true;
+  } else {
+    loadPublicStories();
+  }
   trySession();
   handleHash();
 })();
