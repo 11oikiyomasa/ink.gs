@@ -3022,6 +3022,32 @@ main {
   font-size: 4.15em;
 }
 
+.reader-body blockquote {
+  max-width: 580px;
+  margin: 58px auto;
+  padding: 0 12px;
+  color: #a6a6a6;
+  font-family: var(--sans);
+  font-size: clamp(30px, 5.1vw, 46px);
+  font-weight: 400;
+  line-height: 1.34;
+  letter-spacing: -1.2px;
+}
+
+.reader-body blockquote p {
+  margin: 0;
+}
+
+.reader-body blockquote cite {
+  display: block;
+  margin-top: 18px;
+  color: #888;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-style: normal;
+  letter-spacing: 0;
+}
+
 .reader-actions {
   position: sticky;
   bottom: 0;
@@ -3216,12 +3242,27 @@ main {
   }
 
   .reader-cover {
-    display: none;
+    display: block;
+    width: calc(100% - 28px);
+    max-height: none;
+    margin: 0 auto 30px;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: 1px;
   }
 
   .reader-body {
     font-size: 20px;
     line-height: 1.76;
+  }
+
+  .reader-body blockquote {
+    width: calc(100% - 34px);
+    margin: 50px auto;
+    padding: 0;
+    font-size: clamp(30px, 7.1vw, 48px);
+    line-height: 1.34;
+    letter-spacing: -1px;
   }
 
   .reader-body p {
