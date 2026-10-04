@@ -147,6 +147,7 @@
   const statsInProgress = document.querySelector('#stats-in-progress');
   const statsMinutes = document.querySelector('#stats-minutes');
   const feedStatus = document.querySelector('#feed-status');
+  const feedSkeleton = document.querySelector('#feed-skeleton');
   const profileDialog = document.querySelector('#profile-dialog');
   const profileForm = document.querySelector('#profile-form');
   const profileName = document.querySelector('#profile-name');
@@ -491,16 +492,23 @@
 
   async function loadPublicStories() {
     if (!API_ENABLED) {
+      if (feedSkeleton) feedSkeleton.hidden = true;
       if (feedStatus) {
         feedStatus.hidden = false;
         feedStatus.textContent = 'Showing local sample stories. Open the Worker app to load published online stories.';
       }
       return false;
     }
+    if (feedSkeleton) {
+      feedSkeleton.hidden = false;
+      if (storiesContainer) storiesContainer.hidden = true;
+    }
     try {
       const data = await apiRequest('/api/stories', { method: 'GET', headers: {} });
       const remoteStories = Array.isArray(data.stories) ? data.stories : [];
       renderRemoteStories(remoteStories);
+      if (feedSkeleton) feedSkeleton.hidden = true;
+      if (storiesContainer) storiesContainer.hidden = false;
       if (feedStatus) {
         feedStatus.hidden = false;
         feedStatus.textContent = remoteStories.length
@@ -509,6 +517,8 @@
       }
       return true;
     } catch (error) {
+      if (feedSkeleton) feedSkeleton.hidden = true;
+      if (storiesContainer) storiesContainer.hidden = false;
       if (feedStatus) {
         feedStatus.hidden = false;
         feedStatus.textContent = 'Online stories are temporarily unavailable. Local stories remain available.';
