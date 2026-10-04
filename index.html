@@ -295,13 +295,21 @@
       </article>
     </div>
     <div class="reader-actions">
-      <div class="reader-actions-group">
-        <button class="reader-action" id="reader-applaud" type="button" aria-pressed="false">Applaud</button>
-        <button class="reader-action" id="reader-respond" type="button">Respond</button>
-        <button class="reader-action" id="reader-repost" type="button" aria-pressed="false">Repost</button>
-        <button class="reader-action" id="reader-bookmark" type="button" aria-pressed="false">Save</button>
+      <div class="reader-stats-row" aria-label="Story engagement">
+        <button class="reader-stat" id="reader-applaud" type="button" aria-label="Applaud" aria-pressed="false">
+          <span class="reader-stat-icon" aria-hidden="true">♢</span><span class="reader-stat-count" id="reader-applaud-count">0</span>
+        </button>
+        <button class="reader-stat" id="reader-respond" type="button" aria-label="Respond">
+          <span class="reader-stat-icon" aria-hidden="true">◯</span><span class="reader-stat-count" id="reader-response-stat-count">0</span>
+        </button>
+        <button class="reader-stat" id="reader-repost" type="button" aria-label="Repost" aria-pressed="false">
+          <span class="reader-stat-icon" aria-hidden="true">↗</span><span class="reader-stat-count" id="reader-repost-count">0</span>
+        </button>
+        <button class="reader-stat reader-stat-bookmark" id="reader-bookmark" type="button" aria-label="Save story" aria-pressed="false">
+          <span class="reader-stat-icon" aria-hidden="true">♧</span>
+        </button>
       </div>
-      <button class="reader-action primary" id="reader-read" type="button">Mark as finished</button>
+      <button class="reader-finished" id="reader-read" type="button">Mark as finished</button>
     </div>
     <section class="reader-social" id="reader-social" hidden aria-label="Story responses">
       <div class="reader-social-heading"><strong id="reader-response-count">0 responses</strong><span>Join the conversation</span></div>
