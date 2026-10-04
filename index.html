@@ -27,6 +27,7 @@
       </div>
     </div>
   </header>
+  <div class="open-app-bar" role="note"><span>Open in app</span><span aria-hidden="true">↗</span></div>
   <div class="layout" id="home">
     <aside class="left-rail" aria-label="Main navigation">
       <div class="rail-mobile-head"><span class="rail-mobile-brand">ink.gs</span><button class="mobile-drawer-close" type="button" aria-label="Close menu">×</button></div>
@@ -56,6 +57,10 @@
           <div class="tabs" role="tablist" aria-label="Story feed"><button class="tab selected" role="tab" aria-selected="true" data-view="For you">For you</button><button class="tab" role="tab" aria-selected="false" data-view="Following">Following</button></div>
           <p class="feed-status" id="feed-status" role="status" aria-live="polite" hidden></p>
         </div>
+        <section class="feed-skeleton" id="feed-skeleton" aria-label="Loading stories" hidden>
+      <article class="skeleton-story"><div class="skeleton-copy"><span class="skeleton-line skeleton-byline"></span><span class="skeleton-line skeleton-title"></span><span class="skeleton-line skeleton-title short"></span><span class="skeleton-line skeleton-summary"></span><span class="skeleton-line skeleton-summary short"></span><div class="skeleton-actions"><span></span><span></span><span></span><span></span></div></div><span class="skeleton-image"></span></article>
+      <article class="skeleton-story"><div class="skeleton-copy"><span class="skeleton-line skeleton-byline"></span><span class="skeleton-line skeleton-title"></span><span class="skeleton-line skeleton-title short"></span><span class="skeleton-line skeleton-summary"></span><span class="skeleton-line skeleton-summary short"></span><div class="skeleton-actions"><span></span><span></span><span></span><span></span></div></div><span class="skeleton-image"></span></article>
+    </section>
         <section id="stories" class="story-feed" aria-label="Recommended stories">
         <article class="story" data-author="Mara Ellis" data-topics="Creativity Writing Mindfulness" data-published-at="2026-05-04T00:00:00Z">
           <div class="story-copy">
