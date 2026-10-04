@@ -81,6 +81,7 @@
   const readerScroll = document.querySelector('#reader-scroll');
   const readerKicker = document.querySelector('#reader-kicker');
   const readerPublication = document.querySelector('#reader-publication');
+  const readerFollowPublication = document.querySelector('#reader-follow-publication');
   const readerTitle = document.querySelector('#reader-title');
   const readerByline = document.querySelector('#reader-byline');
   const readerSummary = document.querySelector('#reader-summary');
@@ -195,7 +196,8 @@
       progress: {},
       drafts: [],
       activeDraftId: null,
-      membershipChanges: { bookmarks: {}, following: {} },
+      membershipChanges: { bookmarks: {}, following: {}, publications: {} },
+      followingPublications: [],
       progressUpdatedAt: {},
       draftTombstones: {},
       profile: { name: '', bio: '' }
@@ -212,8 +214,12 @@
         activeDraftId: typeof saved.activeDraftId === 'string' ? saved.activeDraftId : null,
         membershipChanges: {
           bookmarks: isRecord(saved.membershipChanges?.bookmarks) ? saved.membershipChanges.bookmarks : {},
-          following: isRecord(saved.membershipChanges?.following) ? saved.membershipChanges.following : {}
+          following: isRecord(saved.membershipChanges?.following) ? saved.membershipChanges.following : {},
+          publications: isRecord(saved.membershipChanges?.publications) ? saved.membershipChanges.publications : {}
         },
+        followingPublications: Array.isArray(saved.followingPublications)
+          ? saved.followingPublications.filter(value => typeof value === 'string').slice(0, 100)
+          : [],
         progressUpdatedAt: isRecord(saved.progressUpdatedAt) ? saved.progressUpdatedAt : {},
         draftTombstones: isRecord(saved.draftTombstones) ? saved.draftTombstones : {},
         profile: {
@@ -273,7 +279,7 @@
   }
 
   function recordMembershipChange(collection, id, present) {
-    if (!state.membershipChanges) state.membershipChanges = { bookmarks: {}, following: {} };
+    if (!state.membershipChanges) state.membershipChanges = { bookmarks: {}, following: {}, publications: {} };
     if (!state.membershipChanges[collection]) state.membershipChanges[collection] = {};
     state.membershipChanges[collection][id] = { present, at: new Date().toISOString() };
   }
@@ -684,6 +690,17 @@
     if (announce) showToast(present ? 'Saved to your reading list.' : 'Removed from your reading list.');
   }
 
+  function setPublicationFollowing(publication, present, announce = true) {
+    if (!publication) return;
+    const set = new Set(state.followingPublications);
+    if (present) set.add(publication); else set.delete(publication);
+    state.followingPublications = [...set];
+    recordMembershipChange('publications', publication, present);
+    persistState();
+    refreshPublicationFollowButton();
+    if (announce) showToast(present ? 'Now following ' + publication + '.' : 'Unfollowed ' + publication + '.');
+  }
+
   function setFollowing(author, present, announce = true) {
     if (!author) return;
     const set = new Set(state.following);
@@ -710,6 +727,14 @@
       readerBookmark.setAttribute('aria-pressed', String(active));
       readerBookmark.textContent = active ? 'Saved story' : 'Save story';
     }
+  }
+
+  function refreshPublicationFollowButton() {
+    if (!readerFollowPublication || !currentStory) return;
+    const publication = currentStory.publication || '';
+    const active = Boolean(publication && state.followingPublications.includes(publication));
+    readerFollowPublication.setAttribute('aria-pressed', String(active));
+    readerFollowPublication.textContent = active ? 'Following publication' : 'Follow publication';
   }
 
   function refreshFollowButton() {
@@ -813,6 +838,7 @@
     }
     if (readerAuthorName) readerAuthorName.textContent = data.author || 'Unknown author';
     if (readerByline) readerByline.textContent = '';
+    refreshPublicationFollowButton();
 
     if (readerImage) {
       if (data.photo) {
@@ -1792,6 +1818,16 @@
           populateEditorFromStory(story);
         }
         if (target.dataset.onlineAction === 'delete') deleteOnlineStory(id);
+        return;
+      }
+
+      if (target.id === 'reader-follow-publication') {
+        if (currentStory?.publication) {
+          setPublicationFollowing(
+            currentStory.publication,
+            !state.followingPublications.includes(currentStory.publication)
+          );
+        }
         return;
       }
 
