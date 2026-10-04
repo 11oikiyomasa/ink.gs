@@ -2081,7 +2081,7 @@
         return;
       }
 
-      if (target.id === 'profile-button') {
+      if (target.id === 'profile-button' || target.id === 'profile-avatar-button') {
         event.preventDefault();
         openProfile();
         return;
