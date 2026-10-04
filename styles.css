@@ -2754,3 +2754,500 @@ main {
     margin-bottom: 32px;
   }
 }
+
+
+/* Editorial reader pass */
+.reader {
+  width: min(960px, calc(100vw - 34px));
+  max-height: min(940px, calc(100dvh - 24px));
+  border-color: #3f3f3f;
+  border-radius: 10px;
+  background: #171717;
+}
+
+.reader-site-bar {
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 32px 44px;
+  align-items: center;
+  gap: 14px;
+  padding: 0 22px;
+  border-bottom: 1px solid var(--line);
+  background: #171717;
+}
+
+.reader-menu-mark {
+  color: #c8c8c8;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.reader-brand {
+  color: #f2f2f2;
+  font-family: var(--serif);
+  font-size: 31px;
+  line-height: .9;
+  font-weight: 700;
+  letter-spacing: -1.8px;
+}
+
+.reader-site-search {
+  color: #cfcfcf;
+  font-size: 25px;
+  line-height: 1;
+  text-align: center;
+}
+
+.reader-site-avatar {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #e83d8c;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 750;
+}
+
+.reader-offer {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 9px 20px;
+  background: var(--yellow);
+  color: var(--yellow-ink);
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.reader-offer a {
+  color: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.reader-toolbar {
+  min-height: 68px;
+  grid-template-columns: auto auto minmax(0,1fr) auto auto;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--line);
+  background: #171717;
+}
+
+.reader-toolbar::before {
+  content: none;
+}
+
+.reader-publication {
+  color: #ededed;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.reader-follow-publication,
+.reader-inline-follow {
+  border: 0;
+  background: transparent;
+  color: #d7d7d7;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.reader-follow-publication {
+  padding: 8px 0;
+  font-size: 14px;
+}
+
+.reader-toolbar-spacer {
+  min-width: 0;
+}
+
+.reader-read-label {
+  color: #7e7e7e;
+  font-size: 11px;
+}
+
+.reader-close {
+  width: 38px;
+  height: 38px;
+  font-size: 28px;
+}
+
+.reader-scroll {
+  max-height: calc(100dvh - 212px);
+  padding: clamp(42px, 6vw, 68px) clamp(28px, 7vw, 86px) 46px;
+}
+
+.reader-article {
+  max-width: 680px;
+}
+
+.reader-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 0 0 20px;
+}
+
+.reader-chip {
+  padding: 9px 13px;
+  border: 1px solid #3e3e3e;
+  border-radius: 19px;
+  background: #1e1e1e;
+  color: #cfcfcf;
+  font-size: 12px;
+}
+
+.reader-chip-accent::before {
+  margin-right: 7px;
+  color: var(--yellow);
+  content: "✦";
+}
+
+.reader-title {
+  margin: 0 0 17px;
+  color: #f7f7f7;
+  font-size: clamp(42px, 5.6vw, 61px);
+  line-height: 1.02;
+  letter-spacing: -2px;
+}
+
+.reader-summary {
+  margin: 0 0 23px;
+  color: #bdbdbd;
+  font-size: 21px;
+  line-height: 1.45;
+}
+
+.reader-meta {
+  margin: 0 0 21px;
+  color: #8f8f8f;
+  font-size: 14px;
+}
+
+.reader-author-row {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 22px;
+}
+
+.reader-author-avatar {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 40px;
+  border-radius: 50%;
+  background: #7b2733;
+  color: #fff1f4;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.reader-author-name {
+  color: #e5e5e5;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.reader-inline-follow {
+  margin-left: 3px;
+  padding: 8px 12px;
+  border: 1px solid #4d4d4d;
+  border-radius: 19px;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.reader-inline-follow:hover,
+.reader-follow-publication:hover {
+  color: #fff;
+}
+
+.reader-tool-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 34px;
+}
+
+.reader-tool {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 17px;
+  border: 1px solid #3e3e3e;
+  border-radius: 23px;
+  background: #191919;
+  color: #cfcfcf;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.reader-tool:hover {
+  background: #222;
+  color: #fff;
+}
+
+.reader-cover {
+  margin-bottom: 34px;
+}
+
+.reader-body {
+  color: #e6e6e6;
+  font-family: var(--serif);
+  font-size: 21px;
+  line-height: 1.78;
+}
+
+.reader-body p {
+  margin: 0 0 29px;
+}
+
+.reader-body p:first-child::first-letter {
+  margin-top: .08em;
+  font-size: 4.15em;
+}
+
+.reader-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  min-height: 68px;
+  padding: 9px 22px;
+  border-top: 1px solid var(--line);
+  background: rgb(24 24 24 / 97%);
+  backdrop-filter: blur(12px);
+}
+
+.reader-actions-group {
+  gap: 18px;
+  align-items: center;
+}
+
+.reader-actions .reader-action {
+  padding: 8px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 14px;
+}
+
+.reader-actions .reader-action:hover {
+  background: transparent;
+  color: #fff;
+}
+
+.reader-actions .reader-action[aria-pressed="true"] {
+  color: var(--yellow);
+  border-color: transparent;
+}
+
+.reader-actions .reader-action.primary {
+  padding: 9px 15px;
+  border: 1px solid #4c4c4c;
+  border-radius: 21px;
+  background: #202020;
+  color: #d7d7d7;
+}
+
+.reader-actions .reader-action.primary:hover {
+  background: #292929;
+  color: #fff;
+}
+
+.reader-social {
+  position: relative;
+  z-index: 5;
+}
+
+@media (max-width: 700px) {
+  .reader {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .reader-site-bar {
+    min-height: 78px;
+    grid-template-columns: 34px minmax(0,1fr) 34px 46px;
+    gap: 11px;
+    padding: 0 max(18px, 5.5vw);
+  }
+
+  .reader-menu-mark {
+    font-size: 22px;
+  }
+
+  .reader-brand {
+    font-size: 36px;
+    letter-spacing: -2.2px;
+  }
+
+  .reader-site-search {
+    font-size: 27px;
+  }
+
+  .reader-site-avatar {
+    width: 46px;
+    height: 46px;
+    font-size: 17px;
+  }
+
+  .reader-offer {
+    min-height: 58px;
+    padding: 9px 14px;
+    font-size: 15px;
+  }
+
+  .reader-toolbar {
+    min-height: 62px;
+    grid-template-columns: auto auto minmax(0,1fr) auto auto;
+    gap: 7px;
+    padding: 0 max(18px, 5.5vw);
+  }
+
+  .reader-publication {
+    max-width: 48vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+  }
+
+  .reader-follow-publication {
+    padding: 7px 0;
+    font-size: 12px;
+  }
+
+  .reader-read-label {
+    display: none;
+  }
+
+  .reader-close {
+    width: 36px;
+    height: 36px;
+  }
+
+  .reader-scroll {
+    max-height: calc(100dvh - 198px);
+    padding: 38px max(22px, 6.2vw) 38px;
+  }
+
+  .reader-article {
+    max-width: none;
+  }
+
+  .reader-chips {
+    gap: 7px;
+    margin-bottom: 18px;
+  }
+
+  .reader-chip {
+    padding: 8px 11px;
+    font-size: 11px;
+  }
+
+  .reader-title {
+    margin-bottom: 14px;
+    font-size: clamp(37px, 9.5vw, 54px);
+    line-height: 1.04;
+    letter-spacing: -1.6px;
+  }
+
+  .reader-summary {
+    margin-bottom: 19px;
+    font-size: 20px;
+    line-height: 1.42;
+  }
+
+  .reader-meta {
+    margin-bottom: 19px;
+    font-size: 13px;
+  }
+
+  .reader-author-row {
+    margin-bottom: 18px;
+  }
+
+  .reader-author-avatar {
+    width: 38px;
+    height: 38px;
+    flex-basis: 38px;
+    font-size: 10px;
+  }
+
+  .reader-author-name {
+    font-size: 14px;
+  }
+
+  .reader-inline-follow {
+    padding: 7px 11px;
+    font-size: 12px;
+  }
+
+  .reader-tool-row {
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+
+  .reader-tool {
+    min-height: 42px;
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  .reader-cover {
+    display: none;
+  }
+
+  .reader-body {
+    font-size: 20px;
+    line-height: 1.76;
+  }
+
+  .reader-body p {
+    margin-bottom: 27px;
+  }
+
+  .reader-actions {
+    min-height: 64px;
+    padding: 8px max(18px, 5.5vw);
+    overflow-x: auto;
+  }
+
+  .reader-actions-group {
+    flex: 1 0 auto;
+    justify-content: space-between;
+    gap: 17px;
+  }
+
+  .reader-actions .reader-action {
+    font-size: 13px;
+  }
+
+  .reader-actions .reader-action.primary {
+    flex: 0 0 auto;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .reader-social {
+    width: calc(100% - 28px);
+    margin-left: 14px;
+    margin-right: 14px;
+  }
+}
