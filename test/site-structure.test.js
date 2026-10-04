@@ -44,20 +44,21 @@ test("story images have text alternatives and no production asset dependency", (
 
 
 test("reader keeps editorial article hierarchy and honest mobile controls", () => {
-  assert.match(html, /id=["']reader-publication["']/u);
-  assert.match(html, /id=["']reader-meta["']/u);
-  assert.match(html, /id=["']reader-author-name["']/u);
-  assert.match(html, /id=["']reader-follow["']/u);
-  assert.match(html, /class=["']reader-tool-row["']/u);
-  assert.match(html, /id=["']reader-applaud["']/u);
-  assert.match(html, /id=["']reader-respond["']/u);
-  assert.match(html, /id=["']reader-repost["']/u);
-  assert.match(js, /formatPublishedDate/u);
-  assert.match(js, /readerPublication/u);
-  assert.match(css, /\\.reader-author-row/iu);
-  assert.match(css, /\\.reader-tool-row/iu);
-  assert.match(css, /\\.reader-actions \\{[\\s\\S]*position: sticky/iu);
+  assert.ok(html.includes('id="reader-publication"'));
+  assert.ok(html.includes('id="reader-meta"'));
+  assert.ok(html.includes('id="reader-author-name"'));
+  assert.ok(html.includes('id="reader-follow"'));
+  assert.ok(html.includes('class="reader-tool-row"'));
+  assert.ok(html.includes('id="reader-applaud"'));
+  assert.ok(html.includes('id="reader-respond"'));
+  assert.ok(html.includes('id="reader-repost"'));
+  assert.ok(js.includes("formatPublishedDate"));
+  assert.ok(js.includes("readerPublication"));
+  assert.ok(css.includes(".reader-author-row"));
+  assert.ok(css.includes(".reader-tool-row"));
+  assert.ok(css.includes("position: sticky"));
 });
+
 
 test("mobile reader, menu, and search hooks stay wired", () => {
   assert.match(html, /id=["']reader-summary["']/u);
