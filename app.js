@@ -70,6 +70,7 @@
 
   const toast = document.querySelector('.toast');
   const search = document.querySelector('#search');
+  const searchBox = document.querySelector('.search-box');
   const searchToggle = document.querySelector('#search-toggle');
   const searchClear = document.querySelector('#search-clear');
   const emptyState = document.querySelector('#empty-state');
@@ -1598,7 +1599,12 @@
       }
 
       if (target.id === 'search-toggle') {
-        search?.focus();
+        const open = !searchBox?.classList.contains('search-open');
+        searchBox?.classList.toggle('search-open', open);
+        target.setAttribute('aria-expanded', String(open));
+        if (open) {
+          search?.focus();
+        }
         return;
       }
 
@@ -1606,7 +1612,9 @@
         if (search) search.value = '';
         updateSearchControls();
         renderCurrentView();
-        search?.focus();
+        searchBox?.classList.remove('search-open');
+        searchToggle?.setAttribute('aria-expanded', 'false');
+        search?.blur();
         return;
       }
 
@@ -1820,6 +1828,9 @@
         search.value = '';
         updateSearchControls();
         renderCurrentView();
+        searchBox?.classList.remove('search-open');
+        searchToggle?.setAttribute('aria-expanded', 'false');
+        search.blur();
       }
     });
 
