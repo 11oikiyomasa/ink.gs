@@ -80,10 +80,14 @@
   const readerLabel = document.querySelector('#reader-label');
   const readerScroll = document.querySelector('#reader-scroll');
   const readerKicker = document.querySelector('#reader-kicker');
+  const readerPublication = document.querySelector('#reader-publication');
   const readerTitle = document.querySelector('#reader-title');
   const readerByline = document.querySelector('#reader-byline');
   const readerSummary = document.querySelector('#reader-summary');
+  const readerMeta = document.querySelector('#reader-meta');
   const readerTopic = document.querySelector('#reader-topic');
+  const readerAuthorAvatar = document.querySelector('#reader-author-avatar');
+  const readerAuthorName = document.querySelector('#reader-author-name');
   const readerImage = document.querySelector('#reader-image');
   const readerBody = document.querySelector('#reader-body');
   const readerProgress = document.querySelector('.reader-progress');
@@ -299,6 +303,7 @@
     const photoAlt = element.querySelector('.story-image')?.getAttribute('alt') || '';
     return {
       id, title, author, publication, summary, topic, photo, photoAlt,
+      publishedAt: element.dataset.publishedAt || '',
       body: originalArticles[id] || [summary || 'This story is part of the sample reading room.'],
       readMinutes: Math.max(1, Number(readTime || 0), Math.ceil((originalArticles[id] || [summary]).join(' ').split(/\s+/u).filter(Boolean).length / 220)),
       applauseCount: 0,
@@ -324,6 +329,13 @@
 
 
 
+  function formatPublishedDate(value) {
+    if (!value) return '';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '';
+    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(parsed);
+  }
+
   function formatCount(value) {
     const count = Number(value || 0);
     if (count < 1000) return String(count);
@@ -335,6 +347,7 @@
     const article = document.createElement('article');
     article.className = 'story';
     article.dataset.author = story.author || 'Unknown author';
+    article.dataset.publishedAt = story.publishedAt || story.published_at || '';
     article.dataset.topics = [story.topic, ...(story.topics || [])].filter(Boolean).join(' ');
     article.dataset.storyId = story.id;
     const copy = document.createElement('div');
@@ -434,6 +447,7 @@
         topic: story.topic || 'Other',
         photo: story.photo || '',
         photoAlt: story.photoAlt || story.photo_alt || '',
+        publishedAt: story.publishedAt || story.published_at || '',
         body: Array.isArray(story.body) ? story.body : String(story.body || '').split(/\n\s*\n/u).filter(Boolean),
         readMinutes: Number(story.readMinutes || 1),
         applauseCount: Number(story.applauseCount || 0),
@@ -785,11 +799,21 @@
     if (!data || !reader) return;
     currentStory = data;
     if (readerLabel) readerLabel.textContent = data.readMinutes + ' min read';
-    if (readerKicker) readerKicker.textContent = data.publication ? data.author + ' in ' + data.publication : data.author;
+    if (readerPublication) readerPublication.textContent = data.publication || data.author || 'ink.gs';
+    if (readerKicker) readerKicker.textContent = '';
     if (readerTitle) readerTitle.textContent = data.title;
     if (readerSummary) readerSummary.textContent = data.summary || '';
+    if (readerMeta) {
+      const publishedDate = formatPublishedDate(data.publishedAt);
+      readerMeta.textContent = data.readMinutes + ' min read' + (publishedDate ? ' · ' + publishedDate : '');
+    }
     if (readerTopic) readerTopic.textContent = data.topic || 'Story';
-    if (readerByline) readerByline.textContent = data.author + (data.publication ? ' · ' + data.publication : '');
+    if (readerAuthorAvatar) {
+      readerAuthorAvatar.textContent = String(data.author || 'R').split(/\\s+/u).map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'R';
+    }
+    if (readerAuthorName) readerAuthorName.textContent = data.author || 'Unknown author';
+    if (readerByline) readerByline.textContent = '';
+
     if (readerImage) {
       if (data.photo) {
         readerImage.src = presentationPhoto(data.photo, data.topic);
