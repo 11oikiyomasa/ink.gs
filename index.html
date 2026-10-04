@@ -262,34 +262,44 @@
       <span class="reader-site-search" aria-hidden="true">⌕</span>
       <span class="reader-site-avatar" aria-hidden="true">R</span>
     </div>
-    <div class="reader-offer"><span>Access to everything. Now 30% off.</span><a href="#membership">Upgrade now</a></div>
+    <div class="reader-offer"><span>Access to everything. Now 30% off.</span><a href="#membership">Explore membership</a></div>
     <div class="reader-toolbar">
-      <span id="reader-label">Reading room</span>
+      <span class="reader-publication" id="reader-publication"></span>
+      <button class="reader-follow-publication" id="reader-follow-publication" type="button">Follow publication</button>
+      <span class="reader-toolbar-spacer" aria-hidden="true"></span>
+      <span id="reader-label" class="reader-read-label">Reading room</span>
       <button class="reader-close" id="reader-close" type="button" aria-label="Close reader">×</button>
     </div>
     <div class="reader-progress" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
     <div class="reader-scroll" id="reader-scroll" tabindex="0">
       <article class="reader-article">
-        <p class="reader-kicker" id="reader-kicker"></p>
         <div class="reader-chips" aria-label="Story attributes">
-          <span class="reader-chip reader-chip-accent">Member story</span>
+          <span class="reader-chip reader-chip-accent">Featured story</span>
           <span class="reader-chip" id="reader-topic">Story</span>
         </div>
         <h2 class="reader-title" id="reader-title"></h2>
         <p class="reader-summary" id="reader-summary"></p>
-        <p class="reader-byline" id="reader-byline"></p>
+        <p class="reader-meta" id="reader-meta"></p>
+        <div class="reader-author-row">
+          <span class="reader-author-avatar" id="reader-author-avatar" aria-hidden="true">R</span>
+          <span class="reader-author-name" id="reader-author-name"></span>
+          <button class="reader-inline-follow" id="reader-follow" type="button" aria-pressed="false">Follow</button>
+        </div>
+        <div class="reader-tool-row">
+          <button class="reader-tool" type="button" data-toast="Audio reading is not enabled for this story yet.">Listen</button>
+          <button class="reader-tool" id="reader-share" type="button" aria-label="Share story link" title="Share story link"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="m8.6 10.6 6.8-4.1M8.6 13.4l6.8 4.1"></path></svg><span>Share</span></button>
+          <button class="reader-tool" type="button" data-toast="More reading options are coming to ink.gs.">More</button>
+        </div>
         <img class="reader-cover" id="reader-image" src="" alt="" hidden />
         <div class="reader-body" id="reader-body"></div>
       </article>
     </div>
     <div class="reader-actions">
       <div class="reader-actions-group">
-        <button class="reader-action" id="reader-bookmark" type="button" aria-pressed="false">Save story</button>
-        <button class="reader-action" id="reader-follow" type="button" aria-pressed="false">Follow writer</button>
         <button class="reader-action" id="reader-applaud" type="button" aria-pressed="false">Applaud</button>
         <button class="reader-action" id="reader-respond" type="button">Respond</button>
         <button class="reader-action" id="reader-repost" type="button" aria-pressed="false">Repost</button>
-        <button class="reader-action reader-share" id="reader-share" type="button" aria-label="Share story link" title="Share story link"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="m8.6 10.6 6.8-4.1M8.6 13.4l6.8 4.1"></path></svg><span>Share</span></button>
+        <button class="reader-action" id="reader-bookmark" type="button" aria-pressed="false">Save</button>
       </div>
       <button class="reader-action primary" id="reader-read" type="button">Mark as finished</button>
     </div>
