@@ -24,46 +24,6 @@
   const isWorkerHost = /\.workers\.dev$/iu.test(location.hostname) || productionHostnames.has(location.hostname);
   const API_BASE = isWorkerHost ? location.origin : configuredApiBase;
   const API_ENABLED = isWorkerHost || Boolean(configuredApiBase);
-  const originalArticles = {
-    'the-quiet-craft-of-paying-attention': [
-      'On the first Monday in May, I took the same twenty-minute walk I always take and left my headphones at home. Without a podcast filling the gaps, the walk seemed to lengthen. I noticed a bakery opening its blue shutters, a neighbor carrying a basil plant, and the particular patch of afternoon light that lands on the corner wall.',
-      'I used to think attention was something you spent, like a battery. The day asked for so much of it that I tried to conserve what was left. But attention turned out to behave more like a path: the more often I returned to the ordinary details around me, the easier it became to find my way back. Nothing on that route was new. My way of meeting it was.',
-      'Now I keep a small notebook by the door. I write down one thing I would have missed if I had hurried. It is not a productivity system, and the notes do not need to become anything. They are simply proof that a day can hold more than its loudest task.',
-      '> Attention becomes a place you return to, not a task you finish. — Mara Ellis',
-      'The walk still takes twenty minutes. It just feels like a place I have arrived.'
-    ],
-    'make-your-tools-a-little-less-impressive': [
-      'My most useful work tool is a timer that does almost nothing. It cannot score me, build a dashboard, or send a report. It gives me one quiet interval, then it rings. For a long time I assumed a tool had to offer more in order to be worth keeping.',
-      'That assumption made my setup impressive and my work strangely indirect. Before starting a short note, I could spend ten minutes adjusting the system that was meant to help me write it. Every new option brought another tiny decision: which view, which label, which ritual? The overhead was easy to mistake for progress.',
-      'So I started removing things. The task list became a plain page. Notifications became quiet by default. I kept the tools that let me begin, and let the rest go. The change was not dramatic; that was the point. Less ceremony left more room for the work itself.',
-      'A tool is doing enough when you can forget it is there.'
-    ],
-    'what-i-learned-from-missing-my-train': [
-      'I arrived at the station with time to spare and still watched the train leave. I had mistaken the departure board for a suggestion and the coffee line for a short one. For the first few minutes, I did what I always do when a plan breaks: I searched for a faster plan.',
-      'There was no faster connection for an hour. The bench by the window was free, so I sat down with the notebook I had packed for the journey. I wrote a list of things I could not do until the next train: answer a message, make a meeting, get to the hotel. Then the list was over, and the waiting began.',
-      'Outside, rain moved across the platforms in narrow bands. A child counted suitcases. Someone shared half a pastry with a stranger. None of this made the missed train worthwhile, exactly, but it gave the hour its own shape. I stopped treating it as an empty space between the real parts of the trip.',
-      'I still like arriving on time. I am learning that a detour can belong to the story, too.'
-    ],
-    'there-is-no-perfect-time-to-begin-again': [
-      'When a week gets crowded, I wait for a clean morning to begin again. I imagine an empty inbox, a fresh page, and enough time to do the thing properly. Those mornings are rare, and waiting for one can turn a small pause into a much longer one.',
-      'A friend once suggested I make the first step almost laughably small. Not “get back in shape,” but put on shoes and walk to the end of the block. Not “write every day,” but open the file and leave one honest sentence. The small step is not a trick for doing more. It is a way to meet the day you actually have.',
-      'Some starts remain small. Some grow into a habit; others simply make the next decision easier. I no longer need to decide whether this is a fresh start or a continuation. I can do one useful thing, then look up.',
-      'The calendar does not have to agree that today is a good day to begin.'
-    ],
-    'rest-is-not-a-reward-for-finishing': [
-      'I used to write rest at the bottom of a list, as if it were a prize waiting behind every unfinished errand. The list kept finding new items. Rest kept moving to tomorrow, where it would have to compete with the next list.',
-      'The first change was small: I put a pause on the calendar before I knew whether I had earned it. I went outside after lunch. I left one email for the morning. Nothing collapsed. The unfinished work was still there, but it looked less like an emergency once I stopped trying to carry it through every quiet moment.',
-      'This is not an argument for ignoring what matters. It is a reminder that attention and energy are part of the work, not bonuses you receive after it. A rested person is still a person with responsibilities; they are just less likely to meet each one as a crisis.',
-      'Some days the kindest item on the list is the space between the items.'
-    ],
-    'the-city-looks-different-when-you-walk-home': [
-      'I took the long way home because the usual bus was full. One extra block turned into three. I saw a tailor putting a paper sign in the window, a new bench under the plane trees, and a corner shop that had changed its name but kept the same green awning.',
-      'On the bus, my neighborhood becomes a sequence of stops. Walking makes it a collection of small decisions: cross here, pause there, take the street with the late sun. I started noticing the people who give a place its rhythm—the grocer sweeping the same stretch of pavement, the dog that waits outside the library, the children who race the crossing signal.',
-      'The city had not changed much in the hour I was away. My scale had. At street level, a familiar route is not a line between errands. It is a place where other people are also making their way through the day.',
-      'I still take the bus when I am in a hurry. When I am not, I try to leave room for the next block.'
-    ]
-  };
-
   let stories = [...document.querySelectorAll('.story')].map((element, index) => {
     const title = element.querySelector('h2')?.textContent?.trim() || ('Story ' + (index + 1));
     const id = element.dataset.storyId || slugify(title);
@@ -331,8 +291,8 @@
     return {
       id, title, author, publication, summary, topic, topics, photo, photoAlt,
       publishedAt: element.dataset.publishedAt || '',
-      body: originalArticles[id] || [summary || 'This story is part of the sample reading room.'],
-      readMinutes: Math.max(1, Number(readTime || 0), Math.ceil((originalArticles[id] || [summary]).join(' ').split(/\s+/u).filter(Boolean).length / 220)),
+      body: [summary || 'This story is available in the online reading room.'],
+      readMinutes: Math.max(1, Number(readTime || 0), Math.ceil(summary.split(/\s+/u).filter(Boolean).length / 220)),
       applauseCount: 0,
       repostCount: 0,
       responseCount: 0
