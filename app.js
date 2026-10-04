@@ -20,8 +20,10 @@
   }
 
   const configuredApiBase = (document.documentElement.dataset.apiBase || readStorageValue('reading-room-api-base') || '').replace(/\/+$/, '');
-  const API_BASE = /\.workers\.dev$/iu.test(location.hostname) ? location.origin : configuredApiBase;
-  const API_ENABLED = Boolean(API_BASE) || /\.workers\.dev$/iu.test(location.hostname);
+  const productionHostnames = new Set(['andregsman.eu.org', 'www.andregsman.eu.org']);
+  const isWorkerHost = /\.workers\.dev$/iu.test(location.hostname) || productionHostnames.has(location.hostname);
+  const API_BASE = isWorkerHost ? location.origin : configuredApiBase;
+  const API_ENABLED = isWorkerHost || Boolean(configuredApiBase);
   const originalArticles = {
     'the-quiet-craft-of-paying-attention': [
       'On the first Monday in May, I took the same twenty-minute walk I always take and left my headphones at home. Without a podcast filling the gaps, the walk seemed to lengthen. I noticed a bakery opening its blue shutters, a neighbor carrying a basil plant, and the particular patch of afternoon light that lands on the corner wall.',
