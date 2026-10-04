@@ -575,7 +575,7 @@ async function handlePublicStories(request, env) {
      FROM editor_stories
      WHERE published = 1 AND managed_by = ?${cursorSql}
      ORDER BY published_at DESC, id DESC
-     LIMIT ${limit + 1}`,
+     LIMIT ?`,
   ).bind(...bindings).all();
   const rows = result.results || [];
   const hasMore = rows.length > limit;
@@ -607,7 +607,7 @@ async function handleEditorStories(request, env) {
          FROM editor_stories
          WHERE managed_by = ?${cursorSql}
          ORDER BY updated_at DESC, id DESC
-         LIMIT ${limit + 1}`,
+         LIMIT ?`,
       ).bind(...bindings).all();
       const rows = result.results || [];
       const hasMore = rows.length > limit;
