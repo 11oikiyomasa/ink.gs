@@ -443,8 +443,8 @@
     const paths = {
       clap: '<path d="M9 12.6 5.8 9.4a1.9 1.9 0 0 0-2.7 2.7l5.6 5.6a4.7 4.7 0 0 0 6.6 0l2.1-2.1a4.8 4.8 0 0 0 .8-5.7l-1.8-3.1"/><path d="m8 10.6 2.2-2.2a2 2 0 0 1 2.8 0l2.9 2.9"/><path d="m6.6 8.4 1.5-1.5a1.8 1.8 0 0 1 2.6 0l4.1 4.1"/><path d="m11.2 6.5 1-1a1.8 1.8 0 0 1 2.6 0l3.4 3.4"/>',
       comment: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.8 3.5.8-3.5H6.5A2.5 2.5 0 0 1 4 12.5z"/>',
-      repost: '<path d="m7 7 3-3 3 3"/><path d="M10 4v9a4 4 0 0 0 4 4h4"/><path d="m17 14 3 3-3 3"/>'
-       bookmark: '<path d="M6.5 4.5h11v15l-5.5-3.3-5.5 3.3z"/>',
+      repost: '<path d="m7 7 3-3 3 3"/><path d="M10 4v9a4 4 0 0 0 4 4h4"/><path d="m17 14 3 3-3 3"/>',
+      bookmark: '<path d="M6.5 4.5h11v15l-5.5-3.3-5.5 3.3z"/>',
        more: '<circle cx="5" cy="12" r="1.25"/><circle cx="12" cy="12" r="1.25"/><circle cx="19" cy="12" r="1.25"/>'
     };
     const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
