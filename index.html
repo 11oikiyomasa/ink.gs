@@ -26,24 +26,16 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-<div class="app-promo"><a href="https://medium-inspired-site.andregsman.workers.dev">Open in app&nbsp; ↗</a></div>
 <header class="topbar">
     <div class="menu-toggle-wrap"><button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div><a class="brand" href="#home" aria-label="ink.gs home"><span class="brand-name">ink.gs</span></a>
     <div class="top-actions">
       <div class="search-box" aria-label="Search stories"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10.8" cy="10.8" r="6.4"></circle><path d="m15.5 15.5 4.2 4.2"></path></svg><input id="search" type="search" placeholder="Search" autocomplete="off" aria-label="Search stories" /><button class="search-toggle" id="search-toggle" type="button" aria-label="Open search" aria-expanded="false"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.4"></circle><path d="m15.5 15.5 4.2 4.2"></path></svg></button><button class="search-clear" id="search-clear" type="button" aria-label="Clear search">×</button></div>
       <button class="text-action write-action" id="write-button" type="button" aria-label="Write" aria-haspopup="dialog" aria-controls="composer"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m14.8 5.2 4 4L8 20H4v-4z"></path><path d="m12.9 7.1 4 4"></path></svg><span>Write</span></button>
       <button class="text-action sync-action" id="sync-button" type="button" title="Refresh published online stories" aria-label="Refresh published online stories">Refresh</button>
-      <button class="text-action" id="editor-login-button" type="button">Sign in</button>
-      <button class="get-started" data-toast="Welcome — this sample page is ready for you.">Get started</button>
+      <button class="text-action editor-action" id="editor-login-button" type="button" title="Open the publishing editor">Editor</button>
       <span class="avatar" aria-label="Reader profile">R</span>
     </div>
   </header>
-  <div class="membership-banner" role="note" aria-label="Welcome offer">
-    <span class="badge">Welcome Offer</span>
-    <span>Access to everything. Now 30% off.</span>
-    <a href="#membership">Upgrade now</a>
-  </div>
-
   <div class="layout" id="home">
     <aside class="left-rail" aria-label="Main navigation">
       <div class="rail-mobile-head">
