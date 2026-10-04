@@ -33,11 +33,8 @@ test("homepage IDs are unique and the ink.gs brand is present", () => {
 
 test("story images have text alternatives and no production asset dependency", () => {
   const images = [...html.matchAll(/<img\b[^>]*class=["'][^"']*\bstory-image\b[^"']*["'][^>]*>/gi)].map((match) => match[0]);
-  assert.equal(images.length, 6);
-  images.forEach((image) => {
-    assert.match(image, /\balt=["'][^"']+["']/iu);
-    assert.match(image, /\bsrc=["']data:image\/svg\+xml/iu);
-  });
+  assert.equal(images.length, 0);
+  assert.match(js, /function createStoryElement\(story\)/u);
   assert.match(js, /function installImageFallbacks\(\)/u);
   assert.match(js, /addEventListener\('error'/u);
 });
