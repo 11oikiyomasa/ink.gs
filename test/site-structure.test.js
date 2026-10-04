@@ -57,6 +57,14 @@ test("reader uses a serif-first system font stack", () => {
   assert.match(css, /\.reader-body\s*\{[\s\S]*?font-family:\s*serif/u);
 });
 
+test("reader supports topic chips and safe pull-quote rendering", () => {
+  assert.ok(html.includes('id="reader-topics"'));
+  assert.ok(js.includes("text.startsWith('> ')"));
+  assert.ok(js.includes("document.createElement('blockquote')"));
+  assert.ok(css.includes(".reader-chip-topic"));
+  assert.ok(css.includes(".reader-body blockquote"));
+});
+
 test("reader keeps editorial article hierarchy and honest mobile controls", () => {
   assert.ok(html.includes('id="reader-publication"'));
   assert.ok(html.includes('id="reader-meta"'));
