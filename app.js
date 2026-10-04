@@ -640,6 +640,9 @@
       return false;
     }
     if (publicStoryLoading) return false;
+    // Keep the reading room populated while the Worker has no published rows yet,
+    // and preserve the local fallback if the remote request is temporarily unavailable.
+    ensureLocalStories();
     if (!append) setFeedSkeleton(true);
     if (append && !publicStoryCursor) return true;
     publicStoryLoading = true;
