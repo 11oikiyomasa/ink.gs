@@ -99,6 +99,8 @@
   const readerProgressFill = document.querySelector('.reader-progress span');
   const writeButton = document.querySelector('#write-button');
   const syncButton = document.querySelector('#sync-button');
+  const loadMoreStoriesButton = document.querySelector('#load-more-stories');
+  const loadMoreOnlineStoriesButton = document.querySelector('#load-more-online-stories');
   const composer = document.querySelector('#composer');
   const draftTitle = document.querySelector('#draft-title');
   const draftBody = document.querySelector('#draft-body');
@@ -193,6 +195,10 @@
   let editorCsrfToken = '';
   let editorStories = [];
   let editingOnlineStoryId = null;
+  let publicStoryCursor = null;
+  let publicStoryLoading = false;
+  let editorStoryCursor = null;
+  let editorStoryLoading = false;
 
   function slugify(value) {
     return value.toLowerCase()
@@ -453,10 +459,15 @@
     return article;
   }
 
-  function renderRemoteStories(remoteStories) {
+  function renderRemoteStories(remoteStories, { reset = false } = {}) {
     const container = document.querySelector('#stories');
     if (!container) return;
-    const seen = new Set(stories.map(element => element.dataset.storyId));
+    if (reset && remoteStories.length) {
+      container.replaceChildren();
+      dynamicStoryRecords.clear();
+      refreshStoriesCollection();
+    }
+    const seen = new Set([...container.querySelectorAll('.story')].map(element => element.dataset.storyId));
     for (const story of remoteStories) {
       if (!story?.id || seen.has(story.id)) continue;
       dynamicStoryRecords.set(story.id, {
@@ -478,8 +489,7 @@
         repostCount: Number(story.repostCount || 0),
         responseCount: Number(story.responseCount || 0)
       });
-      const element = createStoryElement(dynamicStoryRecords.get(story.id));
-      container.prepend(element);
+      container.append(createStoryElement(dynamicStoryRecords.get(story.id)));
       seen.add(story.id);
     }
     refreshStoriesCollection();
@@ -489,31 +499,52 @@
     renderCurrentView();
   }
 
-  async function loadPublicStories() {
+  function updatePublicLoadMoreState() {
+    if (!loadMoreStoriesButton) return;
+    loadMoreStoriesButton.hidden = !publicStoryCursor;
+    loadMoreStoriesButton.disabled = publicStoryLoading;
+    loadMoreStoriesButton.textContent = publicStoryLoading ? 'Loading…' : 'Load more stories';
+  }
+
+  async function loadPublicStories({ append = false } = {}) {
     if (!API_ENABLED) {
+      publicStoryCursor = null;
+      updatePublicLoadMoreState();
       if (feedStatus) {
         feedStatus.hidden = false;
         feedStatus.textContent = 'Showing local sample stories. Open the Worker app to load published online stories.';
       }
       return false;
     }
+    if (publicStoryLoading) return false;
+    if (append && !publicStoryCursor) return true;
+    publicStoryLoading = true;
+    updatePublicLoadMoreState();
     try {
-      const data = await apiRequest('/api/stories', { method: 'GET', headers: {} });
+      const params = new URLSearchParams({ limit: '24' });
+      if (append && publicStoryCursor) params.set('cursor', publicStoryCursor);
+      const data = await apiRequest('/api/stories?' + params.toString(), { method: 'GET', headers: {} });
       const remoteStories = Array.isArray(data.stories) ? data.stories : [];
-      renderRemoteStories(remoteStories);
+      renderRemoteStories(remoteStories, { reset: !append });
+      publicStoryCursor = data.nextCursor || null;
+      updatePublicLoadMoreState();
       if (feedStatus) {
         feedStatus.hidden = false;
+        const loaded = stories.filter(element => dynamicStoryRecords.has(element.dataset.storyId)).length;
         feedStatus.textContent = remoteStories.length
-          ? remoteStories.length + (remoteStories.length === 1 ? ' published online story loaded.' : ' published online stories loaded.')
-          : 'No published online stories yet. Local sample stories remain available.';
+          ? loaded + (publicStoryCursor ? '+ published online stories loaded.' : ' published online stories loaded.')
+          : (append ? 'No more published online stories.' : 'No published online stories yet. Local sample stories remain available.');
       }
       return true;
     } catch (error) {
-      if (feedStatus) {
+      if (!append && feedStatus) {
         feedStatus.hidden = false;
         feedStatus.textContent = 'Online stories are temporarily unavailable. Local stories remain available.';
       }
       return false;
+    } finally {
+      publicStoryLoading = false;
+      updatePublicLoadMoreState();
     }
   }
 
@@ -1509,6 +1540,10 @@
       editorLoginButton.setAttribute('aria-pressed', String(editorAuthenticated));
       editorLoginButton.setAttribute('aria-label', editorAuthenticated ? 'Sign out of editor' : 'Sign in to editor');
     }
+    if (writeButton) {
+      writeButton.setAttribute('aria-label', editorAuthenticated ? 'Write a story' : 'Sign in to write');
+      writeButton.title = editorAuthenticated ? 'Open the writing editor' : 'Sign in to write';
+    }
     if (publishOnlineButton) publishOnlineButton.disabled = !editorAuthenticated;
     if (!editorAuthenticated && onlineLibrary) {
       onlineLibrary.hidden = true;
@@ -1561,6 +1596,10 @@
 
   function openComposer() {
     if (!composer) return;
+    if (!editorAuthenticated) {
+      openLogin();
+      return;
+    }
     const draft = findDraft();
     if (!draft) createDraft();
     else {
@@ -1636,30 +1675,54 @@
     }
   }
 
-  async function loadOnlineStories() {
-    if (!onlineStoryList) return;
-    if (!API_ENABLED) {
+  function updateOnlineLoadMoreState() {
+    if (!loadMoreOnlineStoriesButton) return;
+    loadMoreOnlineStoriesButton.hidden = !editorStoryCursor;
+    loadMoreOnlineStoriesButton.disabled = editorStoryLoading;
+    loadMoreOnlineStoriesButton.textContent = editorStoryLoading ? 'Loading…' : 'Load more stories';
+  }
+
+  async function loadOnlineStories({ append = false } = {}) {
+    if (!onlineStoryList) return false;
+    if (!API_ENABLED || !editorAuthenticated) {
+      editorStoryCursor = null;
+      updateOnlineLoadMoreState();
       onlineStoryList.replaceChildren();
       onlineStoryCount.textContent = '0';
       const empty = document.createElement('p');
       empty.className = 'draft-empty';
-      empty.textContent = 'Online stories require the Cloudflare Worker API.';
+      empty.textContent = !API_ENABLED ? 'Online stories require the Cloudflare Worker API.' : 'Sign in to manage online stories.';
       onlineStoryList.append(empty);
       return false;
     }
+    if (editorStoryLoading) return false;
+    if (append && !editorStoryCursor) return true;
+    editorStoryLoading = true;
+    updateOnlineLoadMoreState();
     try {
-      const data = await apiRequest(editorAuthenticated ? '/api/editor/stories' : '/api/stories', { method: 'GET', headers: {} });
-      editorStories = Array.isArray(data.stories) ? data.stories : [];
-      onlineStoryCount.textContent = String(editorStories.length);
+      const params = new URLSearchParams({ limit: '50' });
+      if (append && editorStoryCursor) params.set('cursor', editorStoryCursor);
+      const data = await apiRequest('/api/editor/stories?' + params.toString(), { method: 'GET', headers: {} });
+      const page = Array.isArray(data.stories) ? data.stories : [];
+      editorStories = append ? [...editorStories, ...page] : page;
+      editorStoryCursor = data.nextCursor || null;
+      onlineStoryCount.textContent = String(editorStories.length) + (editorStoryCursor ? '+' : '');
       renderOnlineStories();
+      updateOnlineLoadMoreState();
       return true;
     } catch (error) {
-      onlineStoryList.replaceChildren();
-      const empty = document.createElement('p');
-      empty.className = 'draft-empty';
-      empty.textContent = 'Online stories unavailable: ' + error.message;
-      onlineStoryList.append(empty);
+      if (!append) {
+        editorStoryCursor = null;
+        onlineStoryList.replaceChildren();
+        const empty = document.createElement('p');
+        empty.className = 'draft-empty';
+        empty.textContent = 'Online stories unavailable: ' + error.message;
+        onlineStoryList.append(empty);
+      }
       return false;
+    } finally {
+      editorStoryLoading = false;
+      updateOnlineLoadMoreState();
     }
   }
 
@@ -1985,13 +2048,25 @@
         return;
       }
 
+      if (target.id === 'load-more-stories') {
+        event.preventDefault();
+        loadPublicStories({ append: true });
+        return;
+      }
+
+      if (target.id === 'load-more-online-stories') {
+        event.preventDefault();
+        loadOnlineStories({ append: true });
+        return;
+      }
+
       if (target.id === 'sync-button') {
         event.preventDefault();
         if (!API_ENABLED) {
           showToast('Published online stories require the Cloudflare Worker app.');
           return;
         }
-        Promise.all([loadPublicStories(), loadOnlineStories()]).then(results => {
+        Promise.all([loadPublicStories({ append: false }), loadOnlineStories({ append: false })].then(results => {
           showToast(results.every(Boolean) ? 'Published stories refreshed.' : 'Refresh completed with unavailable online data.');
         });
         return;
