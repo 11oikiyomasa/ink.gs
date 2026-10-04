@@ -133,6 +133,12 @@
   const readerBookmark = document.querySelector('#reader-bookmark');
   const readerFollow = document.querySelector('#reader-follow');
   const readerShare = document.querySelector('#reader-share');
+  const readerListen = document.querySelector('#reader-listen');
+  const readerMore = document.querySelector('#reader-more');
+  const readerMoreMenu = document.querySelector('#reader-more-menu');
+  const readerCopyLink = document.querySelector('#reader-copy-link');
+  const readerCopyTitle = document.querySelector('#reader-copy-title');
+  const readerOpenNew = document.querySelector('#reader-open-new');
   const readerRead = document.querySelector('#reader-read');
   const statsSaved = document.querySelector('#stats-saved');
   const statsFinished = document.querySelector('#stats-finished');
@@ -180,6 +186,7 @@
   let currentStory = null;
   let toastTimer = null;
   let progressSaveTimer = null;
+  let readerSpeech = null;
   let editorAuthenticated = false;
   let editorCsrfToken = '';
   let editorStories = [];
@@ -873,6 +880,8 @@
     }
 
     if (readerBody) renderStoryBlocks(readerBody, data.body);
+    stopReaderListen();
+    closeReaderMore();
     const progress = state.progress[id] || { ratio: 0, finished: false };
     if (!progress.finished && Number(progress.ratio) > 0) {
       if (readerLabel) readerLabel.textContent = Math.round(Number(progress.ratio) * 100) + '% read';
@@ -894,6 +903,8 @@
   }
 
   function closeReader() {
+    stopReaderListen();
+    closeReaderMore();
     if (!reader) return;
     if (reader.open && typeof reader.close === 'function') reader.close();
     else reader.removeAttribute('open');
@@ -932,10 +943,90 @@
     showToast('Story marked as finished.');
   }
 
-  function shareCurrentStory() {
-    if (!currentStory) return;
+  function currentStoryUrl() {
+    if (!currentStory) return '';
     const url = new URL(window.location.href);
     url.hash = 'story=' + encodeURIComponent(currentStory.id);
+    return url.toString();
+  }
+
+  async function copyText(value, successMessage) {
+    if (!value) return false;
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(value);
+        showToast(successMessage);
+        return true;
+      } catch {}
+    }
+    showToast(value);
+    return false;
+  }
+
+  function stopReaderListen() {
+    if (readerSpeech && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    readerSpeech = null;
+    if (readerListen) {
+      readerListen.setAttribute('aria-pressed', 'false');
+      readerListen.textContent = 'Listen';
+    }
+  }
+
+  function toggleReaderListen() {
+    if (!currentStory || !readerListen) return;
+    if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) {
+      showToast('Text-to-speech is not available in this browser.');
+      return;
+    }
+    if (readerSpeech) {
+      stopReaderListen();
+      showToast('Reading stopped.');
+      return;
+    }
+    const text = [currentStory.title, currentStory.summary, ...currentStory.body.map(value => String(value).replace(/^>\s*/u, '').trim())].filter(Boolean).join('. ');
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.96;
+    utterance.pitch = 1;
+    utterance.onend = () => {
+      readerSpeech = null;
+      readerListen.setAttribute('aria-pressed', 'false');
+      readerListen.textContent = 'Listen';
+    };
+    utterance.onerror = () => {
+      readerSpeech = null;
+      readerListen.setAttribute('aria-pressed', 'false');
+      readerListen.textContent = 'Listen';
+      showToast('Text-to-speech could not start.');
+    };
+    readerSpeech = utterance;
+    readerListen.setAttribute('aria-pressed', 'true');
+    readerListen.textContent = 'Stop listening';
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+    showToast('Reading aloud started.');
+  }
+
+  function toggleReaderMore() {
+    if (!readerMoreMenu || !readerMore) return;
+    const open = readerMoreMenu.hidden;
+    readerMoreMenu.hidden = !open;
+    readerMore.setAttribute('aria-expanded', String(open));
+    if (open) {
+      readerMoreMenu.querySelector('[role="menuitem"]')?.focus();
+    }
+  }
+
+  function closeReaderMore() {
+    if (!readerMoreMenu || !readerMore) return;
+    readerMoreMenu.hidden = true;
+    readerMore.setAttribute('aria-expanded', 'false');
+  }
+
+  function shareCurrentStory() {
+    if (!currentStory) return;
+    const url = new URL(currentStoryUrl());
     if (navigator.share) {
       navigator.share({ title: currentStory.title, text: currentStory.summary, url: url.toString() }).catch(() => {});
       return;
@@ -1911,6 +2002,35 @@
         return;
       }
 
+      if (target.id === 'reader-listen') {
+        toggleReaderListen();
+        return;
+      }
+
+      if (target.id === 'reader-more') {
+        toggleReaderMore();
+        return;
+      }
+
+      if (target.id === 'reader-copy-link') {
+        copyText(currentStoryUrl(), 'Story link copied.');
+        closeReaderMore();
+        return;
+      }
+
+      if (target.id === 'reader-copy-title') {
+        copyText(currentStory?.title || '', 'Story title copied.');
+        closeReaderMore();
+        return;
+      }
+
+      if (target.id === 'reader-open-new') {
+        const url = currentStoryUrl();
+        if (url) window.open(url, '_blank', 'noopener,noreferrer');
+        closeReaderMore();
+        return;
+      }
+
       if (target.id === 'reader-share') {
         shareCurrentStory();
         return;
@@ -1938,6 +2058,9 @@
     });
 
     document.addEventListener('click', event => {
+      if (readerMoreMenu && !event.target.closest('.reader-more-wrap')) {
+        closeReaderMore();
+      }
       const title = event.target.closest('.story h2');
       if (!title || event.target.closest('button')) return;
       openReader(title.closest('.story')?.dataset.storyId);
