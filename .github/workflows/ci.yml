@@ -36,7 +36,7 @@ jobs:
           tables = [row[0] for row in connection.execute(
               "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
           )]
-          expected = ["editor_login_attempts", "editor_sessions", "editor_stories", "owner_state", "story_responses", "story_social_actions"]
+          expected = ["editor_credentials", "editor_login_attempts", "editor_sessions", "editor_stories", "owner_state", "story_responses", "story_social_actions"]
           assert tables == expected, (tables, expected)
           print("Migration tables:", tables)
           PY
