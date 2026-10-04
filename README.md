@@ -11,7 +11,7 @@ npm test
 npm run build:assets
 ```
 
-`npm test` runs the Worker tests using an in-memory D1 test double. `npm run build:assets` copies `index.html`, `styles.css`, and `app.js` into `public/`, then copies files from `assets/` when that optional source directory exists. When `assets/` is absent, the build still prepares the static homepage and reports that the built-in image fallbacks remain available. The generated `public/` copy is intentionally not duplicated in this archive.
+`npm test` runs the Worker tests using an in-memory D1 test double. `npm run build:assets` first regenerates the Worker's inlined copy of the frontend (`npm run bundle:worker` writes `src/static-content.js` from `index.html`, `styles.css`, and `app.js`), then copies those three files into `public/`, then copies files from `assets/` when that optional source directory exists. Run `npm run bundle:worker` after any frontend edit; a test asserts the bundle matches the source files. When `assets/` is absent, the build still prepares the static homepage and reports that the built-in image fallbacks remain available. The generated `public/` copy is intentionally not duplicated in this archive.
 
 Both SQL migrations can also be checked locally with SQLite. For example:
 

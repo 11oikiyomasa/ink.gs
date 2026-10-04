@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build:assets": "node scripts/build-assets.mjs",
+    "bundle:worker": "node scripts/bundle-static-content.mjs",
+    "build:assets": "npm run bundle:worker && node scripts/build-assets.mjs",
     "test": "node --test",
     "hash:editor-password": "node scripts/hash-editor-password.mjs",
     "deploy": "npm run build:assets && npx wrangler deploy"

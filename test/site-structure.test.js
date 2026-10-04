@@ -205,3 +205,73 @@ test("story cards surface locally saved reading progress", () => {
   assert.ok(js.includes("refreshProgressBadges();"));
   assert.ok(css.includes(".story-status"));
 });
+
+test("feed cards carry publication, author, date and icon metrics", () => {
+  const articles = [...html.matchAll(/<article class="story"[\s\S]*?<\/article>/gu)].map((match) => match[0]);
+  assert.equal(articles.length, 6);
+  articles.forEach((article) => {
+    assert.match(article, /data-publication="[^"]+"/u);
+    assert.match(article, /<span class="byline-names">In <strong>[^<]+<\/strong> by <strong>[^<]+<\/strong><\/span>/u);
+    assert.match(article, /<time datetime="\d{4}-\d{2}-\d{2}">[^<]+<\/time>/u);
+    assert.match(article, /class="member-mark"/u);
+    assert.match(article, /class="story-tool less-like"/u);
+    assert.equal((article.match(/class="engagement-icon"/gu) || []).length, 3);
+    assert.equal((article.match(/<svg/gu) || []).length, 6);
+  });
+  assert.match(js, /function storyIcon\(name\)/u);
+  assert.match(js, /function formatShortDate\(value\)/u);
+  assert.match(js, /bylineNames\.className = 'byline-names'/u);
+});
+
+test("the metrics row is a sibling of the story copy so it can span the card", () => {
+  assert.match(html, /<\/div>\s*<div class="story-meta story-engagement">/u);
+  assert.match(js, /article\.append\(copy, meta, image\);/u);
+  assert.match(css, /grid-area: meta/u);
+});
+
+test("membership bar, drawer suggestion link and loading skeleton are present", () => {
+  assert.match(html, /class="membership-banner"[\s\S]*?Access to everything\. Now 30% off\.[\s\S]*?Upgrade now/u);
+  assert.match(html, /class="rail-suggest-link">See suggestions</u);
+  assert.match(html, /id="feed-skeleton"/u);
+  assert.match(js, /function setFeedLoading\(loading\)/u);
+  assert.ok(css.includes(".skeleton-card"));
+  assert.ok(css.includes("@keyframes skeleton-shimmer"));
+});
+
+test("reader keeps icon buttons intact while their labels change", () => {
+  assert.match(html, /id="reader-listen"[^>]*>\s*<svg/u);
+  assert.match(html, /class="reader-tool-label">Listen<\/span>/u);
+  assert.match(html, /id="reader-read"[\s\S]*?class="reader-finished-label"/u);
+  assert.match(js, /function setReaderListenLabel\(text\)/u);
+  assert.match(js, /function setFinishedButton\(finished\)/u);
+  assert.doesNotMatch(js, /readerBookmark\.textContent =/u);
+  // the only remaining text assignments are the label fallbacks inside the setters
+  assert.equal((js.match(/readerListen\.textContent =/gu) || []).length, 1);
+  assert.equal((js.match(/readerRead\.textContent =/gu) || []).length, 1);
+});
+
+test("reader chips expose a follow control and the cover keeps its colour", () => {
+  assert.match(html, /class="reader-chips reader-chips-accent"/u);
+  assert.match(js, /add\.className = 'reader-chip-add'/u);
+  assert.match(js, /function applyTopicFromChip\(topic\)/u);
+  assert.ok(css.includes(".reader-chip-add"));
+  assert.doesNotMatch(css, /filter: grayscale/u);
+});
+
+test("show-less-like-this hides a card without deleting saved state", () => {
+  assert.match(js, /function showLessLikeThis\(element\)/u);
+  assert.match(js, /!element\.classList\.contains\('dismissed'\)/u);
+  assert.ok(css.includes(".story.dismissed"));
+});
+
+test("the Worker bundle is generated from the canonical frontend files", async () => {
+  const [indexHtml, stylesCss, appJs] = await Promise.all([
+    readFile(new URL("index.html", root), "utf8"),
+    readFile(new URL("styles.css", root), "utf8"),
+    readFile(new URL("app.js", root), "utf8")
+  ]);
+  const bundle = await import(new URL("src/static-content.js", root).href);
+  assert.equal(bundle.INDEX_HTML, indexHtml);
+  assert.equal(bundle.STYLES_CSS, stylesCss);
+  assert.equal(bundle.APP_JS, appJs);
+});

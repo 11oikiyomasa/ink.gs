@@ -147,6 +147,7 @@
   const statsInProgress = document.querySelector('#stats-in-progress');
   const statsMinutes = document.querySelector('#stats-minutes');
   const feedStatus = document.querySelector('#feed-status');
+  const feedSkeleton = document.querySelector('#feed-skeleton');
   const profileDialog = document.querySelector('#profile-dialog');
   const profileForm = document.querySelector('#profile-form');
   const profileName = document.querySelector('#profile-name');
@@ -313,8 +314,9 @@
     if (remote) return remote;
     const title = element.querySelector('h2')?.textContent?.trim() || '';
     const byline = element.querySelector('.byline')?.textContent?.trim() || '';
-    const author = element.dataset.author || byline.split(' in ')[0] || 'Unknown author';
-    const publication = byline.includes(' in ') ? byline.split(' in ').slice(1).join(' in ').trim() : '';
+    const author = element.dataset.author || byline.split(' by ').slice(1).join(' by ').split('·')[0].trim() || 'Unknown author';
+    const publication = element.dataset.publication
+      || (byline.startsWith('In ') ? byline.slice(3).split(' by ')[0].trim() : '');
     const summary = element.querySelector('.story-summary')?.textContent?.trim() || '';
     const meta = [...element.querySelectorAll('.story-meta .engagement-item')].map(node => node.textContent.trim());
     const readTime = (meta.find(text => /min read$/i.test(text)) || '').match(/(\d+)/)?.[1];
@@ -364,6 +366,43 @@
     return (count / 1000000).toFixed(1).replace(/\.0$/u, '') + 'M';
   }
 
+  const ICON_MARKUP = {
+    sparkle: '<svg class="icon icon-sparkle" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2c.62 4.52 2.66 6.56 7.18 7.18-4.52.62-6.56 2.66-7.18 7.18-.62-4.52-2.66-6.56-7.18-7.18C9.34 8.76 11.38 6.72 12 2.2Z"/></svg>',
+    clap: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="m11.3 9.6-3-3a1.35 1.35 0 0 1 1.9-1.9l3 3"/><path d="m13.2 8.7-3.6-3.6a1.35 1.35 0 0 1 1.9-1.9l3.6 3.6"/><path d="m15.1 8.8-2.6-2.6a1.35 1.35 0 0 1 1.9-1.9l4 4c1.7 1.7 1.8 4.4.3 6.3l-1.4 1.8c-1.6 2-4.6 2.2-6.4.4l-4-4a1.35 1.35 0 0 1 1.9-1.9l1.7 1.7"/><path d="M5.6 4.4 4.9 2.9M9.2 3.2 9 1.7M3.2 7.9 1.7 7.6"/></svg>',
+    comment: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 11.6a8.3 8.3 0 0 1-11.9 7.5L3.6 20.6l1.5-4.9a8.3 8.3 0 1 1 15.7-4.1Z"/></svg>',
+    repost: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16.4 3.3 3 3-3 3"/><path d="M4.4 12.1V9.8a3.5 3.5 0 0 1 3.5-3.5h11.5"/><path d="m7.6 20.7-3-3 3-3"/><path d="M19.6 11.9v2.3a3.5 3.5 0 0 1-3.5 3.5H4.6"/></svg>',
+    less: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.4 4.2h1.9c.9 0 1.6.7 1.6 1.6v6.1c0 .9-.7 1.6-1.6 1.6h-1.9Z"/><path d="M17.4 13.5h-1.2l-2.6 5.3c-.3.6-.9 1-1.5 1a1.8 1.8 0 0 1-1.8-2.2l.8-3.6H6.4a2.2 2.2 0 0 1-2.1-2.8l1.7-5.9c.3-1 1.2-1.6 2.2-1.6h9.2Z"/></svg>',
+    dots: '<svg class="icon" viewBox="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18.5" cy="12" r="1.6"/></svg>'
+  };
+
+  function storyIcon(name) {
+    const template = document.createElement('template');
+    template.innerHTML = ICON_MARKUP[name] || '';
+    const node = template.content.firstElementChild;
+    if (node) node.setAttribute('aria-hidden', 'true');
+    return node || document.createTextNode('');
+  }
+
+  function initialsFor(value) {
+    return String(value || 'U')
+      .split(/\s+/u)
+      .filter(Boolean)
+      .map(part => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || 'U';
+  }
+
+  function formatShortDate(value) {
+    if (!value) return '';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '';
+    const sameYear = parsed.getUTCFullYear() === new Date().getUTCFullYear();
+    return new Intl.DateTimeFormat('en-US', sameYear
+      ? { month: 'short', day: 'numeric', timeZone: 'UTC' }
+      : { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(parsed);
+  }
+
   function createStoryElement(story) {
     const article = document.createElement('article');
     article.className = 'story';
@@ -373,16 +412,38 @@
     article.dataset.storyId = story.id;
     const copy = document.createElement('div');
     copy.className = 'story-copy';
+    if (story.publication) article.dataset.publication = story.publication;
     const byline = document.createElement('div');
     byline.className = 'byline';
     const avatar = document.createElement('span');
     avatar.className = 'mini-avatar';
-    avatar.textContent = String(story.author || 'U').split(/\s+/u).map(part => part[0]).join('').slice(0, 2).toUpperCase();
+    avatar.setAttribute('aria-hidden', 'true');
+    avatar.textContent = initialsFor(story.publication || story.author);
     const bylineText = document.createElement('span');
+    bylineText.className = 'byline-text';
+    const bylineNames = document.createElement('span');
+    bylineNames.className = 'byline-names';
     const authorStrong = document.createElement('strong');
     authorStrong.textContent = story.author || 'Unknown author';
-    bylineText.append(authorStrong);
-    if (story.publication) bylineText.append(document.createTextNode(' in ' + story.publication));
+    if (story.publication) {
+      const publicationStrong = document.createElement('strong');
+      publicationStrong.textContent = story.publication;
+      bylineNames.append(document.createTextNode('In '), publicationStrong, document.createTextNode(' by '), authorStrong);
+    } else {
+      bylineNames.append(authorStrong);
+    }
+    bylineText.append(bylineNames);
+    const shortDate = formatShortDate(story.publishedAt || story.published_at || '');
+    if (shortDate) {
+      const dot = document.createElement('span');
+      dot.className = 'byline-dot';
+      dot.setAttribute('aria-hidden', 'true');
+      dot.textContent = '\u00b7';
+      const time = document.createElement('time');
+      time.dateTime = String(story.publishedAt || story.published_at || '').slice(0, 10);
+      time.textContent = shortDate;
+      bylineText.append(dot, time);
+    }
     byline.append(avatar, bylineText);
     const title = document.createElement('h2');
     title.className = 'story-title-button';
@@ -397,6 +458,11 @@
     meta.className = 'story-meta story-engagement';
     const engagement = document.createElement('div');
     engagement.className = 'engagement-list';
+    const memberMark = document.createElement('span');
+    memberMark.className = 'member-mark';
+    memberMark.title = 'Editorial story';
+    memberMark.setAttribute('aria-label', 'Editorial story');
+    memberMark.append(storyIcon('sparkle'));
     const applause = document.createElement('button');
     applause.type = 'button';
     applause.className = 'engagement-item engagement-button';
@@ -416,40 +482,41 @@
       node.replaceChildren();
       const iconNode = document.createElement('span');
       iconNode.className = 'engagement-icon';
-      iconNode.textContent = icon;
+      iconNode.setAttribute('aria-hidden', 'true');
+      iconNode.append(storyIcon(icon));
       const valueNode = document.createElement('span');
       valueNode.textContent = formatCount(value);
       node.append(iconNode, valueNode);
     }
-    setMetric(applause, '✦', story.applauseCount);
-    setMetric(responses, '◌', story.responseCount);
-    setMetric(reposts, '↗', story.repostCount);
-    engagement.append(applause, responses, reposts);
+    setMetric(applause, 'clap', story.applauseCount);
+    setMetric(responses, 'comment', story.responseCount);
+    setMetric(reposts, 'repost', story.repostCount);
+    engagement.append(memberMark, applause, responses, reposts);
     const topic = document.createElement('span');
     topic.className = 'topic-pill';
     topic.hidden = true;
     topic.textContent = story.topic || 'Other';
     const tools = document.createElement('div');
     tools.className = 'story-tools';
-    const bookmark = document.createElement('button');
-    bookmark.className = 'bookmark';
-    bookmark.type = 'button';
-    bookmark.setAttribute('aria-label', 'Save ' + (story.title || 'story'));
-    bookmark.setAttribute('aria-pressed', 'false');
-    bookmark.textContent = '♧';
+    const lessLike = document.createElement('button');
+    lessLike.className = 'story-tool less-like';
+    lessLike.type = 'button';
+    lessLike.title = 'Show less like this';
+    lessLike.setAttribute('aria-label', 'Show less like this');
+    lessLike.append(storyIcon('less'));
     const more = document.createElement('button');
     more.className = 'more';
     more.type = 'button';
     more.setAttribute('aria-label', 'More options');
-    more.textContent = '···';
-    tools.append(bookmark, more);
+    more.append(storyIcon('dots'));
+    tools.append(lessLike, more);
     meta.append(engagement, topic, tools);
-    copy.append(byline, title, summary, meta);
+    copy.append(byline, title, summary);
     const image = document.createElement('img');
     image.className = 'story-image';
     image.src = presentationPhoto(story.photo, story.topic);
     image.alt = story.photoAlt || story.title || '';
-    article.append(copy, image);
+    article.append(copy, meta, image);
     return article;
   }
 
@@ -497,6 +564,7 @@
       }
       return false;
     }
+    setFeedLoading(true);
     try {
       const data = await apiRequest('/api/stories', { method: 'GET', headers: {} });
       const remoteStories = Array.isArray(data.stories) ? data.stories : [];
@@ -514,7 +582,14 @@
         feedStatus.textContent = 'Online stories are temporarily unavailable. Local stories remain available.';
       }
       return false;
+    } finally {
+      setFeedLoading(false);
     }
+  }
+
+  function setFeedLoading(loading) {
+    if (feedSkeleton) feedSkeleton.hidden = !loading;
+    document.querySelector('#stories')?.toggleAttribute('data-loading', loading);
   }
 
   function openProfile() {
@@ -743,7 +818,8 @@
     if (readerBookmark && currentStory) {
       const active = state.bookmarks.includes(currentStory.id);
       readerBookmark.setAttribute('aria-pressed', String(active));
-      readerBookmark.textContent = active ? 'Saved story' : 'Save story';
+      readerBookmark.setAttribute('aria-label', active ? 'Remove from reading list' : 'Save story');
+      readerBookmark.title = active ? 'Saved to your reading list' : 'Save story';
     }
   }
 
@@ -759,7 +835,8 @@
     if (!readerFollow || !currentStory) return;
     const active = state.following.includes(currentStory.author);
     readerFollow.setAttribute('aria-pressed', String(active));
-    readerFollow.textContent = active ? 'Following writer' : 'Follow writer';
+    readerFollow.textContent = active ? 'Following' : 'Follow';
+    readerFollow.setAttribute('aria-label', (active ? 'Unfollow ' : 'Follow ') + (currentStory.author || 'this writer'));
   }
 
   function renderStats() {
@@ -823,7 +900,7 @@
       const matchesSearch = !query || haystack.includes(query);
       const matchesTopic = !topic || (element.dataset.topics || '').split(/\s+/).includes(topic);
       const matchesView = view === 'Stats' ? false : currentViewMatches(element);
-      const shouldShow = matchesSearch && matchesTopic && matchesView;
+      const shouldShow = matchesSearch && matchesTopic && matchesView && !element.classList.contains('dismissed');
       element.classList.toggle('hidden', !shouldShow);
       if (shouldShow) visible++;
     });
@@ -968,6 +1045,32 @@
     storyMenu.querySelector('[role="menuitem"]')?.focus();
   }
 
+  function applyTopicFromChip(topic) {
+    if (!topic) return;
+    const railButtons = [...document.querySelectorAll('.topic-button')];
+    const railButton = railButtons.find(button => button.dataset.topic === topic);
+    railButtons.forEach(button => button.setAttribute('aria-pressed', 'false'));
+    const railVisible = Boolean(railButton && railButton.offsetParent !== null);
+    if (railVisible) railButton.setAttribute('aria-pressed', 'true');
+    else if (search) {
+      search.value = topic;
+      updateSearchControls();
+    }
+    closeReader();
+    renderCurrentView();
+    document.querySelector('#stories')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    showToast('Showing stories about ' + topic + '.');
+  }
+
+  function showLessLikeThis(element) {
+    const data = storyData(element);
+    if (!data) return;
+    element.classList.add('dismissed');
+    element.hidden = true;
+    renderCurrentView();
+    showToast('Showing fewer stories like this until you reload.');
+  }
+
   function setView(view) {
     document.querySelectorAll('.rail-link[data-view]').forEach(button => {
       button.classList.toggle('active', button.dataset.view === view);
@@ -1007,7 +1110,7 @@
     }
     if (readerTopic) readerTopic.textContent = data.topic || 'Story';
     if (readerAuthorAvatar) {
-      readerAuthorAvatar.textContent = String(data.author || 'R').split(/\\s+/u).map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'R';
+      readerAuthorAvatar.textContent = initialsFor(data.author || 'Reader');
     }
     if (readerAuthorName) readerAuthorName.textContent = data.author || 'Unknown author';
     if (readerByline) readerByline.textContent = '';
@@ -1031,7 +1134,17 @@
       topics.slice(0, 5).forEach(topic => {
         const chip = document.createElement('span');
         chip.className = 'reader-chip reader-chip-topic';
-        chip.textContent = topic;
+        const label = document.createElement('span');
+        label.className = 'reader-chip-label';
+        label.textContent = topic;
+        const add = document.createElement('button');
+        add.type = 'button';
+        add.className = 'reader-chip-add';
+        add.dataset.chipTopic = topic;
+        add.setAttribute('aria-label', 'Show ' + topic + ' stories');
+        add.title = 'Show ' + topic + ' stories';
+        add.textContent = '+';
+        chip.append(label, add);
         readerTopics.append(chip);
       });
     }
@@ -1051,7 +1164,7 @@
     if (readerApplaudCount) readerApplaudCount.textContent = formatCount(data.applauseCount || 0);
     if (readerResponseStatCount) readerResponseStatCount.textContent = formatCount(data.responseCount || 0);
     if (readerRepostCount) readerRepostCount.textContent = formatCount(data.repostCount || 0);
-    if (readerRead) readerRead.textContent = state.progress[id]?.finished ? 'Finished' : 'Mark as finished';
+    setFinishedButton(Boolean(state.progress[id]?.finished));
     if (readerSocial) readerSocial.hidden = true;
     updateSocialActionAvailability();
     loadReaderSocial();
@@ -1088,6 +1201,16 @@
     }, 220);
   }
 
+  function setFinishedButton(finished) {
+    if (!readerRead) return;
+    const label = readerRead.querySelector('.reader-finished-label');
+    if (label) label.textContent = finished ? 'Finished' : 'Mark as finished';
+    else readerRead.textContent = finished ? 'Finished' : 'Mark as finished';
+    readerRead.setAttribute('aria-pressed', String(finished));
+    readerRead.title = finished ? 'Marked as finished' : 'Mark as finished';
+    readerRead.setAttribute('aria-label', finished ? 'Marked as finished' : 'Mark as finished');
+  }
+
   function markFinished() {
     if (!currentStory) return;
     state.progress[currentStory.id] = { ratio: 1, finished: true };
@@ -1095,7 +1218,7 @@
     persistState();
     if (readerProgressFill) readerProgressFill.style.width = '100%';
     if (readerProgress) readerProgress.setAttribute('aria-valuenow', '100');
-    if (readerRead) readerRead.textContent = 'Finished';
+    setFinishedButton(true);
     renderStats();
     showToast('Story marked as finished.');
   }
@@ -1120,6 +1243,14 @@
     return false;
   }
 
+  function setReaderListenLabel(text) {
+    if (!readerListen) return;
+    const label = readerListen.querySelector('.reader-tool-label');
+    if (label) label.textContent = text;
+    else readerListen.textContent = text;
+    readerListen.setAttribute('aria-label', text);
+  }
+
   function stopReaderListen() {
     if (readerSpeech && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
@@ -1127,7 +1258,7 @@
     readerSpeech = null;
     if (readerListen) {
       readerListen.setAttribute('aria-pressed', 'false');
-      readerListen.textContent = 'Listen';
+      setReaderListenLabel('Listen');
     }
   }
 
@@ -1154,7 +1285,7 @@
       voiceTimeout = null;
       readerSpeech = null;
       readerListen.setAttribute('aria-pressed', 'false');
-      readerListen.textContent = 'Listen';
+      setReaderListenLabel('Listen');
     };
 
     utterance.onend = resetSpeechState;
@@ -1183,7 +1314,7 @@
 
     readerSpeech = utterance;
     readerListen.setAttribute('aria-pressed', 'true');
-    readerListen.textContent = 'Stop listening';
+    setReaderListenLabel('Stop listening');
 
     const voices = window.speechSynthesis.getVoices?.() || [];
     if (voices.length) {
@@ -1970,6 +2101,19 @@
       if (target.matches('.bookmark')) {
         const story = target.closest('.story');
         if (story) setBookmark(story.dataset.storyId, !state.bookmarks.includes(story.dataset.storyId));
+        return;
+      }
+
+      if (target.matches('.less-like')) {
+        event.preventDefault();
+        const story = target.closest('.story');
+        if (story) showLessLikeThis(story);
+        return;
+      }
+
+      if (target.matches('.reader-chip-add')) {
+        event.preventDefault();
+        applyTopicFromChip(target.dataset.chipTopic || '');
         return;
       }
 
