@@ -3012,6 +3012,52 @@ main {
   color: #fff;
 }
 
+.reader-more-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.reader-tool[aria-pressed="true"] {
+  border-color: #5c5c5c;
+  color: #f0f0f0;
+}
+
+.reader-more-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  min-width: 185px;
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid #414141;
+  border-radius: 10px;
+  background: #202020;
+  box-shadow: 0 14px 34px rgb(0 0 0 / 42%);
+}
+
+.reader-more-menu[hidden] {
+  display: none !important;
+}
+
+.reader-more-menu button {
+  width: 100%;
+  padding: 10px 11px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #d0d0d0;
+  text-align: left;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.reader-more-menu button:hover {
+  background: #2a2a2a;
+  color: #fff;
+}
+
 .reader-cover {
   margin-bottom: 34px;
   filter: grayscale(1) contrast(.94) brightness(.82);
@@ -3283,6 +3329,14 @@ main {
     min-height: 42px;
     padding: 8px 14px;
     font-size: 13px;
+  }
+
+  .reader-more-menu {
+    position: fixed;
+    top: auto;
+    right: 18px;
+    bottom: 76px;
+    min-width: 180px;
   }
 
   .reader-cover {
