@@ -3009,7 +3009,7 @@ main {
 
 .reader-body {
   color: #e6e6e6;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
   font-size: 21px;
   line-height: 1.78;
 }
@@ -3288,7 +3288,7 @@ main {
   }
 
   .reader-body {
-    font-family: Georgia, "Times New Roman", serif !important;
+    font-family: ui-serif, Georgia, "Times New Roman", serif !important;
     font-size: 20px;
     line-height: 1.76;
   }
