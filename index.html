@@ -40,19 +40,19 @@
     <aside class="left-rail" aria-label="Main navigation">
       <div class="rail-mobile-head"><span class="rail-mobile-brand">ink.gs</span><button class="mobile-drawer-close" type="button" aria-label="Close menu">×</button></div>
       <nav class="rail-list">
-        <button class="rail-link active" data-view="For you" aria-current="page"><span class="rail-icon" aria-hidden="true">⌂</span><span>Home</span></button>
-        <button class="rail-link" data-view="Reading list"><span class="rail-icon" aria-hidden="true">▱</span><span>Library</span></button>
-        <button class="rail-link" id="profile-button"><span class="rail-icon" aria-hidden="true">◯</span><span>Profile</span></button>
-        <button class="rail-link editor-auth-only" id="manage-stories-button" hidden><span class="rail-icon" aria-hidden="true">✎</span><span>Stories</span></button>
-        <button class="rail-link editor-auth-only" id="editor-settings-button" hidden><span class="rail-icon" aria-hidden="true">⚙</span><span>Settings</span></button>
-        <button class="rail-link" data-view="Stats" aria-label="Stats"><span class="rail-icon" aria-hidden="true">▥</span><span>Stats</span></button>
+        <button class="rail-link active" data-view="For you" aria-current="page"><span class="rail-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.7 12 3.8l8.5 6.9"/><path d="M5.5 9.7v9.1h13V9.7"/><path d="M9.5 18.8v-5h5v5"/></svg></span><span>Home</span></button>
+        <button class="rail-link" data-view="Reading list"><span class="rail-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h13v15H5z"/><path d="M8 8h7M8 11.5h7M8 15h4.5"/></svg></span><span>Library</span></button>
+        <button class="rail-link" id="profile-button"><span class="rail-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 19.2c.9-3.1 3-4.7 6.5-4.7s5.6 1.6 6.5 4.7"/></svg></span><span>Profile</span></button>
+        <button class="rail-link editor-auth-only" id="manage-stories-button" hidden><span class="rail-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h14v15H5z"/><path d="M8 8h8M8 11.5h6M8 15h4"/></svg></span><span>Stories</span></button>
+        <button class="rail-link editor-auth-only" id="editor-settings-button" hidden><span class="rail-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9M12 19V5M19 19v-7"/><path d="M3.5 19h17"/></svg></span><span>Settings</span></button>
+        <button class="rail-link" data-view="Stats" aria-label="Stats"><span class="rail-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9M12 19V5M19 19v-7"/><path d="M3.5 19h17"/></svg></span><span>Stats</span></button>
         <hr class="rail-divider" />
-        <button class="rail-link rail-link-with-badge" id="games-button"><span><span class="rail-icon" aria-hidden="true">◈</span><span>Games</span></span><span class="beta">Beta</span></button>
+        <button class="rail-link rail-link-with-badge" id="games-button"><span><span class="rail-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 8.5h9a4 4 0 0 1 3.9 4.9l-.8 3.8a2.7 2.7 0 0 1-4.7 1.2l-1.3-1.5H10.4l-1.3 1.5a2.7 2.7 0 0 1-4.7-1.2l-.8-3.8A4 4 0 0 1 7.5 8.5Z"/><path d="M8 11v4M6 13h4M15.7 12.5h.1M18 14.5h.1"/></svg></span><span>Games</span></span><span class="beta">Beta</span></button>
         <hr class="rail-divider" />
         <p class="rail-label">Following</p>
-        <button class="rail-link" data-view="Following"><span class="rail-icon" aria-hidden="true">♧</span><span>Following</span></button>
+        <button class="rail-link" data-view="Following"><span class="rail-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 18.5a6.5 6.5 0 1 1 6.5-6.5"/><path d="M13 17h6M16 14v6"/></svg></span><span>Following</span></button>
         <div class="rail-following" id="rail-following" aria-label="Followed writers"></div>
-        <button class="rail-link" id="writers-button"><span class="rail-icon" aria-hidden="true">＋</span><span>Find writers and publications to follow</span></button><button class="rail-link" id="suggestions-button" type="button"><span class="rail-icon" aria-hidden="true">✦</span><span>See suggestions</span></button>
+        <button class="rail-link" id="writers-button"><span class="rail-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span>Find writers and publications to follow</span></button><button class="rail-link" id="suggestions-button" type="button"><span class="rail-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="m18.5 15 .8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></svg></span><span>See suggestions</span></button>
       </nav>
       <div class="rail-bottom"><a href="#about">About</a><a href="#help">Help</a><a href="#terms">Terms</a><br />Made for curious readers.</div>
     </aside>
@@ -184,9 +184,9 @@
   </dialog>
   <dialog class="reader" id="reader" aria-labelledby="reader-title">
     <div class="reader-site-bar">
-      <span class="reader-menu-mark" aria-hidden="true">☰</span>
+      <span class="reader-menu-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span>
       <span class="reader-brand">ink.gs</span>
-      <span class="reader-site-search" aria-hidden="true">⌕</span>
+      <span class="reader-site-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.4"/><path d="m15.5 15.5 4.2 4.2"/></svg></span>
       <span class="reader-site-avatar" aria-hidden="true">R</span>
     </div>
     <div class="reader-offer"><span>Access to everything. Now 30% off.</span><a href="#membership">Explore membership</a></div>
@@ -231,16 +231,16 @@
     <div class="reader-actions">
       <div class="reader-stats-row" aria-label="Story engagement">
         <button class="reader-stat" id="reader-applaud" type="button" aria-label="Applaud" aria-pressed="false">
-          <span class="reader-stat-icon" aria-hidden="true">♢</span><span class="reader-stat-count" id="reader-applaud-count">0</span>
+          <span class="reader-stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12.6 5.8 9.4a1.9 1.9 0 0 0-2.7 2.7l5.6 5.6a4.7 4.7 0 0 0 6.6 0l2.1-2.1a4.8 4.8 0 0 0 .8-5.7l-1.8-3.1"/><path d="m8 10.6 2.2-2.2a2 2 0 0 1 2.8 0l2.9 2.9"/><path d="m6.6 8.4 1.5-1.5a1.8 1.8 0 0 1 2.6 0l4.1 4.1"/><path d="m11.2 6.5 1-1a1.8 1.8 0 0 1 2.6 0l3.4 3.4"/></svg></span><span class="reader-stat-count" id="reader-applaud-count">0</span>
         </button>
         <button class="reader-stat" id="reader-respond" type="button" aria-label="Respond">
-          <span class="reader-stat-icon" aria-hidden="true">◯</span><span class="reader-stat-count" id="reader-response-stat-count">0</span>
+          <span class="reader-stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.8 3.5.8-3.5H6.5A2.5 2.5 0 0 1 4 12.5z"/></svg></span><span class="reader-stat-count" id="reader-response-stat-count">0</span>
         </button>
         <button class="reader-stat" id="reader-repost" type="button" aria-label="Repost" aria-pressed="false">
-          <span class="reader-stat-icon" aria-hidden="true">↗</span><span class="reader-stat-count" id="reader-repost-count">0</span>
+          <span class="reader-stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 3-3 3 3"/><path d="M10 4v9a4 4 0 0 0 4 4h4"/><path d="m17 14 3 3-3 3"/></svg></span><span class="reader-stat-count" id="reader-repost-count">0</span>
         </button>
         <button class="reader-stat reader-stat-bookmark" id="reader-bookmark" type="button" aria-label="Save story" aria-pressed="false">
-          <span class="reader-stat-icon" aria-hidden="true">♧</span>
+          <span class="reader-stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4.5h11v15l-5.5-3.3-5.5 3.3z"/></svg></span>
         </button>
       </div>
       <button class="reader-finished" id="reader-read" type="button">Mark as finished</button>
@@ -300,5 +300,5 @@
   </footer>
   <div class="toast" role="status" aria-live="polite"></div>
   <script type="module" src="app.js"></script>
-/body>
+</body>
 </html>
