@@ -872,34 +872,7 @@
       });
     }
 
-    if (readerBody) {
-      const fragment = document.createDocumentFragment();
-      data.body.forEach(blockText => {
-        const text = String(blockText || '').trim();
-        if (!text) return;
-        if (text.startsWith('> ')) {
-          const quote = document.createElement('blockquote');
-          const quoteText = text.slice(2).trim();
-          const splitAttribution = quoteText.lastIndexOf(' — ');
-          const quoteCopy = splitAttribution > 0 ? quoteText.slice(0, splitAttribution).trim() : quoteText;
-          const attribution = splitAttribution > 0 ? quoteText.slice(splitAttribution + 3).trim() : '';
-          const p = document.createElement('p');
-          p.textContent = quoteCopy;
-          quote.append(p);
-          if (attribution) {
-            const cite = document.createElement('cite');
-            cite.textContent = '— ' + attribution;
-            quote.append(cite);
-          }
-          fragment.append(quote);
-          return;
-        }
-        const p = document.createElement('p');
-        p.textContent = text;
-        fragment.append(p);
-      });
-      readerBody.replaceChildren(fragment);
-    }
+    if (readerBody) renderStoryBlocks(readerBody, data.body);
     const progress = state.progress[id] || { ratio: 0, finished: false };
     if (!progress.finished && Number(progress.ratio) > 0) {
       if (readerLabel) readerLabel.textContent = Math.round(Number(progress.ratio) * 100) + '% read';
@@ -1037,15 +1010,60 @@
     updateDraftCount();
   }
 
+  function renderStoryBlocks(container, body) {
+    if (!container) return;
+    const source = Array.isArray(body)
+      ? body
+      : String(body || '').split(/\n\s*\n/u).filter(Boolean);
+    const fragment = document.createDocumentFragment();
+
+    source.forEach(blockText => {
+      const text = String(blockText || '').trim();
+      if (!text) return;
+
+      if (text.startsWith('> ')) {
+        const quote = document.createElement('blockquote');
+        const quoteText = text.slice(2).trim();
+        const splitAttribution = quoteText.lastIndexOf(' — ');
+        const quoteCopy = splitAttribution > 0
+          ? quoteText.slice(0, splitAttribution).trim()
+          : quoteText;
+        const attribution = splitAttribution > 0
+          ? quoteText.slice(splitAttribution + 3).trim()
+          : '';
+
+        const p = document.createElement('p');
+        p.textContent = quoteCopy;
+        quote.append(p);
+
+        if (attribution) {
+          const cite = document.createElement('cite');
+          cite.textContent = '— ' + attribution;
+          quote.append(cite);
+        }
+
+        fragment.append(quote);
+        return;
+      }
+
+      const p = document.createElement('p');
+      p.textContent = text;
+      fragment.append(p);
+    });
+
+    if (!fragment.childNodes.length) {
+      const empty = document.createElement('p');
+      empty.textContent = 'Nothing to preview yet.';
+      fragment.append(empty);
+    }
+
+    container.replaceChildren(fragment);
+  }
+
   function renderDraftPreview() {
     if (!previewTitle || !previewBody) return;
     previewTitle.textContent = draftTitle?.value?.trim() || 'Untitled story';
-    const paragraphs = (draftBody?.value || '').trim().split(/\n\s*\n/).filter(Boolean);
-    previewBody.replaceChildren(...(paragraphs.length ? paragraphs : ['Nothing to preview yet.']).map(text => {
-      const p = document.createElement('p');
-      p.textContent = text.trim();
-      return p;
-    }));
+    renderStoryBlocks(previewBody, draftBody?.value || '');
   }
 
   function loadDraftIntoEditor(id) {
