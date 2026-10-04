@@ -11,6 +11,96 @@
     photoAlt: 'A quiet scene for reading',
     published: true
   };
+
+  const LOCAL_STORIES = [
+    {
+      id: 'india-month',
+      author: 'Mira Sen',
+      publication: 'The Open Notebook',
+      topic: 'Philosophy',
+      topics: ['Philosophy', 'Travel', 'Self', 'India', 'Health'],
+      publishedAt: '2026-08-24',
+      title: 'I Spent A Month In India. I Won’t Be Back',
+      summary: 'I was always the country I wanted to visit the most. A month there changed what I thought I was looking for.',
+      body: [
+        'India made me slower.',
+        'For a month I let the country decide the pace of my days. I travelled without trying to conquer every landmark, and I noticed how much of my attention had been spent elsewhere.',
+        'The places were memorable, but the quieter changes stayed with me longer: longer conversations, less certainty, and a little more patience with being out of control.',
+        'I still want to go back. Not because the trip was perfect, but because it made the familiar parts of my life look new again.'
+      ],
+      readMinutes: 5,
+      applauseCount: 27,
+      responseCount: 8,
+      repostCount: 3,
+      photo: '/assets/train-journal.jpeg',
+      photoAlt: 'A traveller’s journal and train window in India',
+      verified: true
+    },
+    {
+      id: 'notebook-you-never-show',
+      author: 'Jon Bell',
+      publication: 'A Field Guide',
+      topic: 'Self',
+      topics: ['Self', 'Writing', 'Philosophy'],
+      publishedAt: '2026-08-21',
+      title: 'On keeping a notebook you never show anyone',
+      summary: 'The private page is where half-formed ideas get permission to exist before they become anything else.',
+      body: [
+        'A notebook is useful partly because nobody is waiting for it to become good.',
+        'I keep one for the thoughts that are too early to publish and too useful to forget. Most pages are ordinary. A few are honest.',
+        'The point is not to archive a perfect version of yourself. It is to leave yourself somewhere to return.'
+      ],
+      readMinutes: 8,
+      applauseCount: 54,
+      responseCount: 12,
+      repostCount: 4,
+      photo: '/assets/notebook.jpg',
+      photoAlt: 'Notebook open on a desk'
+    },
+    {
+      id: 'neighborhood',
+      author: 'Rina Joseph',
+      publication: 'Civic Life',
+      topic: 'Life',
+      topics: ['Life', 'Travel', 'Culture'],
+      publishedAt: '2026-08-18',
+      title: 'How a block becomes a neighborhood',
+      summary: 'The invisible work of belonging happens in tiny, repeated encounters that rarely make the news.',
+      body: [
+        'A neighborhood begins as a set of addresses and becomes something else.',
+        'People learn the shortcut, the shopkeeper learns your name, and a bench becomes the place where someone waits every afternoon.',
+        'The change is gradual enough to miss while you are living through it.'
+      ],
+      readMinutes: 6,
+      applauseCount: 31,
+      responseCount: 6,
+      repostCount: 2,
+      photo: '/assets/city-scenes.jpg',
+      photoAlt: 'Street scene at dusk',
+      verified: true
+    },
+    {
+      id: 'kinder-plan',
+      author: 'Noor Ali',
+      publication: 'New Rhythm',
+      topic: 'Self',
+      topics: ['Self', 'Health', 'Mindfulness'],
+      publishedAt: '2026-08-15',
+      title: 'A kinder way to make a plan',
+      summary: 'A useful plan leaves enough room for the person making it to actually live through the day.',
+      body: [
+        'A plan can be useful without being a promise that the day will obey it.',
+        'The kinder version leaves room for energy, interruptions, and the fact that other people exist.',
+        'I started writing three things I could do instead of ten things I should do. The list got smaller. The day got easier.'
+      ],
+      readMinutes: 5,
+      applauseCount: 18,
+      responseCount: 4,
+      repostCount: 1,
+      photo: '/assets/forest-wellness.jpg',
+      photoAlt: 'Quiet forest scene'
+    }
+  ];
   function readStorageValue(key) {
     try {
       return localStorage.getItem(key) || '';
@@ -24,6 +114,7 @@
   const isWorkerHost = /\.workers\.dev$/iu.test(location.hostname) || productionHostnames.has(location.hostname);
   const API_BASE = isWorkerHost ? location.origin : configuredApiBase;
   const API_ENABLED = isWorkerHost || Boolean(configuredApiBase);
+  const loadingPreview = new URLSearchParams(location.search).get('loading') === '1';
   let stories = [...document.querySelectorAll('.story')].map((element, index) => {
     const title = element.querySelector('h2')?.textContent?.trim() || ('Story ' + (index + 1));
     const id = element.dataset.storyId || slugify(title);
@@ -297,24 +388,25 @@
     const meta = [...element.querySelectorAll('.story-meta .engagement-item')].map(node => node.textContent.trim());
     const readTime = (meta.find(text => /min read$/i.test(text)) || '').match(/(\d+)/)?.[1];
     const topic = element.querySelector('.topic-pill')?.textContent?.trim() || '';
+    const applauseCount = Number(element.dataset.applauseCount || 0);
+    const responseCount = Number(element.dataset.responseCount || 0);
+    const repostCount = Number(element.dataset.repostCount || 0);
     const topics = [...new Set((element.dataset.topics || topic).split(/\s+/u).map(value => value.trim()).filter(Boolean))];
     const photo = element.querySelector('.story-image')?.getAttribute('src') || '';
     const photoAlt = element.querySelector('.story-image')?.getAttribute('alt') || '';
     let body = [summary || 'This story is available in the online reading room.'];
     if (element.dataset.body) {
-      try {
-        const parsedBody = element.dataset.body.split(/\s*\|\|\s*/u).filter(Boolean);
-        if (parsedBody.length) body = parsedBody;
-      } catch {}
+      const parsedBody = element.dataset.body.split(/\s*\|\|\s*/u).filter(Boolean);
+      if (parsedBody.length) body = parsedBody;
     }
     return {
       id, title, author, publication, summary, topic, topics, photo, photoAlt,
       publishedAt: element.dataset.publishedAt || '',
       body,
       readMinutes: Math.max(1, Number(readTime || 0), Math.ceil(summary.split(/\s+/u).filter(Boolean).length / 220)),
-      applauseCount: 0,
-      repostCount: 0,
-      responseCount: 0
+      applauseCount,
+      repostCount,
+      responseCount
     };
   }
 
@@ -369,6 +461,10 @@
     article.dataset.topics = [story.topic, ...(story.topics || [])].filter(Boolean).join(' ');
     article.dataset.storyId = story.id;
     article.dataset.verified = story.verified ? 'true' : 'false';
+    article.dataset.body = (Array.isArray(story.body) ? story.body : [story.body || story.summary || '']).filter(Boolean).join('||');
+    article.dataset.applauseCount = String(story.applauseCount || 0);
+    article.dataset.responseCount = String(story.responseCount || 0);
+    article.dataset.repostCount = String(story.repostCount || 0);
     const copy = document.createElement('div');
     copy.className = 'story-copy';
     const byline = document.createElement('div');
@@ -519,6 +615,15 @@
     const skeleton = document.querySelector('#feed-skeleton');
     if (!skeleton) return;
     skeleton.dataset.loading = visible ? 'true' : 'false';
+  }
+
+  function ensureLocalStories() {
+    const container = document.querySelector('#stories');
+    if (!container || container.children.length) return;
+    const fragment = document.createDocumentFragment();
+    LOCAL_STORIES.forEach(story => fragment.append(createStoryElement(story)));
+    container.append(fragment);
+    refreshStoriesCollection();
   }
 
   async function loadPublicStories({ append = false } = {}) {
@@ -2232,7 +2337,7 @@
         return;
       }
 
-      if (target.id === 'profile-button') {
+      if (target.id === 'profile-button-top' || target.id === 'profile-button') {
         event.preventDefault();
         openProfile();
         return;
@@ -2507,6 +2612,7 @@
     }
   });
 
+  ensureLocalStories();
   installImageFallbacks();
   wireStorySocialControls();
   refreshBookmarkButtons();
@@ -2517,7 +2623,13 @@
   renderCurrentView();
   updateEditorUi();
   wireEvents();
-  loadPublicStories();
+  if (loadingPreview) {
+    setFeedSkeleton(true);
+    const storiesContainer = document.querySelector('#stories');
+    if (storiesContainer) storiesContainer.hidden = true;
+  } else {
+    loadPublicStories();
+  }
   trySession();
   handleHash();
 })();
