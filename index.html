@@ -3,98 +3,60 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#171717" />
-  <meta name="description" content="A personalized reading feed with thoughtful stories, writers, and ideas to explore." />
+  <meta name="theme-color" content="#111111" />
+  <meta name="description" content="ink.gs — a calm reading room for stories, ideas, and independent publishing." />
   <title>ink.gs — For you</title>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-<header class="topbar">
-    <div class="menu-toggle-wrap"><button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div><a class="brand" href="#home" aria-label="ink.gs home"><span class="brand-name">ink.gs</span></a>
-    <div class="top-actions">
-      <div class="search-box" aria-label="Search stories"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10.8" cy="10.8" r="6.4"></circle><path d="m15.5 15.5 4.2 4.2"></path></svg><input id="search" type="search" placeholder="Search" autocomplete="off" aria-label="Search stories" /><button class="search-toggle" id="search-toggle" type="button" aria-label="Open search" aria-expanded="false"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.4"></circle><path d="m15.5 15.5 4.2 4.2"></path></svg></button><button class="search-clear" id="search-clear" type="button" aria-label="Clear search">×</button></div>
-      <button class="text-action write-action" id="write-button" type="button" aria-label="Write" aria-haspopup="dialog" aria-controls="composer"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m14.8 5.2 4 4L8 20H4v-4z"></path><path d="m12.9 7.1 4 4"></path></svg><span>Write</span></button>
-      <button class="text-action sync-action" id="sync-button" type="button" title="Refresh published online stories" aria-label="Refresh published online stories">Refresh</button>
-      <button class="text-action editor-action" id="editor-login-button" type="button" title="Open the publishing editor">Editor</button>
-      <span class="avatar" aria-label="Reader profile">R</span>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
+      <a class="brand" href="#home" aria-label="ink.gs home"><span class="brand-name">ink.gs</span></a>
+      <div class="top-actions">
+        <div class="search-box" aria-label="Search stories">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.4"></circle><path d="m15.5 15.5 4.2 4.2"></path></svg>
+          <input id="search" type="search" placeholder="Search stories" autocomplete="off" aria-label="Search stories" />
+          <button class="search-toggle" id="search-toggle" type="button" aria-label="Open search" aria-expanded="false"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.4"></circle><path d="m15.5 15.5 4.2 4.2"></path></svg></button>
+          <button class="search-clear" id="search-clear" type="button" aria-label="Clear search">×</button>
+        </div>
+        <button class="text-action write-action" id="write-button" type="button" aria-label="Write" aria-haspopup="dialog" aria-controls="composer">Write</button>
+        <button class="text-action sync-action" id="sync-button" type="button" title="Refresh published online stories" aria-label="Refresh published online stories">Refresh</button>
+        <button class="text-action editor-action" id="editor-login-button" type="button" title="Open the publishing editor">Sign in</button>
+        <span class="avatar" aria-label="Reader profile">R</span>
+      </div>
     </div>
   </header>
   <div class="layout" id="home">
     <aside class="left-rail" aria-label="Main navigation">
-      <div class="rail-mobile-head">
-        <span class="rail-mobile-brand">ink.gs</span>
-        <button class="mobile-drawer-close" type="button" aria-label="Close menu">×</button>
-      </div>
+      <div class="rail-mobile-head"><span class="rail-mobile-brand">ink.gs</span><button class="mobile-drawer-close" type="button" aria-label="Close menu">×</button></div>
       <nav class="rail-list">
-        <button class="rail-link active" data-view="For you" aria-current="page">
-          <span class="rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3.5 10.5 8.5-7 8.5 7"></path><path d="M5.5 9.4v10.1h13V9.4"></path><path d="M9.5 19.5v-6h5v6"></path></svg></span><span>Home</span>
-        </button>
-        <button class="rail-link" data-view="Reading list">
-          <span class="rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 4.5h12v16l-6-4-6 4z"></path></svg></span><span>Library</span>
-        </button>
-        <button class="rail-link" id="profile-button">
-          <span class="rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"></circle><path d="M4.6 20c.8-3.8 3.3-5.7 7.4-5.7s6.6 1.9 7.4 5.7"></path></svg></span><span>Profile</span>
-        </button>
-        <button class="rail-link" id="manage-stories-button">
-          <span class="rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m14.7 5.3 4 4L8 20H4v-4z"></path><path d="m12.8 7.2 4 4"></path></svg></span><span>Stories</span>
-        </button>
-        <button class="rail-link" data-view="Stats" aria-label="Stats">
-          <span class="rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19.5h16"></path><path d="M6.5 17V11M12 17V5M17.5 17V8"></path></svg></span><span>Stats</span>
-        </button>
-
+        <button class="rail-link active" data-view="For you" aria-current="page"><span class="rail-icon" aria-hidden="true">⌂</span><span>Home</span></button>
+        <button class="rail-link" data-view="Reading list"><span class="rail-icon" aria-hidden="true">▱</span><span>Library</span></button>
+        <button class="rail-link" id="profile-button"><span class="rail-icon" aria-hidden="true">◯</span><span>Profile</span></button>
+        <button class="rail-link" id="manage-stories-button"><span class="rail-icon" aria-hidden="true">✎</span><span>Stories</span></button>
+        <button class="rail-link" data-view="Stats" aria-label="Stats"><span class="rail-icon" aria-hidden="true">▥</span><span>Stats</span></button>
         <hr class="rail-divider" />
-
-        <button class="rail-link rail-link-with-badge" id="games-button">
-          <span><span class="rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 8h.01M12 8h.01M16 8h.01M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"></path></svg></span><span>Games</span></span>
-          <span class="beta">Beta</span>
-        </button>
-
+        <button class="rail-link rail-link-with-badge" id="games-button"><span><span class="rail-icon" aria-hidden="true">◈</span><span>Games</span></span><span class="beta">Beta</span></button>
         <hr class="rail-divider" />
-
         <p class="rail-label">Following</p>
-        <button class="rail-link" data-view="Following">
-          <span class="rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"></circle><path d="M3.5 20c.6-3.4 2.4-5.2 5.5-5.2s4.9 1.8 5.5 5.2"></path><path d="M16 5.8a3 3 0 0 1 0 5.8M16.3 15c2.3.6 3.7 2.2 4.2 4.8"></path></svg></span><span>Following</span>
-        </button>
-
+        <button class="rail-link" data-view="Following"><span class="rail-icon" aria-hidden="true">♧</span><span>Following</span></button>
         <div class="rail-following" id="rail-following" aria-label="Followed writers"></div>
-
-        <button class="rail-link" id="writers-button">
-          <span class="rail-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg></span><span>Find writers and publications to follow.</span>
-        </button>
+        <button class="rail-link" id="writers-button"><span class="rail-icon" aria-hidden="true">＋</span><span>Find writers to follow</span></button>
       </nav>
       <div class="rail-bottom"><a href="#about">About</a><a href="#help">Help</a><a href="#terms">Terms</a><br />Made for curious readers.</div>
     </aside>
-
     <main>
       <div class="feed-view" id="feed-view">
-      <section class="welcome" aria-labelledby="welcome-title">
-        <p class="eyebrow">Home</p>
-        <h1 id="welcome-title">For you</h1>
-        <p>Stories and ideas picked for your next great read.</p>
-      </section>
-      <div class="tabs" role="tablist" aria-label="Story feed">
-        <button class="tab selected" role="tab" aria-selected="true" data-view="For you">For you</button>
-        <button class="tab" role="tab" aria-selected="false" data-view="Following">Activity</button>
-      </div>
-      <p class="feed-status" id="feed-status" role="status" aria-live="polite" hidden></p>
-       <section id="stories" aria-label="Recommended stories">
+        <section class="welcome" aria-labelledby="welcome-title">
+          <div class="welcome-copy"><p class="eyebrow">Your reading room</p><h1 id="welcome-title">For you</h1><p>Thoughtful stories, independent voices, and ideas worth your time.</p></div>
+          <div class="welcome-mark" aria-hidden="true"><span>INK</span><span>GS</span></div>
+        </section>
+        <div class="feed-toolbar">
+          <div class="tabs" role="tablist" aria-label="Story feed"><button class="tab selected" role="tab" aria-selected="true" data-view="For you">For you</button><button class="tab" role="tab" aria-selected="false" data-view="Following">Following</button></div>
+          <p class="feed-status" id="feed-status" role="status" aria-live="polite" hidden></p>
+        </div>
+        <section id="stories" class="story-feed" aria-label="Recommended stories">
         <article class="story" data-author="Mara Ellis" data-topics="Creativity Writing Mindfulness" data-published-at="2026-05-04T00:00:00Z">
           <div class="story-copy">
             <div class="byline"><span class="mini-avatar">ME</span><span><strong>Mara Ellis</strong> in The Open Notebook</span></div>
@@ -150,51 +112,33 @@
           <img class="story-image" src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201200%20800%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20stop-color%3D%22%234f3842%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23c18b9f%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%221200%22%20height%3D%22800%22%20fill%3D%22url(%23g)%22%2F%3E%3Ccircle%20cx%3D%22960%22%20cy%3D%22180%22%20r%3D%22150%22%20fill%3D%22%23fff%22%20opacity%3D%22.08%22%2F%3E%3Cpath%20d%3D%22M0%20640%20C220%20520%20410%20730%20620%20600%20S980%20470%201200%20620%20V800%20H0Z%22%20fill%3D%22%23000%22%20opacity%3D%22.14%22%2F%3E%3C%2Fsvg%3E" alt="A collage of street scenes and city landmarks" />
         </article>
       </section>
-      <p class="empty-state" id="empty-state">No stories match that yet. Try another search.</p>
+        <p class="empty-state" id="empty-state">No stories match that yet. Try another search.</p>
       </div>
       <section class="stats-view" id="stats-view" aria-labelledby="stats-title" hidden>
-        <div class="stats-heading">
-          <h1 id="stats-title">Reading stats</h1>
-          <p>A small snapshot of progress across the sample stories.</p>
-        </div>
+        <div class="stats-heading"><p class="eyebrow">Your activity</p><h1 id="stats-title">Reading stats</h1><p>A small snapshot of your saved and finished stories.</p></div>
         <p class="stats-scope-note">These totals use stories available on this page and reading progress saved in this browser. The page does not track time spent reading.</p>
         <dl class="stats-grid" aria-label="Local reading activity">
           <div class="stats-card"><dt>Saved stories</dt><dd id="stats-saved">0</dd><p>In your reading list</p></div>
-          <div class="stats-card"><dt>Finished stories</dt><dd id="stats-finished">0</dd><p>Marked as finished in the reader</p></div>
-          <div class="stats-card"><dt>In progress</dt><dd id="stats-in-progress">0</dd><p>Opened and not marked finished</p></div>
-          <div class="stats-card"><dt>Estimated minutes</dt><dd id="stats-minutes">0</dd><p>Listed read-time estimates for finished stories</p></div>
+          <div class="stats-card"><dt>Finished stories</dt><dd id="stats-finished">0</dd><p>Marked as finished</p></div>
+          <div class="stats-card"><dt>In progress</dt><dd id="stats-in-progress">0</dd><p>Opened and not finished</p></div>
+          <div class="stats-card"><dt>Estimated minutes</dt><dd id="stats-minutes">0</dd><p>Read-time estimates for finished stories</p></div>
         </dl>
-        <p class="stats-footnote">Estimated minutes add published read-time labels. They are not a measure of actual reading time.</p>
       </section>
     </main>
-
     <aside class="right-rail" aria-label="Explore ink.gs">
-      <section class="side-section">
-        <h2>Discover more of what matters to you</h2>
-        <div class="topics">
-          <button class="topic-button" data-topic="Technology">Technology</button>
-          <button class="topic-button" data-topic="Creativity">Creativity</button>
-          <button class="topic-button" data-topic="Life">Life</button>
-          <button class="topic-button" data-topic="Writing">Writing</button>
-          <button class="topic-button" data-topic="Travel">Travel</button>
-          <button class="topic-button" data-topic="Mindfulness">Mindfulness</button>
-        </div>
+      <section class="side-section side-discover"><p class="section-kicker">Explore</p><h2>Find something worth reading.</h2><p>Follow a topic, then let the feed narrow itself.</p><div class="topics">
+        <button class="topic-button" data-topic="Technology">Technology</button><button class="topic-button" data-topic="Creativity">Creativity</button><button class="topic-button" data-topic="Life">Life</button><button class="topic-button" data-topic="Writing">Writing</button><button class="topic-button" data-topic="Travel">Travel</button><button class="topic-button" data-topic="Mindfulness">Mindfulness</button>
+      </div></section>
+      <section class="side-section"><p class="section-kicker">Staff picks</p>
+        <article class="pick"><span class="pick-number">01</span><div><p class="pick-byline">A Field Guide · 8 min</p><h3>On keeping a notebook you never show anyone</h3></div></article>
+        <article class="pick"><span class="pick-number">02</span><div><p class="pick-byline">Civic Life · 6 min</p><h3>How a block becomes a neighborhood</h3></div></article>
+        <article class="pick"><span class="pick-number">03</span><div><p class="pick-byline">New Rhythm · 5 min</p><h3>A kinder way to make a plan</h3></div></article>
+        <a class="see-more" href="#stories">Browse all stories →</a>
       </section>
-      <section class="side-section">
-        <h2>Staff picks</h2>
-        <article class="pick"><span class="pick-number">01</span><div><p class="pick-byline">A Field Guide · 8 min read</p><h3>On keeping a notebook you never show anyone</h3></div></article>
-        <article class="pick"><span class="pick-number">02</span><div><p class="pick-byline">Civic Life · 6 min read</p><h3>How a block becomes a neighborhood</h3></div></article>
-        <article class="pick"><span class="pick-number">03</span><div><p class="pick-byline">New Rhythm · 5 min read</p><h3>A kinder way to make a plan</h3></div></article>
-        <a class="see-more" href="#stories">See the full list</a>
-      </section>
-      <section class="membership-card" id="membership">
-        <h2>Read without limits.</h2>
-        <p>Support the writers you love and find your next favorite idea.</p>
-        <button data-toast="Membership is a demo action on this sample page.">Try membership</button>
-      </section>
+      <section class="membership-card" id="membership"><p class="section-kicker">Membership</p><h2>Read without limits.</h2><p>Support writers and keep discovering ideas that stay with you.</p><button data-toast="Membership is a demo action on this sample page.">Explore membership</button></section>
     </aside>
   </div>
-  <dialog class="composer" id="composer" aria-labelledby="composer-label" data-mode="write">
+<dialog class="composer" id="composer" aria-labelledby="composer-label" data-mode="write">
     <div class="composer-toolbar">
       <span class="composer-status" id="draft-status" role="status" aria-live="polite">Your draft stays in this browser</span>
       <div class="composer-toolbar-actions">
@@ -346,7 +290,7 @@
     <p class="game-feedback" id="game-feedback" role="status" aria-live="polite"></p>
     <button class="composer-button primary" id="game-restart" type="button">Start over</button>
   </dialog>
-  <footer class="site-footer" aria-label="Site information">
+<footer class="site-footer" aria-label="Site information">
     <section id="about">
       <p class="eyebrow">About</p>
       <h2>ink.gs</h2>
@@ -363,7 +307,7 @@
       <p>Stories shown as local samples are demonstration content. Published online stories, reactions, and responses are stored by the Worker according to the project configuration. Do not enter confidential information into public responses.</p>
     </section>
   </footer>
-    <div class="toast" role="status" aria-live="polite"></div>
+  <div class="toast" role="status" aria-live="polite"></div>
   <script type="module" src="app.js"></script>
 </body>
 </html>

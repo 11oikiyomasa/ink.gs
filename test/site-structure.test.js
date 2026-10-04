@@ -102,7 +102,7 @@ test("reader keeps editorial article hierarchy and honest mobile controls", () =
   assert.ok(js.includes("readerPublication"));
   assert.ok(css.includes(".reader-author-row"));
   assert.ok(css.includes(".reader-tool-row"));
-  assert.ok(css.includes("position: sticky"));
+  assert.match(css, /position:\s*sticky/u);
 });
 
 
