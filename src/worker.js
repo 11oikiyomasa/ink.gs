@@ -2,6 +2,10 @@ import { INDEX_HTML, STYLES_CSS, APP_JS } from "./static-content.js";
 
 const MAX_BODY_BYTES = 160 * 1024;
 const MAX_PASSWORD_BYTES = 1024;
+const MIN_PASSWORD_BYTES = 10;
+const PASSWORD_HASH_ITERATIONS = 310_000;
+const PASSWORD_HASH_BYTES = 32;
+const PASSWORD_SALT_BYTES = 16;
 const SESSION_TTL_SECONDS = 8 * 60 * 60;
 const LOGIN_WINDOW_SECONDS = 15 * 60;
 const MAX_LOGIN_FAILURES = 5;
@@ -215,17 +219,38 @@ function requireDatabase(env) {
   return env.DB;
 }
 
-function requireEditorPasswordHash(env) {
-  const hash = typeof env.EDITOR_PASSWORD_HASH === "string" ? env.EDITOR_PASSWORD_HASH.trim() : "";
-  if (!hash) throw new HttpError(503, "Editor sign-in is not configured");
-  const parts = hash.split("$");
+function validateEditorPasswordHash(hash) {
+  const value = typeof hash === "string" ? hash.trim() : "";
+  if (!value) throw new HttpError(503, "Editor sign-in is not configured");
+  const parts = value.split("$");
   const iterations = Number(parts[1]);
   const salt = parts.length === 4 ? base64UrlToBytes(parts[2]) : null;
   const digest = parts.length === 4 ? base64UrlToBytes(parts[3]) : null;
   if (parts[0] !== "pbkdf2-sha256" || !Number.isSafeInteger(iterations) || iterations < MIN_PASSWORD_HASH_ITERATIONS || iterations > MAX_PASSWORD_HASH_ITERATIONS || !salt || salt.byteLength < 16 || !digest || digest.byteLength !== 32) {
     throw new HttpError(503, "Editor sign-in is not configured");
   }
-  return hash;
+  return value;
+}
+
+function requireEditorPasswordHash(env) {
+  return validateEditorPasswordHash(env.EDITOR_PASSWORD_HASH);
+}
+
+async function hashEditorPassword(password) {
+  const passwordBytes = encoder.encode(password);
+  if (typeof password !== "string" || passwordBytes.byteLength < MIN_PASSWORD_BYTES || passwordBytes.byteLength > MAX_PASSWORD_BYTES) {
+    throw new HttpError(400, "New password must be between 10 and 1024 bytes");
+  }
+  const salt = crypto.getRandomValues(new Uint8Array(PASSWORD_SALT_BYTES));
+  const key = await crypto.subtle.importKey("raw", passwordBytes, "PBKDF2", false, ["deriveBits"]);
+  const derived = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: PASSWORD_HASH_ITERATIONS, hash: "SHA-256" }, key, PASSWORD_HASH_BYTES * 8);
+  return "pbkdf2-sha256$" + PASSWORD_HASH_ITERATIONS + "$" + bytesToBase64Url(salt) + "$" + bytesToBase64Url(derived);
+}
+
+async function activeEditorPassword(db, env) {
+  const row = await db.prepare("SELECT password_hash FROM editor_credentials WHERE owner = ?").bind(EDITOR_OWNER).first();
+  if (row?.password_hash) return { hash: validateEditorPasswordHash(row.password_hash), source: "database" };
+  return { hash: requireEditorPasswordHash(env), source: "environment" };
 }
 
 async function sessionInfo(request, env) {
@@ -259,8 +284,9 @@ async function requireEditor(request, env, { csrf = false } = {}) {
 async function handleLogin(request, env) {
   if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "POST" });
   if (!originMatches(request, { required: true })) throw new HttpError(403, "Same-origin request required");
-  const encodedHash = requireEditorPasswordHash(env);
   const db = requireDatabase(env);
+  const credential = await activeEditorPassword(db, env);
+  const encodedHash = credential.hash;
   const input = await readJsonBody(request, 4 * 1024);
   if (!isRecord(input) || Object.keys(input).some((key) => key !== "password") || typeof input.password !== "string") {
     throw new HttpError(400, "Invalid sign-in request");
@@ -297,6 +323,11 @@ async function handleLogin(request, env) {
   }
 
   await db.prepare("DELETE FROM editor_login_attempts WHERE ip_hash = ?").bind(ipHash).run();
+  if (credential.source === "environment") {
+    await db.prepare(
+      "INSERT INTO editor_credentials (owner, password_hash, updated_at) VALUES (?, ?, ?) ON CONFLICT(owner) DO NOTHING",
+    ).bind(EDITOR_OWNER, encodedHash, now).run();
+  }
   await db.prepare("DELETE FROM editor_sessions WHERE expires_at <= ?").bind(now).run();
   const token = bytesToBase64Url(crypto.getRandomValues(new Uint8Array(32)));
   const csrfToken = bytesToBase64Url(crypto.getRandomValues(new Uint8Array(32)));
@@ -309,6 +340,38 @@ async function handleLogin(request, env) {
   });
 }
 
+async function handleChangePassword(request, env) {
+  if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "POST" });
+  const session = await requireEditor(request, env, { csrf: true });
+  const db = requireDatabase(env);
+  const input = await readJsonBody(request, 8 * 1024);
+  if (!isRecord(input) || Object.keys(input).some((key) => !["currentPassword", "newPassword"].includes(key)) || typeof input.currentPassword !== "string" || typeof input.newPassword !== "string") {
+    throw new HttpError(400, "Invalid password change request");
+  }
+  if (encoder.encode(input.currentPassword).byteLength > MAX_PASSWORD_BYTES || encoder.encode(input.newPassword).byteLength < MIN_PASSWORD_BYTES || encoder.encode(input.newPassword).byteLength > MAX_PASSWORD_BYTES) {
+    throw new HttpError(400, "New password must be between 10 and 1024 bytes");
+  }
+  if (input.currentPassword === input.newPassword) throw new HttpError(400, "New password must be different");
+
+  const credential = await activeEditorPassword(db, env);
+  let matched = false;
+  try { matched = await verifyPassword(input.currentPassword, credential.hash); } catch {
+    throw new HttpError(503, "Editor sign-in is not configured");
+  }
+  if (!matched) throw new HttpError(401, "Current password is incorrect");
+
+  const now = Math.floor(Date.now() / 1000);
+  const newHash = await hashEditorPassword(input.newPassword);
+  await db.prepare(
+    `INSERT INTO editor_credentials (owner, password_hash, updated_at)
+     VALUES (?, ?, ?)
+     ON CONFLICT(owner) DO UPDATE SET
+       password_hash = excluded.password_hash,
+       updated_at = excluded.updated_at`,
+  ).bind(EDITOR_OWNER, newHash, now).run();
+  await db.prepare("DELETE FROM editor_sessions WHERE token_hash != ?").bind(session.tokenHash).run();
+  return jsonResponse({ ok: true });
+}
 async function handleSession(request, env) {
   if (request.method !== "GET") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET" });
   const session = await sessionInfo(request, env);
@@ -691,6 +754,7 @@ export default {
       if (url.pathname === "/api/social/reactions") return await handleSocialReaction(request, env);
       if (url.pathname === "/api/social/responses") return await handleSocialResponse(request, env);
       if (url.pathname === "/api/editor/login") return await handleLogin(request, env);
+      if (url.pathname === "/api/editor/password") return await handleChangePassword(request, env);
       if (url.pathname === "/api/editor/session") return await handleSession(request, env);
       if (url.pathname === "/api/editor/logout") return await handleLogout(request, env);
       if (url.pathname === "/api/editor/stories" || url.pathname.startsWith("/api/editor/stories/")) {
