@@ -166,8 +166,11 @@
   const readerResponseInput = document.querySelector('#reader-response-input');
   const readerResponseList = document.querySelector('#reader-response-list');
   const readerApplaud = document.querySelector('#reader-applaud');
+  const readerApplaudCount = document.querySelector('#reader-applaud-count');
   const readerRespond = document.querySelector('#reader-respond');
+  const readerResponseStatCount = document.querySelector('#reader-response-stat-count');
   const readerRepost = document.querySelector('#reader-repost');
+  const readerRepostCount = document.querySelector('#reader-repost-count');
   const readerRespondCancel = document.querySelector('#reader-respond-cancel');
   const dynamicStoryRecords = new Map();
 
@@ -866,6 +869,9 @@
     if (readerProgress) readerProgress.setAttribute('aria-valuenow', String(percent));
     refreshBookmarkButtons();
     refreshFollowButton();
+    if (readerApplaudCount) readerApplaudCount.textContent = formatCount(data.applauseCount || 0);
+    if (readerResponseStatCount) readerResponseStatCount.textContent = formatCount(data.responseCount || 0);
+    if (readerRepostCount) readerRepostCount.textContent = formatCount(data.repostCount || 0);
     if (readerRead) readerRead.textContent = state.progress[id]?.finished ? 'Finished' : 'Mark as finished';
     if (readerSocial) readerSocial.hidden = true;
     updateSocialActionAvailability();
@@ -1419,13 +1425,14 @@
   function updateReaderSocial(data) {
     const counts = data?.counts || {};
     if (readerApplaud) {
-      readerApplaud.textContent = 'Applaud' + (Number(counts.applause || 0) ? ' · ' + formatCount(counts.applause) : '');
       readerApplaud.setAttribute('aria-pressed', String(Boolean(data?.me?.applauded)));
     }
+    if (readerApplaudCount) readerApplaudCount.textContent = formatCount(counts.applause || 0);
     if (readerRepost) {
-      readerRepost.textContent = 'Repost' + (Number(counts.reposts || 0) ? ' · ' + formatCount(counts.reposts) : '');
       readerRepost.setAttribute('aria-pressed', String(Boolean(data?.me?.reposted)));
     }
+    if (readerRepostCount) readerRepostCount.textContent = formatCount(counts.reposts || 0);
+    if (readerResponseStatCount) readerResponseStatCount.textContent = formatCount(counts.responses || 0);
     if (readerResponseCount) readerResponseCount.textContent = String(counts.responses || 0) + ' ' + (Number(counts.responses || 0) === 1 ? 'response' : 'responses');
     if (currentStory) {
       updateStoryCardSocial(currentStory.id, data);
