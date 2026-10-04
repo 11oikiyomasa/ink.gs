@@ -188,3 +188,20 @@ test("frontend requests are owned by the Worker runtime", () => {
   assert.match(wranglerConfig, /"main":\s*"src\/worker\.js"/u);
   assert.match(workerJs, /function bundledAssetResponse\(request\)/u);
 });
+
+test("story card menu, view-aware headings and search shortcut are wired", () => {
+  assert.ok(js.includes("function openStoryMenu(trigger)"));
+  assert.ok(js.includes("function closeStoryMenu("));
+  assert.ok(js.includes("openStoryMenu(target)"));
+  assert.ok(js.includes("function renderViewHeading(view)"));
+  assert.ok(js.includes("function emptyMessage(view, filtered)"));
+  assert.ok(js.includes("function announceResults("));
+  assert.ok(js.includes("event.key === '/'"));
+  assert.ok(css.includes(".story-menu"));
+});
+
+test("story cards surface locally saved reading progress", () => {
+  assert.ok(js.includes("function refreshProgressBadges()"));
+  assert.ok(js.includes("refreshProgressBadges();"));
+  assert.ok(css.includes(".story-status"));
+});
