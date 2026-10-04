@@ -2044,7 +2044,8 @@
 
       if (target.id === 'write-button') {
         event.preventDefault();
-        openComposer();
+        if (editorAuthenticated) openComposer();
+        else openLogin();
         return;
       }
 
@@ -2066,7 +2067,10 @@
           showToast('Published online stories require the Cloudflare Worker app.');
           return;
         }
-        Promise.all([loadPublicStories({ append: false }), loadOnlineStories({ append: false })].then(results => {
+        Promise.all([
+          loadPublicStories({ append: false }),
+          loadOnlineStories({ append: false })
+        ]).then(results => {
           showToast(results.every(Boolean) ? 'Published stories refreshed.' : 'Refresh completed with unavailable online data.');
         });
         return;
@@ -2132,6 +2136,11 @@
       }
 
       if (target.id === 'manage-stories-button') {
+        event.preventDefault();
+        if (!editorAuthenticated) {
+          openLogin();
+          return;
+        }
         openComposer();
         if (draftLibrary) draftLibrary.hidden = false;
         renderDraftList();
