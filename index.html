@@ -35,6 +35,7 @@
         <button class="rail-link" data-view="Reading list"><span class="rail-icon" aria-hidden="true">▱</span><span>Library</span></button>
         <button class="rail-link" id="profile-button"><span class="rail-icon" aria-hidden="true">◯</span><span>Profile</span></button>
         <button class="rail-link editor-auth-only" id="manage-stories-button" hidden><span class="rail-icon" aria-hidden="true">✎</span><span>Stories</span></button>
+        <button class="rail-link editor-auth-only" id="editor-settings-button" hidden><span class="rail-icon" aria-hidden="true">⚙</span><span>Settings</span></button>
         <button class="rail-link" data-view="Stats" aria-label="Stats"><span class="rail-icon" aria-hidden="true">▥</span><span>Stats</span></button>
         <hr class="rail-divider" />
         <button class="rail-link rail-link-with-badge" id="games-button"><span><span class="rail-icon" aria-hidden="true">◈</span><span>Games</span></span><span class="beta">Beta</span></button>
@@ -137,6 +138,16 @@
       <label for="editor-password">Editor password<input id="editor-password" name="password" type="password" autocomplete="current-password" required maxlength="1024" /></label>
       <div class="login-error" id="editor-login-error" role="status" aria-live="polite"></div>
       <div class="login-actions"><button id="close-editor-login" type="button">Cancel</button><button class="primary" id="submit-editor-login" type="submit">Sign in</button></div>
+    </form>
+  </dialog>
+  <dialog class="utility-dialog" id="editor-settings-dialog" aria-labelledby="editor-settings-title">
+    <div class="utility-dialog-head"><div><p class="eyebrow">Editor</p><h2 id="editor-settings-title">Settings</h2><p>Manage the private editor access used to publish and edit stories.</p></div><button class="utility-dialog-close" id="editor-settings-close" type="button" aria-label="Close editor settings">×</button></div>
+    <form class="profile-form" id="editor-password-form">
+      <label>Current password<input id="editor-current-password" type="password" autocomplete="current-password" required maxlength="1024" /></label>
+      <label>New password<input id="editor-new-password" type="password" autocomplete="new-password" required minlength="10" maxlength="1024" /></label>
+      <label>Confirm new password<input id="editor-confirm-password" type="password" autocomplete="new-password" required minlength="10" maxlength="1024" /></label>
+      <p class="login-error" id="editor-password-error" role="status" aria-live="polite"></p>
+      <div class="utility-dialog-actions"><button class="composer-button" id="editor-settings-cancel" type="button">Cancel</button><button class="composer-button primary" id="editor-password-submit" type="submit">Change password</button></div>
     </form>
   </dialog>
   <dialog class="reader" id="reader" aria-labelledby="reader-title">
