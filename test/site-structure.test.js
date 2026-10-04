@@ -60,6 +60,12 @@ test("reader keeps editorial article hierarchy and honest mobile controls", () =
 });
 
 
+test("mobile article reader preserves editorial cover and pull-quote presentation", () => {
+  assert.match(css, /\.reader-cover\s*\{[\s\S]*?aspect-ratio:\s*16\s*\/\s*9/u);
+  assert.match(css, /\.reader-body blockquote\s*\{/u);
+  assert.match(css, /\.reader-body blockquote cite\s*\{/u);
+});
+
 test("reader publication metadata and follow state stay wired", () => {
   assert.match(html, /id=["']reader-publication["']/u);
   assert.match(html, /id=["']reader-follow-publication["']/u);
