@@ -472,7 +472,7 @@
       updatePublicLoadMoreState();
       if (feedStatus) {
         feedStatus.hidden = false;
-        feedStatus.textContent = 'Showing local sample stories. Open the Worker app to load published online stories.';
+        feedStatus.textContent = 'Online publishing is available on the Worker app.';
       }
       return false;
     }
@@ -493,13 +493,13 @@
         const loaded = stories.filter(element => dynamicStoryRecords.has(element.dataset.storyId)).length;
         feedStatus.textContent = remoteStories.length
           ? loaded + (publicStoryCursor ? '+ published online stories loaded.' : ' published online stories loaded.')
-          : (append ? 'No more published online stories.' : 'No published online stories yet. Local sample stories remain available.');
+          : (append ? 'No more published stories.' : 'No published stories yet.');
       }
       return true;
     } catch (error) {
       if (!append && feedStatus) {
         feedStatus.hidden = false;
-        feedStatus.textContent = 'Online stories are temporarily unavailable. Local stories remain available.';
+        feedStatus.textContent = 'Online stories are temporarily unavailable. Try again shortly.';
       }
       return false;
     } finally {
@@ -858,7 +858,7 @@
         ? 'The writers you follow have no stories here yet.'
         : 'You are not following anyone yet. Use “Find writers” in the menu to start.';
     }
-    return 'No stories match that yet. Try another search.';
+    return !filtered && view === 'For you' ? 'No stories have been published yet.' : 'No stories match that yet. Try another search.';
   }
 
   let resultsStatus = null;
