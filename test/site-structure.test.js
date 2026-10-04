@@ -45,6 +45,14 @@ test("story images have text alternatives and no production asset dependency", (
 
 
 
+test("reader engagement stats expose icon counts", () => {
+  assert.ok(html.includes('id="reader-applaud-count"'));
+  assert.ok(html.includes('id="reader-response-stat-count"'));
+  assert.ok(html.includes('id="reader-repost-count"'));
+  assert.ok(css.includes(".reader-stats-row"));
+  assert.ok(css.includes(".reader-stat-count"));
+});
+
 test("reader keeps editorial article hierarchy and honest mobile controls", () => {
   assert.ok(html.includes('id="reader-publication"'));
   assert.ok(html.includes('id="reader-meta"'));
