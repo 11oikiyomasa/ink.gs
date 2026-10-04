@@ -3004,11 +3004,12 @@ main {
 
 .reader-cover {
   margin-bottom: 34px;
+  filter: grayscale(1) contrast(.94) brightness(.82);
 }
 
 .reader-body {
   color: #e6e6e6;
-  font-family: var(--serif);
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 21px;
   line-height: 1.78;
 }
@@ -3242,7 +3243,9 @@ main {
   }
 
   .reader-cover {
-    display: block;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
     width: calc(100% - 28px);
     max-height: none;
     margin: 0 auto 30px;
@@ -3252,6 +3255,7 @@ main {
   }
 
   .reader-body {
+    font-family: Georgia, "Times New Roman", serif !important;
     font-size: 20px;
     line-height: 1.76;
   }
