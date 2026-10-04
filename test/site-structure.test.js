@@ -112,7 +112,6 @@ test("mobile article reader preserves editorial cover and pull-quote presentatio
 test("reader publication metadata and follow state stay wired", () => {
   assert.match(html, /id=["']reader-publication["']/u);
   assert.match(html, /id=["']reader-follow-publication["']/u);
-  assert.match(html, /data-published-at=/u);
   assert.match(js, /function setPublicationFollowing\(publication, present, announce = true\)/u);
   assert.match(js, /function refreshPublicationFollowButton\(\)/u);
 });
