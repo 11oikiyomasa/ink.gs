@@ -24,7 +24,7 @@ jobs:
       - name: Build static assets
         run: npm run build:assets
       - name: Verify generated Worker bundle is committed
-        run: git diff --exit-code -- src/static-content.js
+        run: git diff --exit-code -- src/static-content.js public/
       - name: Validate D1 migrations with SQLite
         run: |
           python3 - <<'PY'
