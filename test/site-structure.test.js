@@ -42,11 +42,15 @@ test("story images have text alternatives and no production asset dependency", (
   assert.match(js, /addEventListener\('error'/u);
 });
 
-test("mobile reader and menu hooks stay wired", () => {
+test("mobile reader, menu, and search hooks stay wired", () => {
   assert.match(html, /id=["']reader-summary["']/u);
   assert.match(html, /class=["']mobile-drawer-close["']/u);
+  assert.match(html, /id=["']search-toggle["']/u);
   assert.match(js, /readerSummary/u);
   assert.match(js, /mobile-drawer-close/u);
+  assert.match(js, /searchBox\\?\\.classList\\.toggle\\(['"]search-open['"]/u);
+  assert.match(css, /\\.search-toggle svg[\\s\\S]*?stroke:\\s*currentColor/u);
+  assert.match(css, /\\.search-box\\.search-open/u);
 });
 
 
