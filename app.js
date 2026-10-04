@@ -169,6 +169,7 @@
   let publicStoryLoading = false;
   let editorStoryCursor = null;
   let editorStoryLoading = false;
+  let lastMenuFocus = null;
 
   function slugify(value) {
     return value.toLowerCase()
@@ -514,9 +515,16 @@
     loadMoreStoriesButton.textContent = publicStoryLoading ? 'Loading…' : 'Load more stories';
   }
 
+  function setFeedSkeleton(visible) {
+    const skeleton = document.querySelector('#feed-skeleton');
+    if (!skeleton) return;
+    skeleton.dataset.loading = visible ? 'true' : 'false';
+  }
+
   async function loadPublicStories({ append = false } = {}) {
     if (!API_ENABLED) {
       publicStoryCursor = null;
+      setFeedSkeleton(false);
       updatePublicLoadMoreState();
       if (feedStatus) {
         feedStatus.hidden = false;
@@ -525,6 +533,7 @@
       return false;
     }
     if (publicStoryLoading) return false;
+    if (!append) setFeedSkeleton(true);
     if (append && !publicStoryCursor) return true;
     publicStoryLoading = true;
     updatePublicLoadMoreState();
@@ -552,6 +561,7 @@
       return false;
     } finally {
       publicStoryLoading = false;
+      setFeedSkeleton(false);
       updatePublicLoadMoreState();
     }
   }
@@ -1998,12 +2008,21 @@
   function toggleMobileMenu(force) {
     const rail = document.querySelector('.left-rail');
     const toggle = document.querySelector('#menu-toggle');
+    const close = document.querySelector('.mobile-drawer-close');
     if (!rail || !toggle) return;
     const open = typeof force === 'boolean' ? force : !rail.classList.contains('mobile-open');
+    if (open) lastMenuFocus = document.activeElement;
     rail.classList.toggle('mobile-open', open);
     document.body.classList.toggle('menu-open', open);
     toggle.setAttribute('aria-expanded', String(open));
     toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    rail.setAttribute('aria-hidden', String(!open));
+    if (open) {
+      window.setTimeout(() => close?.focus(), 0);
+    } else if (lastMenuFocus instanceof HTMLElement) {
+      window.setTimeout(() => lastMenuFocus?.focus?.(), 0);
+      lastMenuFocus = null;
+    }
   }
 
   function wireEvents() {
@@ -2014,7 +2033,26 @@
     });
     document.querySelector('.mobile-drawer-close')?.addEventListener('click', () => toggleMobileMenu(false));
     document.addEventListener('keydown', event => {
-      if (event.key === 'Escape' && document.body.classList.contains('menu-open')) toggleMobileMenu(false);
+      if (event.key === 'Escape' && document.body.classList.contains('menu-open')) {
+        event.preventDefault();
+        toggleMobileMenu(false);
+        return;
+      }
+      if (event.key === 'Tab' && document.body.classList.contains('menu-open')) {
+        const rail = document.querySelector('.left-rail.mobile-open');
+        const focusables = rail ? [...rail.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])')] : [];
+        if (focusables.length) {
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
+        }
+      }
       const typing = event.target.closest?.('input, textarea, select, [contenteditable="true"]');
       const modalOpen = document.querySelector('dialog[open]');
       if (event.key === '/' && !typing && !modalOpen && !event.metaKey && !event.ctrlKey && !event.altKey) {
@@ -2199,7 +2237,7 @@
         openProfile();
         return;
       }
-      if (target.id === 'writers-button') {
+      if (target.id === 'writers-button' || target.id === 'suggestions-button') {
         event.preventDefault();
         renderWriterList();
         if (typeof writersDialog?.showModal === 'function') writersDialog.showModal(); else writersDialog?.setAttribute('open', '');
