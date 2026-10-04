@@ -3060,40 +3060,73 @@ main {
   backdrop-filter: blur(12px);
 }
 
-.reader-actions-group {
-  gap: 18px;
+.reader-stats-row {
+  min-width: 0;
+  display: flex;
   align-items: center;
+  gap: 24px;
 }
 
-.reader-actions .reader-action {
-  padding: 8px 0;
+.reader-stat {
+  min-width: 52px;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 7px 0;
   border: 0;
-  border-radius: 0;
   background: transparent;
+  color: #9c9c9c;
+  cursor: pointer;
+}
+
+.reader-stat:hover {
+  color: #e7e7e7;
+}
+
+.reader-stat-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.reader-stat-count {
   font-size: 14px;
+  line-height: 1;
 }
 
-.reader-actions .reader-action:hover {
-  background: transparent;
-  color: #fff;
-}
-
-.reader-actions .reader-action[aria-pressed="true"] {
+.reader-stat[aria-pressed="true"] {
   color: var(--yellow);
-  border-color: transparent;
 }
 
-.reader-actions .reader-action.primary {
-  padding: 9px 15px;
-  border: 1px solid #4c4c4c;
-  border-radius: 21px;
-  background: #202020;
-  color: #d7d7d7;
+.reader-stat-bookmark {
+  min-width: 42px;
 }
 
-.reader-actions .reader-action.primary:hover {
-  background: #292929;
+.reader-stat-bookmark .reader-stat-icon {
+  font-size: 26px;
+}
+
+.reader-finished {
+  flex: 0 0 auto;
+  padding: 8px 13px;
+  border: 1px solid #454545;
+  border-radius: 20px;
+  background: #1f1f1f;
+  color: #cfcfcf;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.reader-finished:hover {
+  background: #282828;
   color: #fff;
+}
+
+.reader-finished:focus-visible,
+.reader-stat:focus-visible {
+  outline: 2px solid var(--yellow);
+  outline-offset: 3px;
 }
 
 .reader-social {
@@ -3279,20 +3312,28 @@ main {
     overflow-x: auto;
   }
 
-  .reader-actions-group {
+  .reader-stats-row {
     flex: 1 0 auto;
     justify-content: space-between;
-    gap: 17px;
+    gap: 12px;
   }
 
-  .reader-actions .reader-action {
+  .reader-stat {
+    min-width: 48px;
+    min-height: 42px;
+  }
+
+  .reader-stat-icon {
+    font-size: 20px;
+  }
+
+  .reader-stat-count {
     font-size: 13px;
   }
 
-  .reader-actions .reader-action.primary {
-    flex: 0 0 auto;
-    padding: 8px 12px;
-    font-size: 12px;
+  .reader-finished {
+    padding: 8px 11px;
+    font-size: 11px;
   }
 
   .reader-social {
