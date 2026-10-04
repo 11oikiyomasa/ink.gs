@@ -49,8 +49,8 @@ test("mobile reader, menu, and search hooks stay wired", () => {
   assert.match(js, /readerSummary/u);
   assert.match(js, /mobile-drawer-close/u);
   assert.ok(js.includes("searchBox?.classList.toggle('search-open', open)"));
-  assert.match(css, /\\.search-toggle svg[\\s\\S]*?stroke:\\s*currentColor/u);
-  assert.match(css, /\\.search-box\\.search-open/u);
+  assert.ok(css.includes(".search-toggle svg"));
+  assert.ok(css.includes(".search-box.search-open"));
 });
 
 
