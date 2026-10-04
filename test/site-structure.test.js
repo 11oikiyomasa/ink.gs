@@ -57,6 +57,12 @@ test("reader uses a serif-first system font stack", () => {
   assert.match(css, /\.reader-body\s*\{[\s\S]*?font-family:\s*serif/u);
 });
 
+test("composer preview shares the reader rich-block renderer", () => {
+  assert.ok(js.includes("function renderStoryBlocks(container, body)"));
+  assert.ok(js.includes("renderStoryBlocks(previewBody, draftBody?.value || '')"));
+  assert.ok(js.includes("renderStoryBlocks(readerBody, data.body)"));
+});
+
 test("reader supports topic chips and safe pull-quote rendering", () => {
   assert.ok(html.includes('id="reader-topics"'));
   assert.ok(js.includes("text.startsWith('> ')"));
