@@ -286,9 +286,16 @@
           <button class="reader-inline-follow" id="reader-follow" type="button" aria-pressed="false">Follow</button>
         </div>
         <div class="reader-tool-row">
-          <button class="reader-tool" type="button" data-toast="Audio reading is not enabled for this story yet.">Listen</button>
+          <button class="reader-tool" id="reader-listen" type="button" aria-pressed="false">Listen</button>
           <button class="reader-tool" id="reader-share" type="button" aria-label="Share story link" title="Share story link"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="m8.6 10.6 6.8-4.1M8.6 13.4l6.8 4.1"></path></svg><span>Share</span></button>
-          <button class="reader-tool" type="button" data-toast="More reading options are coming to ink.gs.">More</button>
+          <span class="reader-more-wrap">
+            <button class="reader-tool" id="reader-more" type="button" aria-expanded="false" aria-controls="reader-more-menu">More</button>
+            <span class="reader-more-menu" id="reader-more-menu" role="menu" hidden>
+              <button type="button" role="menuitem" id="reader-copy-link">Copy story link</button>
+              <button type="button" role="menuitem" id="reader-copy-title">Copy story title</button>
+              <button type="button" role="menuitem" id="reader-open-new">Open standalone</button>
+            </span>
+          </span>
         </div>
         <img class="reader-cover" id="reader-image" src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201200%20800%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20stop-color%3D%22%23493f2b%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23c09a5b%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%221200%22%20height%3D%22800%22%20fill%3D%22url(%23g)%22%2F%3E%3Ccircle%20cx%3D%22960%22%20cy%3D%22180%22%20r%3D%22150%22%20fill%3D%22%23fff%22%20opacity%3D%22.08%22%2F%3E%3Cpath%20d%3D%22M0%20640%20C220%20520%20410%20730%20620%20600%20S980%20470%201200%20620%20V800%20H0Z%22%20fill%3D%22%23000%22%20opacity%3D%22.14%22%2F%3E%3C%2Fsvg%3E" alt="Story cover" />
         <div class="reader-body" id="reader-body"></div>
