@@ -2858,6 +2858,11 @@ main {
   cursor: pointer;
 }
 
+.reader-follow-publication[aria-pressed="true"] {
+  color: var(--accent);
+  text-decoration: none;
+}
+
 .reader-follow-publication {
   padding: 8px 0;
   font-size: 14px;
