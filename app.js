@@ -989,23 +989,52 @@
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 0.96;
     utterance.pitch = 1;
-    utterance.onend = () => {
+    let started = false;
+    let voiceTimeout = null;
+
+    const resetSpeechState = () => {
+      if (voiceTimeout) clearTimeout(voiceTimeout);
+      voiceTimeout = null;
       readerSpeech = null;
       readerListen.setAttribute('aria-pressed', 'false');
       readerListen.textContent = 'Listen';
     };
-    utterance.onerror = () => {
-      readerSpeech = null;
-      readerListen.setAttribute('aria-pressed', 'false');
-      readerListen.textContent = 'Listen';
-      showToast('Text-to-speech could not start.');
+
+    utterance.onend = resetSpeechState;
+    utterance.onerror = event => {
+      const reason = event?.error || 'unknown';
+      resetSpeechState();
+      showToast(reason === 'canceled'
+        ? 'Reading stopped.'
+        : 'Text-to-speech is unavailable in this browser.');
     };
+
+    const startSpeech = () => {
+      if (started || readerSpeech !== utterance) return;
+      started = true;
+      try {
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+        window.speechSynthesis.resume?.();
+      } catch {
+        resetSpeechState();
+        showToast('Text-to-speech is unavailable in this browser.');
+        return;
+      }
+      showToast('Reading aloud started.');
+    };
+
     readerSpeech = utterance;
     readerListen.setAttribute('aria-pressed', 'true');
     readerListen.textContent = 'Stop listening';
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
-    showToast('Reading aloud started.');
+
+    const voices = window.speechSynthesis.getVoices?.() || [];
+    if (voices.length) {
+      startSpeech();
+    } else {
+      window.speechSynthesis.onvoiceschanged = startSpeech;
+      voiceTimeout = setTimeout(startSpeech, 1600);
+    }
   }
 
   function toggleReaderMore() {
