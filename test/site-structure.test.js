@@ -42,6 +42,23 @@ test("story images have text alternatives and no production asset dependency", (
   assert.match(js, /addEventListener\('error'/u);
 });
 
+
+test("reader keeps editorial article hierarchy and honest mobile controls", () => {
+  assert.match(html, /id=["']reader-publication["']/u);
+  assert.match(html, /id=["']reader-meta["']/u);
+  assert.match(html, /id=["']reader-author-name["']/u);
+  assert.match(html, /id=["']reader-follow["']/u);
+  assert.match(html, /class=["']reader-tool-row["']/u);
+  assert.match(html, /id=["']reader-applaud["']/u);
+  assert.match(html, /id=["']reader-respond["']/u);
+  assert.match(html, /id=["']reader-repost["']/u);
+  assert.match(js, /formatPublishedDate/u);
+  assert.match(js, /readerPublication/u);
+  assert.match(css, /\\.reader-author-row/iu);
+  assert.match(css, /\\.reader-tool-row/iu);
+  assert.match(css, /\\.reader-actions \\{[\\s\\S]*position: sticky/iu);
+});
+
 test("mobile reader, menu, and search hooks stay wired", () => {
   assert.match(html, /id=["']reader-summary["']/u);
   assert.match(html, /class=["']mobile-drawer-close["']/u);
