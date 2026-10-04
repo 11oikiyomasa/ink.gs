@@ -53,6 +53,10 @@ test("reader engagement stats expose icon counts", () => {
   assert.ok(css.includes(".reader-stat-count"));
 });
 
+test("reader uses a serif-first system font stack", () => {
+  assert.match(css, /\.reader-body\s*\{[\s\S]*?font-family:\s*ui-serif,\s*Georgia/u);
+});
+
 test("reader keeps editorial article hierarchy and honest mobile controls", () => {
   assert.ok(html.includes('id="reader-publication"'));
   assert.ok(html.includes('id="reader-meta"'));
