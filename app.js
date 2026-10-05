@@ -115,7 +115,8 @@
   const API_BASE = isWorkerHost ? location.origin : configuredApiBase;
   const API_ENABLED = isWorkerHost || Boolean(configuredApiBase);
   const loadingPreview = new URLSearchParams(location.search).get('loading') === '1';
-  let stories = [...document.querySelectorAll('.story')].map((element, index) => {
+  const starterStories = [...document.querySelectorAll('.story')];
+  let stories = starterStories.map((element, index) => {
     const title = element.querySelector('h2')?.textContent?.trim() || ('Story ' + (index + 1));
     const id = element.dataset.storyId || slugify(title);
     element.dataset.storyId = id;
@@ -128,6 +129,10 @@
   const searchToggle = document.querySelector('#search-toggle');
   const searchClear = document.querySelector('#search-clear');
   const emptyState = document.querySelector('#empty-state');
+  const emptyStateTitle = document.querySelector('#empty-state-title');
+  const emptyStateCopy = document.querySelector('.empty-state-copy');
+  const feedSkeleton = document.querySelector('#feed-skeleton');
+  const storyFeed = document.querySelector('#stories');
   const feedView = document.querySelector('#feed-view');
   const statsView = document.querySelector('#stats-view');
   const reader = document.querySelector('#reader');
@@ -258,9 +263,10 @@
   let editingOnlineStoryId = null;
   let publicStoryCursor = null;
   let publicStoryLoading = false;
+  let publicStoryUnavailable = false;
+  let menuReturnFocus = null;
   let editorStoryCursor = null;
   let editorStoryLoading = false;
-  let lastMenuFocus = null;
 
   function slugify(value) {
     return value.toLowerCase()
@@ -569,9 +575,9 @@
   function renderRemoteStories(remoteStories, { reset = false } = {}) {
     const container = document.querySelector('#stories');
     if (!container) return;
-    if (reset && remoteStories.length) {
-      container.replaceChildren();
+    if (reset) {
       dynamicStoryRecords.clear();
+      container.replaceChildren(...(remoteStories.length ? [] : starterStories));
       refreshStoriesCollection();
     }
     const seen = new Set([...container.querySelectorAll('.story')].map(element => element.dataset.storyId));
@@ -617,6 +623,7 @@
     const skeleton = document.querySelector('#feed-skeleton');
     if (!skeleton) return;
     skeleton.dataset.loading = visible ? 'true' : 'false';
+    skeleton.hidden = !visible;
   }
 
   function ensureLocalStories() {
@@ -640,14 +647,20 @@
       return false;
     }
     if (publicStoryLoading) return false;
-    if (!append) setFeedSkeleton(true);
     if (append && !publicStoryCursor) return true;
     publicStoryLoading = true;
+    if (!append && !stories.length) {
+      setFeedSkeleton(true);
+      if (feedSkeleton) feedSkeleton.hidden = false;
+      if (storyFeed) storyFeed.setAttribute('aria-busy', 'true');
+      if (emptyState) emptyState.hidden = true;
+    }
     updatePublicLoadMoreState();
     try {
       const params = new URLSearchParams({ limit: '24' });
       if (append && publicStoryCursor) params.set('cursor', publicStoryCursor);
       const data = await apiRequest('/api/stories?' + params.toString(), { method: 'GET', headers: {} });
+      publicStoryUnavailable = false;
       const remoteStories = Array.isArray(data.stories) ? data.stories : [];
       renderRemoteStories(remoteStories, { reset: !append });
       publicStoryCursor = data.nextCursor || null;
@@ -661,6 +674,7 @@
       }
       return true;
     } catch (error) {
+      if (!append) publicStoryUnavailable = true;
       if (!append && feedStatus) {
         feedStatus.hidden = false;
         feedStatus.textContent = 'Online stories are temporarily unavailable. Try again shortly.';
@@ -669,6 +683,11 @@
     } finally {
       publicStoryLoading = false;
       setFeedSkeleton(false);
+      if (!append) {
+        if (feedSkeleton) feedSkeleton.hidden = true;
+        if (storyFeed) storyFeed.setAttribute('aria-busy', 'false');
+        renderCurrentView();
+      }
       updatePublicLoadMoreState();
     }
   }
@@ -987,7 +1006,8 @@
     if (feedView) feedView.hidden = view === 'Stats';
     if (statsView) statsView.hidden = view !== 'Stats';
     if (emptyState) {
-      emptyState.textContent = emptyMessage(view, Boolean(query || topic));
+      if (emptyStateTitle) emptyStateTitle.textContent = emptyHeading(view, Boolean(query || topic));
+      if (emptyStateCopy) emptyStateCopy.textContent = emptyMessage(view, Boolean(query || topic));
       emptyState.classList.toggle('show', view !== 'Stats' && visible === 0);
       emptyState.hidden = view === 'Stats' || visible !== 0;
     }
@@ -1023,7 +1043,20 @@
         ? 'The writers you follow have no stories here yet.'
         : 'You are not following anyone yet. Use “Find writers” in the menu to start.';
     }
-    return !filtered && view === 'For you' ? 'No stories have been published yet.' : 'No stories match that yet. Try another search.';
+    if (!filtered && view === 'For you') {
+      return publicStoryUnavailable
+        ? 'Published stories are temporarily unavailable. Try refreshing when the connection returns.'
+        : 'No stories have been published yet.';
+    }
+    return 'No stories match that yet. Try another search.';
+  }
+
+  function emptyHeading(view, filtered) {
+    if (filtered) return 'No matching stories.';
+    if (view === 'Reading list') return 'Your reading list is empty.';
+    if (view === 'Following') return state.following.length ? 'No followed stories yet.' : 'Nothing in Following yet.';
+    if (publicStoryUnavailable) return 'Stories are temporarily unavailable.';
+    return 'No stories just yet.';
   }
 
   let resultsStatus = null;
@@ -1131,6 +1164,7 @@
     });
     document.querySelectorAll('.tab[data-view]').forEach(button => {
       button.classList.toggle('selected', button.dataset.view === view);
+      button.setAttribute('aria-selected', String(button.dataset.view === view));
     });
     if (view === 'Stats') {
       if (feedView) feedView.hidden = true;
@@ -1211,6 +1245,7 @@
     if (readerSocial) readerSocial.hidden = true;
     updateSocialActionAvailability();
     loadReaderSocial();
+    reader.hidden = false;
     if (typeof reader.showModal === 'function') reader.showModal();
     else reader.setAttribute('open', '');
   }
@@ -1221,6 +1256,7 @@
     if (!reader) return;
     if (reader.open && typeof reader.close === 'function') reader.close();
     else reader.removeAttribute('open');
+    reader.hidden = true;
     currentStory = null;
   }
 
@@ -2117,18 +2153,31 @@
     const toggle = document.querySelector('#menu-toggle');
     const close = document.querySelector('.mobile-drawer-close');
     if (!rail || !toggle) return;
+    if (force === true && window.innerWidth > 820) return;
+    const wasOpen = rail.classList.contains('mobile-open');
     const open = typeof force === 'boolean' ? force : !rail.classList.contains('mobile-open');
-    if (open) lastMenuFocus = document.activeElement;
+    if (open && !wasOpen) menuReturnFocus = document.activeElement;
     rail.classList.toggle('mobile-open', open);
     document.body.classList.toggle('menu-open', open);
+    document.querySelector('#drawer-overlay')?.classList.toggle('visible', open);
+    const backgroundRegions = [
+      document.querySelector('main'),
+      document.querySelector('.right-rail'),
+      document.querySelector('.site-footer'),
+      document.querySelector('.promotion-banner'),
+      document.querySelector('.brand'),
+      document.querySelector('.top-actions')
+    ];
+    backgroundRegions.forEach(region => { if (region) region.inert = open; });
     toggle.setAttribute('aria-expanded', String(open));
     toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
     rail.setAttribute('aria-hidden', String(!open));
     if (open) {
-      window.setTimeout(() => close?.focus(), 0);
-    } else if (lastMenuFocus instanceof HTMLElement) {
-      window.setTimeout(() => lastMenuFocus?.focus?.(), 0);
-      lastMenuFocus = null;
+      window.setTimeout(() => close?.focus({ preventScroll: true }), 0);
+    } else if (wasOpen) {
+      const returnFocus = menuReturnFocus?.isConnected ? menuReturnFocus : toggle;
+      menuReturnFocus = null;
+      window.setTimeout(() => returnFocus?.focus({ preventScroll: true }), 0);
     }
   }
 
@@ -2139,26 +2188,35 @@
       toggleMobileMenu();
     });
     document.querySelector('.mobile-drawer-close')?.addEventListener('click', () => toggleMobileMenu(false));
+    document.querySelector('#drawer-overlay')?.addEventListener('click', () => toggleMobileMenu(false));
+    reader?.addEventListener('close', () => {
+      reader.hidden = true;
+      currentStory = null;
+      stopReaderListen();
+      closeReaderMore();
+    });
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape' && document.body.classList.contains('menu-open')) {
         event.preventDefault();
         toggleMobileMenu(false);
         return;
       }
-      if (event.key === 'Tab' && document.body.classList.contains('menu-open')) {
-        const rail = document.querySelector('.left-rail.mobile-open');
-        const focusables = rail ? [...rail.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])')] : [];
-        if (focusables.length) {
-          const first = focusables[0];
-          const last = focusables[focusables.length - 1];
-          if (event.shiftKey && document.activeElement === first) {
+      if (document.body.classList.contains('menu-open')) {
+        if (event.key === 'Tab') {
+          const rail = document.querySelector('.left-rail.mobile-open');
+          const focusable = [...(rail?.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])') || [])]
+            .filter(element => !element.hidden && element.getClientRects().length);
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (focusable.length && event.shiftKey && (document.activeElement === first || !rail?.contains(document.activeElement))) {
             event.preventDefault();
             last.focus();
-          } else if (!event.shiftKey && document.activeElement === last) {
+          } else if (focusable.length && !event.shiftKey && (document.activeElement === last || !rail?.contains(document.activeElement))) {
             event.preventDefault();
             first.focus();
           }
         }
+        return;
       }
       const typing = event.target.closest?.('input, textarea, select, [contenteditable="true"]');
       const modalOpen = document.querySelector('dialog[open]');
@@ -2174,7 +2232,16 @@
       if (storyMenu && !storyMenu.hidden && !event.target.closest('.story-menu, .more')) closeStoryMenu();
     });
     window.addEventListener('scroll', () => closeStoryMenu(), { passive: true });
-    window.addEventListener('resize', () => closeStoryMenu());
+    window.addEventListener('resize', () => {
+      closeStoryMenu();
+      if (window.innerWidth > 820 && document.body.classList.contains('menu-open')) toggleMobileMenu(false);
+    });
+    document.querySelector('.reader-offer a')?.addEventListener('click', event => {
+      event.preventDefault();
+      closeReader();
+      window.location.hash = 'about';
+      document.querySelector('#about')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
 
     document.addEventListener('click', event => {
       if (document.body.classList.contains('menu-open') &&

@@ -1,0 +1,14 @@
+---
+description: "ink.gs project context and memory workflow for coding tasks"
+alwaysApply: true
+---
+
+<!-- ai-coding-ok: v4.1.0 -->
+
+Before coding, read `AGENTS.md` and `.github/agent/memory/project-memory.md`, `decisions-log.md`, and `task-history.md`. Inspect actual content and preserve unrelated work.
+
+ink.gs is a lightweight editorial publishing and long-form reading platform backed by Cloudflare Workers and D1. Preserve the brand and architecture. Never invent stories, claims, statistics, links, app destinations, or capabilities; represent empty/unavailable states honestly. Use local/system fonts and do not weaken CSP.
+
+Run `npm test`; for frontend source changes also run `npm run build:assets` to synchronize generated `public/` and `src/static-content.js`. Report checks accurately. No formatter, linter, type-checker, or coverage command is configured.
+
+After coding, update `.github/agent/memory/task-history.md`; update project memory for changed facts and the decisions log for new decisions. Do not push, publish, deploy, apply remote migrations, or change remote services unless explicitly requested.

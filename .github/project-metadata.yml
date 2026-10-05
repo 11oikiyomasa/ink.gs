@@ -1,0 +1,47 @@
+# ai-coding-ok: v4.1.0
+project:
+  name: "ink.gs"
+  description: "A lightweight editorial publishing and long-form reading platform backed by Cloudflare Workers and D1."
+  version: "not recorded"
+  stage: "unspecified"
+  created: "not recorded"
+  user_scale: "not tracked"
+  design_principle: "Truthful editorial presentation, accessible reading, minimal dependencies, and secure publishing."
+
+tech_stack:
+  language: "JavaScript (ES modules)"
+  language_version: "Node.js 22+; Cloudflare Workers runtime"
+  backend_framework: "Cloudflare Workers native Fetch API"
+  frontend: "Semantic HTML, CSS, and vanilla JavaScript"
+  orm: "None"
+  database: "Cloudflare D1"
+  database_driver: "Workers D1 binding"
+  test_framework: "Node.js built-in test runner (node:test)"
+  config: "wrangler.jsonc and environment secrets"
+  package_manager: "npm; no third-party dependencies or lockfile"
+
+code_quality:
+  formatter: "Not configured"
+  linter: "Not configured"
+  type_checker: "Not configured"
+  test_framework: "Node.js built-in test runner (node:test)"
+  min_coverage: "Not configured"
+
+commands:
+  install: "Not required for the dependency-free project"
+  dev: "npm run build:assets && npx --yes wrangler@latest dev (after local D1 setup)"
+  test: "npm test"
+  test_coverage: "Not configured"
+  lint: "Not configured"
+  format: "Not configured"
+
+structure:
+  source_dir: "src"
+  test_dir: "test"
+  docs_dir: ". (README.md)"
+  scripts_dir: "scripts"
+
+conventions:
+  commit_format: "conventional-commits"
+  branch_strategy: "github-flow"
+  code_review: "recommended"

@@ -1,0 +1,52 @@
+name: Memory Check
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "test/**"
+      - "scripts/**"
+      - "migrations/**"
+      - "app.js"
+      - "index.html"
+      - "styles.css"
+      - "package.json"
+      - "wrangler.jsonc"
+
+permissions:
+  contents: read
+
+jobs:
+  memory-check:
+    name: Project memory reminder
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check source and memory changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed_files="$(git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD")"
+          printf 'Changed files:\n%s\n' "$changed_files"
+          core_pattern='^(src/|test/|scripts/|migrations/|app\.js$|index\.html$|styles\.css$|package\.json$|wrangler\.jsonc$)'
+          if ! printf '%s\n' "$changed_files" | grep -Eq "$core_pattern"; then
+            echo "No tracked core-source changes; no memory reminder needed."
+            exit 0
+          fi
+          if printf '%s\n' "$changed_files" | grep -Eq '^\.github/agent/memory/'; then
+            echo "Project memory files changed in this pull request."
+            exit 0
+          fi
+          {
+            echo '## Project memory reminder'
+            echo
+            echo 'This pull request changes core ink.gs source. Review whether these records need updates:'
+            echo '- `.github/agent/memory/task-history.md` — always record the task.'
+            echo '- `.github/agent/memory/project-memory.md` — update changed project facts.'
+            echo '- `.github/agent/memory/decisions-log.md` — record new technical decisions.'
+            echo
+            echo 'This is an Actions summary only; it does not post a public pull-request comment.'
+          } >> "$GITHUB_STEP_SUMMARY"

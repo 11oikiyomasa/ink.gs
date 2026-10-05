@@ -1,0 +1,52 @@
+name: "Feature request"
+description: "Suggest an improvement to ink.gs."
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the reader or editor need and the outcome you are seeking.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or motivation
+      description: What task or need is difficult today?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Desired outcome
+      description: Describe the experience you would find useful.
+    validations:
+      required: true
+  - type: textarea
+    id: user_story
+    attributes:
+      label: User story (optional)
+      placeholder: |
+        As a [reader/editor],
+        I want [capability],
+        so that [benefit].
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance criteria (optional)
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Suggested priority
+      options:
+        - "P0 — Essential"
+        - "P1 — Important"
+        - "P2 — Nice to have"
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context

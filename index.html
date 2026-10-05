@@ -14,7 +14,7 @@
 <body>
   <header class="topbar">
     <div class="topbar-inner">
-      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="main-navigation"><span></span><span></span><span></span></button>
       <a class="brand" href="#home" aria-label="ink.gs home"><span class="brand-name">ink.gs</span></a>
       <div class="top-actions">
         <div class="search-box" aria-label="Search stories">
@@ -30,17 +30,14 @@
       </div>
     </div>
   </header>
-
-  <a class="open-app-bar" href="#membership" aria-label="Open ink.gs in app">
-    <span>Open in app</span><span aria-hidden="true">↗</span>
-  </a>
-  <div class="promotion-banner" role="region" aria-label="Membership promotion">
-    <span>Access to everything. Now 30% off.</span>
-    <a href="#membership">Upgrade now</a>
-  </div>
-
+  <div class="open-app-bar" role="note" aria-label="App availability"><span>Open in app</span><span aria-hidden="true">↗</span></div>
+  <button class="drawer-overlay" id="drawer-overlay" type="button" aria-label="Close menu" tabindex="-1"></button>
+  <aside class="promotion-banner" aria-label="About ink.gs">
+    <span>A calm reading room for stories, ideas, and independent publishing.</span>
+    <a href="#about">About ink.gs <span aria-hidden="true">↗</span></a>
+  </aside>
   <div class="layout" id="home">
-    <aside class="left-rail" aria-label="Main navigation">
+    <aside class="left-rail" id="main-navigation" aria-label="Main navigation">
       <div class="rail-mobile-head"><span class="rail-mobile-brand">ink.gs</span><button class="mobile-drawer-close" type="button" aria-label="Close menu">×</button></div>
       <nav class="rail-list">
         <button class="rail-link active" data-view="For you" aria-current="page"><span class="rail-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.7 12 3.8l8.5 6.9"/><path d="M5.5 9.7v9.1h13V9.7"/><path d="M9.5 18.8v-5h5v5"/></svg></span><span>Home</span></button>
@@ -67,35 +64,53 @@
         </section>
         <div class="feed-toolbar">
           <div class="tabs" role="tablist" aria-label="Story feed"><button class="tab selected" role="tab" aria-selected="true" data-view="For you">For you</button><button class="tab" role="tab" aria-selected="false" data-view="Following">Activity</button></div>
-          <p class="feed-status" id="feed-status" role="status" aria-live="polite" hidden></p>
+          <div class="feed-status-slot"><p class="feed-status" id="feed-status" role="status" aria-live="polite" hidden></p></div>
         </div>
-        <section id="feed-skeleton" class="feed-skeleton" aria-label="Loading stories" aria-hidden="true">
-          <div class="skeleton-story">
+        <div class="feed-skeleton" id="feed-skeleton" aria-label="Loading stories" aria-hidden="true" hidden>
+          <article class="skeleton-story">
             <div class="skeleton-copy">
-              <span class="skeleton-line skeleton-meta"></span>
-              <span class="skeleton-line skeleton-title wide"></span>
-              <span class="skeleton-line skeleton-title medium"></span>
-              <span class="skeleton-line skeleton-text wide"></span>
-              <span class="skeleton-line skeleton-text short"></span>
-              <div class="skeleton-actions"><span></span><span></span><span></span><span></span></div>
+              <div class="skeleton-byline"><span class="skeleton-avatar"></span><span class="skeleton-meta"><i></i><i></i></span></div>
+              <span class="skeleton-line skeleton-title-line"></span>
+              <span class="skeleton-line skeleton-title-line short"></span>
+              <span class="skeleton-line skeleton-title-line short skeleton-extra-title-line"></span>
+              <span class="skeleton-line skeleton-paragraph-line"></span>
+              <span class="skeleton-line skeleton-paragraph-line short"></span>
+              <div class="skeleton-actions"><i></i><i></i><i></i></div>
             </div>
-            <span class="skeleton-thumb" aria-hidden="true"></span>
-          </div>
-          <div class="skeleton-story">
+            <span class="skeleton-image"></span>
+          </article>
+          <article class="skeleton-story">
             <div class="skeleton-copy">
-              <span class="skeleton-line skeleton-meta"></span>
-              <span class="skeleton-line skeleton-title wide"></span>
-              <span class="skeleton-line skeleton-text medium"></span>
-              <span class="skeleton-line skeleton-text short"></span>
-              <div class="skeleton-actions"><span></span><span></span><span></span></div>
+              <div class="skeleton-byline"><span class="skeleton-avatar"></span><span class="skeleton-meta"><i></i><i></i></span></div>
+              <span class="skeleton-line skeleton-title-line"></span>
+              <span class="skeleton-line skeleton-title-line short"></span>
+              <span class="skeleton-line skeleton-title-line short skeleton-extra-title-line"></span>
+              <span class="skeleton-line skeleton-paragraph-line"></span>
+              <span class="skeleton-line skeleton-paragraph-line short"></span>
+              <div class="skeleton-actions"><i></i><i></i><i></i></div>
             </div>
-            <span class="skeleton-thumb" aria-hidden="true"></span>
-          </div>
+            <span class="skeleton-image"></span>
+          </article>
+        </div>
+        <section id="stories" class="story-feed" aria-label="Recommended stories" aria-busy="false">
         </section>
-        <section id="stories" class="story-feed" aria-label="Recommended stories">
-      </section>
         <button class="load-more" id="load-more-stories" type="button" hidden>Load more stories</button>
-        <p class="empty-state" id="empty-state">No stories match that yet. Try another search.</p>
+        <section class="empty-state" id="empty-state" aria-labelledby="empty-state-title" aria-live="polite" hidden>
+          <div class="empty-state-copy-column">
+            <div class="empty-state-byline"><span class="empty-state-avatar" aria-hidden="true">i</span><span>ink.gs <span class="empty-state-source">· Feed preview</span></span></div>
+            <p class="empty-state-kicker">Feed status</p>
+            <h2 id="empty-state-title">No stories just yet.</h2>
+            <p class="empty-state-copy">No published stories are available in this feed. Story details and actions will appear here when a published story is available.</p>
+            <div class="empty-story-actions" role="group" aria-label="Story actions unavailable until a story is published">
+              <button type="button" disabled aria-label="Applause unavailable until a story is published"><span aria-hidden="true">✦</span><span aria-hidden="true">—</span></button>
+              <button type="button" disabled aria-label="Responses unavailable until a story is published"><span aria-hidden="true">◯</span><span aria-hidden="true">—</span></button>
+              <button type="button" disabled aria-label="Reposts unavailable until a story is published"><span aria-hidden="true">↗</span><span aria-hidden="true">—</span></button>
+              <button class="empty-story-bookmark" type="button" disabled aria-label="Save unavailable until a story is published"><span aria-hidden="true">♧</span></button>
+              <button class="empty-story-more" type="button" disabled aria-label="More story actions unavailable until a story is published"><span aria-hidden="true">···</span></button>
+            </div>
+          </div>
+          <div class="empty-state-art" aria-hidden="true"><span class="empty-state-art-mark">i</span><span class="empty-state-art-label">ink.gs · Feed</span></div>
+        </section>
       </div>
       <section class="stats-view" id="stats-view" aria-labelledby="stats-title" hidden>
         <div class="stats-heading"><p class="eyebrow">Your activity</p><h1 id="stats-title">Reading stats</h1><p>A small snapshot of your saved and finished stories.</p></div>
@@ -112,7 +127,7 @@
       <section class="side-section side-discover"><p class="section-kicker">Explore</p><h2>Find something worth reading.</h2><p>Follow a topic, then let the feed narrow itself.</p><div class="topics">
         <button class="topic-button" data-topic="Technology">Technology</button><button class="topic-button" data-topic="Creativity">Creativity</button><button class="topic-button" data-topic="Life">Life</button><button class="topic-button" data-topic="Writing">Writing</button><button class="topic-button" data-topic="Travel">Travel</button><button class="topic-button" data-topic="Mindfulness">Mindfulness</button>
       </div></section>
-      <section class="side-section"><p class="section-kicker">Staff picks</p>
+      <section class="side-section"><p class="section-kicker">Staff picks · Sample stories</p>
         <article class="pick"><span class="pick-number">01</span><div><p class="pick-byline">A Field Guide · 8 min</p><h3>On keeping a notebook you never show anyone</h3></div></article>
         <article class="pick"><span class="pick-number">02</span><div><p class="pick-byline">Civic Life · 6 min</p><h3>How a block becomes a neighborhood</h3></div></article>
         <article class="pick"><span class="pick-number">03</span><div><p class="pick-byline">New Rhythm · 5 min</p><h3>A kinder way to make a plan</h3></div></article>
@@ -185,14 +200,14 @@
       <div class="utility-dialog-actions"><button class="composer-button" id="editor-settings-cancel" type="button">Cancel</button><button class="composer-button primary" id="editor-password-submit" type="submit">Change password</button></div>
     </form>
   </dialog>
-  <dialog class="reader" id="reader" aria-labelledby="reader-title">
+  <dialog class="reader" id="reader" aria-labelledby="reader-title" hidden>
     <div class="reader-site-bar">
       <span class="reader-menu-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span>
       <span class="reader-brand">ink.gs</span>
       <span class="reader-site-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.4"/><path d="m15.5 15.5 4.2 4.2"/></svg></span>
       <span class="reader-site-avatar" aria-hidden="true">R</span>
     </div>
-    <div class="reader-offer"><span>Access to everything. Now 30% off.</span><a href="#membership">Explore membership</a></div>
+    <div class="reader-offer"><span>A calm reading room for stories, ideas, and independent publishing.</span><a href="#about">About ink.gs <span aria-hidden="true">↗</span></a></div>
     <div class="reader-toolbar">
       <span class="reader-publication" id="reader-publication"></span>
       <button class="reader-follow-publication" id="reader-follow-publication" type="button">Follow publication</button>
