@@ -18,6 +18,19 @@ async function makeTestPasswordHash(password) {
   return `pbkdf2-sha256$100000$${toBase64Url(salt)}$${toBase64Url(derived)}`;
 }
 
+function likeMatches(value, pattern) {
+  let expression = "^";
+  for (let index = 0; index < pattern.length; index++) {
+    const character = pattern[index];
+    if (character === "\\" && index + 1 < pattern.length) {
+      expression += pattern[++index].replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+    } else if (character === "%") expression += ".*";
+    else if (character === "_") expression += ".";
+    else expression += character.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  }
+  return new RegExp(expression + "$", "iu").test(String(value || ""));
+}
+
 class MemoryD1 {
   stories = new Map();
   sessions = new Map();
@@ -25,6 +38,7 @@ class MemoryD1 {
   socialActions = new Map();
   responses = new Map();
   credentials = new Map();
+  queries = [];
 
   prepare(sql) {
     const database = this;
@@ -33,7 +47,10 @@ class MemoryD1 {
     return {
       bind(...bound) { values = bound; return this; },
       async first() { return database.first(normalized, values); },
-      async all() { return database.all(normalized, values); },
+      async all() {
+        database.queries.push({ sql: normalized, values: [...values] });
+        return database.all(normalized, values);
+      },
       async run() { return database.run(normalized, values); },
     };
   }
@@ -129,11 +146,41 @@ class MemoryD1 {
     if (sql.startsWith("SELECT id, body, created_at FROM story_responses")) {
       return { results: [...this.responses.values()].filter(row => row.story_id === values[0]).sort((a, b) => b.created_at.localeCompare(a.created_at)).map(row => ({ ...row })) };
     }
+    if (sql.startsWith("SELECT MIN(author) AS author")) {
+      const pattern = values[1];
+      const cursor = sql.includes("author COLLATE NOCASE > ?") ? values[3] : null;
+      const limit = values.at(-1);
+      const groups = new Map();
+      for (const row of this.stories.values()) {
+        if (row.managed_by !== values[0] || row.published !== 1) continue;
+        if (!likeMatches(row.author, pattern) && !likeMatches(row.publication, pattern)) continue;
+        const key = String(row.author || "").toLocaleLowerCase("en");
+        const prior = groups.get(key);
+        if (prior) {
+          prior.publication = [prior.publication, row.publication].filter(Boolean).sort((a, b) => a.localeCompare(b))[0] || "";
+          prior.story_count++;
+        } else groups.set(key, { author: row.author, publication: row.publication || "", story_count: 1 });
+      }
+      const results = [...groups.values()]
+        .filter(row => !cursor || row.author.localeCompare(cursor, "en", { sensitivity: "base" }) > 0)
+        .sort((a, b) => a.author.localeCompare(b.author, "en", { sensitivity: "base" }) || a.author.localeCompare(b.author))
+        .slice(0, limit);
+      return { results };
+    }
     if (sql.startsWith("SELECT id, title, summary, body, author, publication, topic, photo, photo_alt, published_at, (SELECT COUNT(*) FROM story_social_actions")) {
+      const hasSearch = sql.includes("title LIKE ?");
+      const pattern = hasSearch ? values[1] : null;
+      const cursorOffset = 1 + (hasSearch ? 6 : 0);
+      const cursor = sql.includes("published_at < ?") ? values.slice(cursorOffset, cursorOffset + 3) : null;
+      const limit = values.at(-1);
+      const matching = [...this.stories.values()]
+        .filter(row => row.managed_by === values[0] && row.published === 1)
+        .filter(row => !pattern || [row.title, row.summary, row.body, row.author, row.publication, row.topic].some(value => likeMatches(value, pattern)))
+        .filter(row => !cursor || row.published_at < cursor[0] || (row.published_at === cursor[0] && row.id < cursor[2]))
+        .sort((a, b) => b.published_at.localeCompare(a.published_at) || b.id.localeCompare(a.id))
+        .slice(0, limit);
       return {
-        results: [...this.stories.values()]
-          .filter((row) => row.managed_by === values[0] && row.published === 1)
-          .map((row) => ({
+        results: matching.map((row) => ({
             ...row,
             applause_count: [...this.socialActions.values()].filter((action) => action.story_id === row.id && action.kind === "applause").length,
             repost_count: [...this.socialActions.values()].filter((action) => action.story_id === row.id && action.kind === "repost").length,
@@ -265,6 +312,24 @@ const storyInput = {
   published: true,
 };
 
+function storedStory(id, overrides = {}) {
+  return {
+    id,
+    title: storyInput.title,
+    summary: storyInput.summary,
+    body: storyInput.body,
+    author: storyInput.author,
+    publication: storyInput.publication,
+    topic: storyInput.topic,
+    photo: storyInput.photo,
+    photo_alt: storyInput.photoAlt,
+    published: 1,
+    published_at: "2026-10-05T00:00:00.000Z",
+    managed_by: "site-editor",
+    ...overrides,
+  };
+}
+
 async function signIn(env, { password = correctPassword, ip = "203.0.113.10" } = {}) {
   const response = await worker.fetch(request("/api/editor/login", {
     method: "POST",
@@ -327,6 +392,84 @@ test("public homepage and story reads need no editor session and receive securit
   const response = await worker.fetch(request("/api/stories"), env, {});
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { stories: [], nextCursor: null });
+});
+
+test("public story search bounds and encodes queries as literal SQL parameters", async () => {
+  const db = new MemoryD1();
+  const env = createEnv({ db });
+  const query = "%_\\ café' OR 1=1 --";
+  const visibleId = "00000000-0000-4000-8000-000000000001";
+  db.stories.set(visibleId, storedStory(visibleId, { body: `A passage contains ${query}.` }));
+  db.stories.set("00000000-0000-4000-8000-000000000002", storedStory("00000000-0000-4000-8000-000000000002", {
+    published: 0,
+    body: `A private draft contains ${query}.`,
+  }));
+
+  const response = await worker.fetch(request(`/api/stories?${new URLSearchParams({ q: query, limit: "10" })}`), env, {});
+  assert.equal(response.status, 200);
+  assert.deepEqual((await response.json()).stories.map(story => story.id), [visibleId]);
+  const queryRecord = db.queries.find(entry => entry.sql.includes("title LIKE ?"));
+  assert.ok(queryRecord);
+  assert.doesNotMatch(queryRecord.sql, /café|OR 1=1/u);
+  assert.ok(queryRecord.values.includes(`%${query.replace(/[\\%_]/gu, "\\$&")}%`));
+  assert.match(queryRecord.sql, /published = 1 AND managed_by = \?/u);
+
+  const before = db.queries.length;
+  const tooLong = await worker.fetch(request(`/api/stories?${new URLSearchParams({ q: "é".repeat(101) })}`), env, {});
+  assert.equal(tooLong.status, 400);
+  assert.equal(db.queries.length, before);
+  const writersTooLong = await worker.fetch(request(`/api/writers?${new URLSearchParams({ q: "x".repeat(101) })}`), env, {});
+  assert.equal(writersTooLong.status, 400);
+});
+
+test("public story search paginates across published matches and never leaks unpublished records", async () => {
+  const db = new MemoryD1();
+  const env = createEnv({ db });
+  const ids = [1, 2, 3].map(number => `00000000-0000-4000-8000-${String(number).padStart(12, "0")}`);
+  ids.forEach((id, index) => db.stories.set(id, storedStory(id, {
+    title: `Published needle story ${index + 1}`,
+    published_at: `2026-10-0${index + 1}T00:00:00.000Z`,
+  })));
+  const privateId = "00000000-0000-4000-8000-000000000099";
+  db.stories.set(privateId, storedStory(privateId, { title: "Private needle story", published: 0 }));
+
+  const first = await worker.fetch(request(`/api/stories?${new URLSearchParams({ q: "needle", limit: "1" })}`), env, {});
+  const page1 = await first.json();
+  assert.equal(page1.stories[0].id, ids[2]);
+  assert.ok(page1.nextCursor);
+  const second = await worker.fetch(request(`/api/stories?${new URLSearchParams({ q: "needle", limit: "1", cursor: page1.nextCursor })}`), env, {});
+  const page2 = await second.json();
+  assert.equal(page2.stories[0].id, ids[1]);
+  const third = await worker.fetch(request(`/api/stories?${new URLSearchParams({ q: "needle", limit: "1", cursor: page2.nextCursor })}`), env, {});
+  const page3 = await third.json();
+  assert.equal(page3.stories[0].id, ids[0]);
+  assert.equal(page3.nextCursor, null);
+  assert.deepEqual([page1, page2, page3].flatMap(page => page.stories.map(story => story.id)), ids.slice().reverse());
+});
+
+test("writer discovery searches actual published author/publication strings with cursors", async () => {
+  const db = new MemoryD1();
+  const env = createEnv({ db });
+  ["Ava Reader", "Bea Writer", "Cora Editor"].forEach((author, index) => {
+    const id = `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`;
+    db.stories.set(id, storedStory(id, { author, publication: "Needle Press" }));
+  });
+  const privateId = "00000000-0000-4000-8000-000000000099";
+  db.stories.set(privateId, storedStory(privateId, { author: "Private Writer", publication: "Needle Press", published: 0 }));
+
+  const first = await worker.fetch(request(`/api/writers?${new URLSearchParams({ q: "needle", limit: "1" })}`), env, {});
+  const page1 = await first.json();
+  assert.deepEqual(page1.writers.map(writer => writer.author), ["Ava Reader"]);
+  assert.equal(page1.writers[0].publication, "Needle Press");
+  assert.equal(page1.writers[0].stories, 1);
+  assert.equal(Object.hasOwn(page1.writers[0], "id"), false);
+  assert.ok(page1.nextCursor);
+  const second = await worker.fetch(request(`/api/writers?${new URLSearchParams({ q: "needle", limit: "1", cursor: page1.nextCursor })}`), env, {});
+  const page2 = await second.json();
+  const third = await worker.fetch(request(`/api/writers?${new URLSearchParams({ q: "needle", limit: "1", cursor: page2.nextCursor })}`), env, {});
+  const page3 = await third.json();
+  assert.deepEqual([page1, page2, page3].flatMap(page => page.writers.map(writer => writer.author)), ["Ava Reader", "Bea Writer", "Cora Editor"]);
+  assert.equal(page3.nextCursor, null);
 });
 
 test("all unauthenticated story mutations and private editor listing are denied", async () => {

@@ -114,6 +114,8 @@
   const isWorkerHost = /\.workers\.dev$/iu.test(location.hostname) || productionHostnames.has(location.hostname);
   const API_BASE = isWorkerHost ? location.origin : configuredApiBase;
   const API_ENABLED = isWorkerHost || Boolean(configuredApiBase);
+  const staffPicks = document.querySelector('#staff-picks');
+  if (staffPicks) staffPicks.hidden = API_ENABLED;
   const loadingPreview = new URLSearchParams(location.search).get('loading') === '1';
   const starterStories = [...document.querySelectorAll('.story')];
   let stories = starterStories.map((element, index) => {
@@ -146,11 +148,15 @@
   const readerByline = document.querySelector('#reader-byline');
   const readerSummary = document.querySelector('#reader-summary');
   const readerMeta = document.querySelector('#reader-meta');
-  const readerTopic = document.querySelector('#reader-topic');
   const readerAuthorAvatar = document.querySelector('#reader-author-avatar');
   const readerAuthorName = document.querySelector('#reader-author-name');
   const readerImage = document.querySelector('#reader-image');
   const readerBody = document.querySelector('#reader-body');
+  const readerResume = document.querySelector('#reader-resume');
+  const readerResumeMessage = document.querySelector('#reader-resume-message');
+  const readerContinue = document.querySelector('#reader-continue');
+  const readerStartOver = document.querySelector('#reader-start-over');
+  const readerSettingsStatus = document.querySelector('#reader-settings-status');
   const readerProgress = document.querySelector('.reader-progress');
   const readerProgressFill = document.querySelector('.reader-progress span');
   const writeButton = document.querySelector('#write-button');
@@ -210,6 +216,8 @@
   const readerCopyTitle = document.querySelector('#reader-copy-title');
   const readerOpenNew = document.querySelector('#reader-open-new');
   const readerRead = document.querySelector('#reader-read');
+  const writerSearchStatus = document.querySelector('#writer-search-status');
+  const writerLoadMore = document.querySelector('#writer-load-more');
   const statsSaved = document.querySelector('#stats-saved');
   const statsFinished = document.querySelector('#stats-finished');
   const statsInProgress = document.querySelector('#stats-in-progress');
@@ -251,12 +259,15 @@
   const readerRepostCount = document.querySelector('#reader-repost-count');
   const readerRespondCancel = document.querySelector('#reader-respond-cancel');
   const dynamicStoryRecords = new Map();
+  const READER_RESUME_THRESHOLD = 0.02;
+  const READER_COMPLETION_THRESHOLD = 0.9;
 
   let state = loadState();
   let currentStory = null;
   let toastTimer = null;
   let progressSaveTimer = null;
   let readerSpeech = null;
+  let readerResumePending = false;
   let editorAuthenticated = false;
   let editorCsrfToken = '';
   let editorStories = [];
@@ -264,6 +275,19 @@
   let publicStoryCursor = null;
   let publicStoryLoading = false;
   let publicStoryUnavailable = false;
+  let publicStoryQuery = '';
+  let publicStoryRequestController = null;
+  let publicStoryRequestId = 0;
+  let publicStorySearchTimer = null;
+  let publicStorySearchPending = false;
+  let publicStorySearchError = false;
+  let writerSearchController = null;
+  let writerSearchRequestId = 0;
+  let writerSearchTimer = null;
+  let writerSearchCursor = null;
+  let writerSearchRows = [];
+  let writerSearchLoading = false;
+  let writerSearchQuery = '';
   let menuReturnFocus = null;
   let editorStoryCursor = null;
   let editorStoryLoading = false;
@@ -282,6 +306,7 @@
       bookmarks: [],
       following: [],
       progress: {},
+      readerSettings: { textSize: 'regular', readingWidth: 'comfortable' },
       drafts: [],
       activeDraftId: null,
       membershipChanges: { bookmarks: {}, following: {}, publications: {} },
@@ -298,6 +323,10 @@
         bookmarks: Array.isArray(saved.bookmarks) ? saved.bookmarks : [],
         following: Array.isArray(saved.following) ? saved.following : [],
         progress: saved.progress && typeof saved.progress === 'object' ? saved.progress : {},
+        readerSettings: {
+          textSize: ['small', 'regular', 'large'].includes(saved.readerSettings?.textSize) ? saved.readerSettings.textSize : 'regular',
+          readingWidth: ['narrow', 'comfortable', 'wide'].includes(saved.readerSettings?.readingWidth) ? saved.readerSettings.readingWidth : 'comfortable'
+        },
         drafts: Array.isArray(saved.drafts) ? saved.drafts.filter(isRecord).map(normalizeDraft) : [],
         activeDraftId: typeof saved.activeDraftId === 'string' ? saved.activeDraftId : null,
         membershipChanges: {
@@ -504,11 +533,12 @@
     bylineText.append(publicationLine);
     byline.append(avatar, bylineText);
     const title = document.createElement('h2');
-    title.className = 'story-title-button';
-    title.setAttribute('role', 'button');
-    title.setAttribute('tabindex', '0');
-    title.setAttribute('aria-label', 'Read ' + (story.title || 'Untitled story'));
-    title.textContent = story.title || 'Untitled story';
+    const titleButton = document.createElement('button');
+    titleButton.type = 'button';
+    titleButton.className = 'story-title-button';
+    titleButton.setAttribute('aria-label', 'Read ' + (story.title || 'Untitled story'));
+    titleButton.textContent = story.title || 'Untitled story';
+    title.append(titleButton);
     const summary = document.createElement('p');
     summary.className = 'story-summary';
     summary.textContent = story.summary || '';
@@ -564,11 +594,17 @@
     tools.append(bookmark, more);
     meta.append(engagement, topic, tools);
     copy.append(byline, title, summary, meta);
+    const imageButton = document.createElement('button');
+    imageButton.type = 'button';
+    imageButton.className = 'story-image-button';
+    imageButton.setAttribute('aria-label', 'Read ' + (story.title || 'Untitled story'));
+    imageButton.addEventListener('click', () => openReader(story.id));
     const image = document.createElement('img');
     image.className = 'story-image';
     image.src = presentationPhoto(story.photo, story.topic);
     image.alt = story.photoAlt || story.title || '';
-    article.append(copy, image);
+    imageButton.append(image);
+    article.append(copy, imageButton);
     return article;
   }
 
@@ -616,7 +652,33 @@
     if (!loadMoreStoriesButton) return;
     loadMoreStoriesButton.hidden = !publicStoryCursor;
     loadMoreStoriesButton.disabled = publicStoryLoading;
-    loadMoreStoriesButton.textContent = publicStoryLoading ? 'Loading…' : 'Load more stories';
+    loadMoreStoriesButton.textContent = publicStoryLoading ? 'Loading…' : (publicStoryQuery ? 'Load more results' : 'Load more stories');
+  }
+
+  function schedulePublicCatalogSearch(value, { immediate = false } = {}) {
+    if (!API_ENABLED) return;
+    const query = String(value || '').trim();
+    clearTimeout(publicStorySearchTimer);
+    publicStoryRequestController?.abort();
+    publicStoryRequestController = null;
+    publicStoryRequestId++;
+    publicStoryLoading = false;
+    publicStoryCursor = null;
+    publicStoryQuery = query;
+    publicStorySearchError = false;
+    publicStorySearchPending = true;
+    setFeedSkeleton(false);
+    if (feedSkeleton) feedSkeleton.hidden = true;
+    if (storyFeed) storyFeed.setAttribute('aria-busy', 'true');
+    if (feedStatus) {
+      feedStatus.hidden = false;
+      feedStatus.textContent = query ? 'Searching published stories…' : 'Loading published stories…';
+    }
+    updatePublicLoadMoreState();
+    renderCurrentView();
+    const run = () => loadPublicStories({ append: false });
+    if (immediate) run();
+    else publicStorySearchTimer = setTimeout(run, 260);
   }
 
   function setFeedSkeleton(visible) {
@@ -642,12 +704,19 @@
       updatePublicLoadMoreState();
       if (feedStatus) {
         feedStatus.hidden = false;
-        feedStatus.textContent = 'Online publishing is available on the Worker app.';
+        feedStatus.textContent = 'Local preview · Sample stories and activity.';
       }
       return false;
     }
-    if (publicStoryLoading) return false;
+    if (append && publicStoryLoading) return false;
     if (append && !publicStoryCursor) return true;
+    if (!append) {
+      publicStoryRequestController?.abort();
+      publicStoryCursor = null;
+    }
+    const requestId = ++publicStoryRequestId;
+    const controller = new AbortController();
+    publicStoryRequestController = controller;
     publicStoryLoading = true;
     if (!append && !stories.length) {
       setFeedSkeleton(true);
@@ -655,12 +724,21 @@
       if (storyFeed) storyFeed.setAttribute('aria-busy', 'true');
       if (emptyState) emptyState.hidden = true;
     }
+    if (storyFeed) storyFeed.setAttribute('aria-busy', 'true');
+    if (!append && !stories.length && !publicStorySearchPending && feedStatus) {
+      feedStatus.hidden = false;
+      feedStatus.textContent = 'Loading published stories…';
+    }
     updatePublicLoadMoreState();
     try {
       const params = new URLSearchParams({ limit: '24' });
       if (append && publicStoryCursor) params.set('cursor', publicStoryCursor);
-      const data = await apiRequest('/api/stories?' + params.toString(), { method: 'GET', headers: {} });
+      if (publicStoryQuery) params.set('q', publicStoryQuery);
+      const data = await apiRequest('/api/stories?' + params.toString(), { method: 'GET', headers: {}, signal: controller.signal });
+      if (requestId !== publicStoryRequestId) return false;
       publicStoryUnavailable = false;
+      publicStorySearchError = false;
+      publicStorySearchPending = false;
       const remoteStories = Array.isArray(data.stories) ? data.stories : [];
       renderRemoteStories(remoteStories, { reset: !append });
       publicStoryCursor = data.nextCursor || null;
@@ -669,25 +747,36 @@
         feedStatus.hidden = false;
         const loaded = stories.filter(element => dynamicStoryRecords.has(element.dataset.storyId)).length;
         feedStatus.textContent = remoteStories.length
-          ? loaded + (publicStoryCursor ? '+ published online stories loaded.' : ' published online stories loaded.')
-          : (append ? 'No more published stories.' : 'No published stories yet.');
+          ? loaded + (publicStoryCursor ? '+ published stories loaded.' : ' published stories loaded.')
+          : (append ? 'No more published stories.' : (publicStoryQuery ? 'No published stories match that search.' : 'No published stories yet.'));
       }
       return true;
     } catch (error) {
-      if (!append) publicStoryUnavailable = true;
-      if (!append && feedStatus) {
+      if (requestId !== publicStoryRequestId) return false;
+      publicStorySearchPending = false;
+      if (!append && publicStoryQuery) {
+        publicStorySearchError = true;
+        publicStoryUnavailable = false;
+        renderRemoteStories([], { reset: true });
+      } else if (!append) {
+        publicStoryUnavailable = true;
+        publicStorySearchError = false;
+      }
+      if (feedStatus) {
         feedStatus.hidden = false;
-        feedStatus.textContent = 'Online stories are temporarily unavailable. Try again shortly.';
+        feedStatus.textContent = publicStoryQuery
+          ? 'Published story search is temporarily unavailable. Try again shortly.'
+          : (append ? 'More published stories could not be loaded. Try again.' : 'Online stories are temporarily unavailable. Try again shortly.');
       }
       return false;
     } finally {
+      if (requestId !== publicStoryRequestId) return;
       publicStoryLoading = false;
+      publicStoryRequestController = null;
       setFeedSkeleton(false);
-      if (!append) {
-        if (feedSkeleton) feedSkeleton.hidden = true;
-        if (storyFeed) storyFeed.setAttribute('aria-busy', 'false');
-        renderCurrentView();
-      }
+      if (feedSkeleton) feedSkeleton.hidden = true;
+      if (storyFeed) storyFeed.setAttribute('aria-busy', 'false');
+      renderCurrentView();
       updatePublicLoadMoreState();
     }
   }
@@ -747,24 +836,13 @@
     }
   }
 
-  function renderWriterList() {
+  function renderWriterRows(rows, { preview = false } = {}) {
     if (!writerList) return;
-    const query = (writerSearch?.value || '').trim().toLowerCase();
-    const map = new Map();
-    for (const story of allStoryData()) {
-      if (!story.author) continue;
-      const key = story.author;
-      const row = map.get(key) || { author: story.author, publication: story.publication, stories: 0 };
-      row.stories++;
-      if (!row.publication) row.publication = story.publication;
-      map.set(key, row);
-    }
     const fragment = document.createDocumentFragment();
-    const rows = [...map.values()].filter(row => !query || [row.author, row.publication].join(' ').toLowerCase().includes(query)).sort((a,b) => a.author.localeCompare(b.author));
-    if (!rows.length) {
+    if (!rows.length && preview) {
       const empty = document.createElement('p');
       empty.className = 'draft-empty';
-      empty.textContent = 'No writers match that search.';
+      empty.textContent = 'No sample writers match that search.';
       fragment.append(empty);
     }
     for (const row of rows) {
@@ -789,6 +867,131 @@
       fragment.append(item);
     }
     writerList.replaceChildren(fragment);
+  }
+
+  function updateWriterLoadMoreState() {
+    if (!writerLoadMore) return;
+    writerLoadMore.hidden = !API_ENABLED || !writerSearchCursor;
+    writerLoadMore.disabled = writerSearchLoading;
+    writerLoadMore.textContent = writerSearchLoading ? 'Loading…' : 'Load more writers';
+  }
+
+  function renderWriterList() {
+    if (!writerList) return;
+    if (API_ENABLED) {
+      if (!writerSearchQuery) {
+        if (writerSearchStatus) writerSearchStatus.textContent = 'Enter a name or publication to search published story bylines.';
+        renderWriterRows([]);
+      } else {
+        renderWriterRows(writerSearchRows);
+      }
+      updateWriterLoadMoreState();
+      return;
+    }
+    const query = (writerSearch?.value || '').trim().toLowerCase();
+    const map = new Map();
+    for (const story of allStoryData()) {
+      if (!story.author) continue;
+      const key = story.author;
+      const row = map.get(key) || { author: story.author, publication: story.publication, stories: 0 };
+      row.stories++;
+      if (!row.publication) row.publication = story.publication;
+      map.set(key, row);
+    }
+    const rows = [...map.values()]
+      .filter(row => !query || [row.author, row.publication].join(' ').toLowerCase().includes(query))
+      .sort((a, b) => a.author.localeCompare(b.author));
+    if (writerSearchStatus) {
+      writerSearchStatus.textContent = rows.length
+        ? 'Local preview · Searching sample-story bylines saved on this device.'
+        : (query ? 'No sample writers or publications match that search.' : 'Local preview · Sample-story bylines only.');
+    }
+    renderWriterRows(rows, { preview: !rows.length });
+    updateWriterLoadMoreState();
+  }
+
+  async function loadPublishedWriters({ append = false, query = writerSearchQuery } = {}) {
+    if (!API_ENABLED) return false;
+    if (append && (writerSearchLoading || !writerSearchCursor)) return false;
+    if (!append) {
+      writerSearchController?.abort();
+      writerSearchQuery = String(query || '').trim();
+      writerSearchCursor = null;
+      writerSearchRows = [];
+    }
+    if (!writerSearchQuery) {
+      renderWriterList();
+      return true;
+    }
+    const requestId = ++writerSearchRequestId;
+    const controller = new AbortController();
+    writerSearchController = controller;
+    writerSearchLoading = true;
+    writerList?.setAttribute('aria-busy', 'true');
+    if (writerSearchStatus) writerSearchStatus.textContent = append ? 'Loading more published writers…' : 'Searching published writers and publications…';
+    updateWriterLoadMoreState();
+    try {
+      const params = new URLSearchParams({ q: writerSearchQuery, limit: '24' });
+      if (append && writerSearchCursor) params.set('cursor', writerSearchCursor);
+      const data = await apiRequest('/api/writers?' + params.toString(), { method: 'GET', headers: {}, signal: controller.signal });
+      if (requestId !== writerSearchRequestId) return false;
+      const rows = Array.isArray(data.writers) ? data.writers.filter(row => row && typeof row.author === 'string').map(row => ({
+        author: row.author.slice(0, 80),
+        publication: typeof row.publication === 'string' ? row.publication.slice(0, 80) : '',
+        stories: Math.max(0, Number(row.stories) || 0)
+      })) : [];
+      writerSearchRows = append ? [...writerSearchRows, ...rows] : rows;
+      writerSearchCursor = data.nextCursor || null;
+      renderWriterList();
+      if (writerSearchStatus) {
+        writerSearchStatus.textContent = writerSearchRows.length
+          ? writerSearchRows.length + (writerSearchCursor ? '+ published writer results loaded.' : ' published writer results loaded.')
+          : 'No published writers or publications match that search.';
+      }
+      return true;
+    } catch (error) {
+      if (requestId !== writerSearchRequestId) return false;
+      if (!append) writerSearchRows = [];
+      renderWriterList();
+      if (writerSearchStatus) writerSearchStatus.textContent = 'Published writer search is temporarily unavailable. Try again shortly.';
+      return false;
+    } finally {
+      if (requestId !== writerSearchRequestId) return;
+      writerSearchLoading = false;
+      writerSearchController = null;
+      writerList?.setAttribute('aria-busy', 'false');
+      updateWriterLoadMoreState();
+    }
+  }
+
+  function scheduleWriterSearch(value, { immediate = false } = {}) {
+    if (!API_ENABLED) {
+      renderWriterList();
+      return;
+    }
+    const query = String(value || '').trim();
+    clearTimeout(writerSearchTimer);
+    writerSearchController?.abort();
+    writerSearchController = null;
+    writerSearchRequestId++;
+    writerSearchLoading = false;
+    writerSearchQuery = query;
+    writerSearchCursor = null;
+    writerSearchRows = [];
+    writerList?.setAttribute('aria-busy', 'true');
+    if (!query) {
+      if (writerSearchStatus) writerSearchStatus.textContent = 'Enter a name or publication to search published story bylines.';
+      writerList?.setAttribute('aria-busy', 'false');
+      renderWriterRows([]);
+      updateWriterLoadMoreState();
+      return;
+    }
+    if (writerSearchStatus) writerSearchStatus.textContent = 'Searching published writers and publications…';
+    renderWriterRows([]);
+    updateWriterLoadMoreState();
+    const run = () => loadPublishedWriters({ append: false, query });
+    if (immediate) run();
+    else writerSearchTimer = setTimeout(run, 260);
   }
 
   const gameState = { round: 0, score: 0, questions: [], current: null, answered: false };
@@ -989,16 +1192,17 @@
     const query = (search?.value || '').trim().toLowerCase();
     const topic = document.querySelector('.topic-button[aria-pressed="true"]')?.dataset.topic || '';
     const view = document.querySelector('.rail-link.active')?.dataset.view || 'For you';
+    const catalogSearchPending = API_ENABLED && publicStorySearchPending;
     let visible = 0;
 
     stories.forEach(element => {
       const data = storyData(element);
       if (!data) return;
       const haystack = [data.title, data.summary, data.author, data.publication, data.topic, element.dataset.topics || ''].join(' ').toLowerCase();
-      const matchesSearch = !query || haystack.includes(query);
+      const matchesSearch = API_ENABLED ? (!query || Boolean(publicStoryQuery)) : (!query || haystack.includes(query));
       const matchesTopic = !topic || (element.dataset.topics || '').split(/\s+/).includes(topic);
       const matchesView = view === 'Stats' ? false : currentViewMatches(element);
-      const shouldShow = matchesSearch && matchesTopic && matchesView;
+      const shouldShow = !catalogSearchPending && matchesSearch && matchesTopic && matchesView;
       element.classList.toggle('hidden', !shouldShow);
       if (shouldShow) visible++;
     });
@@ -1009,7 +1213,7 @@
       if (emptyStateTitle) emptyStateTitle.textContent = emptyHeading(view, Boolean(query || topic));
       if (emptyStateCopy) emptyStateCopy.textContent = emptyMessage(view, Boolean(query || topic));
       emptyState.classList.toggle('show', view !== 'Stats' && visible === 0);
-      emptyState.hidden = view === 'Stats' || visible !== 0;
+      emptyState.hidden = view === 'Stats' || catalogSearchPending || visible !== 0;
     }
     renderViewHeading(view);
     announceResults(view, visible, Boolean(query || topic));
@@ -1037,6 +1241,7 @@
   }
 
   function emptyMessage(view, filtered) {
+    if (API_ENABLED && publicStorySearchError) return 'Published story search is temporarily unavailable. Try again shortly.';
     if (!filtered && view === 'Reading list') return 'Nothing saved yet. Use the bookmark on any story to keep it here.';
     if (!filtered && view === 'Following') {
       return state.following.length
@@ -1052,6 +1257,7 @@
   }
 
   function emptyHeading(view, filtered) {
+    if (API_ENABLED && publicStorySearchError) return 'Published story search is unavailable.';
     if (filtered) return 'No matching stories.';
     if (view === 'Reading list') return 'Your reading list is empty.';
     if (view === 'Following') return state.following.length ? 'No followed stories yet.' : 'Nothing in Following yet.';
@@ -1071,7 +1277,11 @@
       document.querySelector('#feed-status')?.after(resultsStatus);
     }
     resultsStatus.textContent = filtered
-      ? (visible === 1 ? '1 story found.' : visible + ' stories found.')
+      ? (API_ENABLED && publicStorySearchPending
+        ? 'Searching published stories…'
+        : (API_ENABLED && publicStorySearchError
+          ? 'Published story search is temporarily unavailable. Try again shortly.'
+          : (visible === 1 ? '1 story found.' : visible + ' stories found.')))
       : '';
   }
 
@@ -1182,6 +1392,112 @@
     if (searchClear) searchClear.classList.toggle('visible', hasQuery);
   }
 
+  function applyReaderSettings() {
+    if (!reader) return;
+    const settings = state.readerSettings || { textSize: 'regular', readingWidth: 'comfortable' };
+    reader.dataset.readerSize = settings.textSize;
+    reader.dataset.readerWidth = settings.readingWidth;
+    document.querySelectorAll('[data-reader-size]').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.readerSize === settings.textSize));
+    });
+    document.querySelectorAll('[data-reader-width]').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.readerWidth === settings.readingWidth));
+    });
+  }
+
+  function readerScrollRatio() {
+    if (!readerScroll || !readerScroll.scrollHeight || !readerScroll.clientHeight) return 0;
+    const maximum = Math.max(0, readerScroll.scrollHeight - readerScroll.clientHeight);
+    return maximum <= 1 ? 1 : Math.max(0, Math.min(1, readerScroll.scrollTop / maximum));
+  }
+
+  function canMarkStoryFinished() {
+    if (!currentStory || !readerScroll || !readerScroll.scrollHeight || !readerScroll.clientHeight) return false;
+    if (reader && !reader.open && !reader.hasAttribute('open')) return false;
+    return readerScrollRatio() >= READER_COMPLETION_THRESHOLD;
+  }
+
+  function updateReaderCompletionControl() {
+    if (!readerRead || !currentStory) return;
+    const finished = Boolean(state.progress[currentStory.id]?.finished);
+    readerRead.textContent = finished ? 'Finished' : 'Mark as finished';
+    readerRead.disabled = finished || !canMarkStoryFinished();
+  }
+
+  function afterReaderLayout(storyId, callback) {
+    const image = readerImage && !readerImage.hidden && !readerImage.complete ? readerImage : null;
+    const imageReady = image
+      ? new Promise(resolve => {
+        let done = false;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          resolve();
+        };
+        const timer = setTimeout(finish, 900);
+        image.addEventListener('load', finish, { once: true });
+        image.addEventListener('error', finish, { once: true });
+      })
+      : Promise.resolve();
+    imageReady.then(() => window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      if (currentStory?.id === storyId && (reader?.open || reader?.hasAttribute('open'))) callback();
+    })));
+  }
+
+  function restoreReaderPosition(storyId, ratio) {
+    if (!readerScroll || currentStory?.id !== storyId) return;
+    const maximum = Math.max(0, readerScroll.scrollHeight - readerScroll.clientHeight);
+    readerScroll.scrollTop = maximum * Math.max(0, Math.min(1, Number(ratio) || 0));
+    readerScroll.focus({ preventScroll: true });
+    updateReaderCompletionControl();
+  }
+
+  function setReaderSetting(type, value) {
+    const choices = type === 'textSize'
+      ? ['small', 'regular', 'large']
+      : ['narrow', 'comfortable', 'wide'];
+    if (!choices.includes(value)) return;
+    const storyId = currentStory?.id;
+    const previousRatio = readerScrollRatio();
+    state.readerSettings = {
+      ...(state.readerSettings || { textSize: 'regular', readingWidth: 'comfortable' }),
+      [type]: value
+    };
+    persistState();
+    applyReaderSettings();
+    if (readerSettingsStatus) readerSettingsStatus.textContent = 'Reader preferences saved only on this device.';
+    if (storyId && (reader?.open || reader?.hasAttribute('open'))) afterReaderLayout(storyId, () => restoreReaderPosition(storyId, previousRatio));
+  }
+
+  function resumeSavedPosition() {
+    if (!currentStory) return;
+    const storyId = currentStory.id;
+    const ratio = Math.max(0, Math.min(1, Number(state.progress[storyId]?.ratio) || 0));
+    if (readerResume) readerResume.hidden = true;
+    afterReaderLayout(storyId, () => {
+      restoreReaderPosition(storyId, ratio);
+      readerResumePending = false;
+    });
+  }
+
+  function startStoryFromBeginning() {
+    if (!currentStory) return;
+    readerResumePending = false;
+    state.progress[currentStory.id] = { ratio: 0, finished: false };
+    recordProgressChange(currentStory.id);
+    persistState();
+    if (readerResume) readerResume.hidden = true;
+    if (readerScroll) readerScroll.scrollTop = 0;
+    if (readerProgressFill) readerProgressFill.style.width = '0%';
+    if (readerProgress) readerProgress.setAttribute('aria-valuenow', '0');
+    if (readerLabel) readerLabel.textContent = currentStory.readMinutes + ' min read';
+    refreshProgressBadges();
+    renderStats();
+    updateReaderCompletionControl();
+    readerScroll?.focus({ preventScroll: true });
+  }
+
   function openReader(id) {
     const data = findStory(id);
     if (!data || !reader) return;
@@ -1195,7 +1511,6 @@
       const publishedDate = formatPublishedDate(data.publishedAt);
       readerMeta.textContent = data.readMinutes + ' min read' + (publishedDate ? ' · ' + publishedDate : '');
     }
-    if (readerTopic) readerTopic.textContent = data.topic || 'Story';
     if (readerAuthorAvatar) {
       readerAuthorAvatar.textContent = String(data.author || 'R').split(/\\s+/u).map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'R';
     }
@@ -1214,9 +1529,13 @@
       }
     }
     if (readerTopics) {
-      const accent = readerTopics.querySelector('.reader-chip-accent');
       readerTopics.replaceChildren();
-      if (accent) readerTopics.append(accent);
+      if (!API_ENABLED && LOCAL_STORIES.some(story => story.id === data.id)) {
+        const preview = document.createElement('span');
+        preview.className = 'reader-chip reader-chip-preview';
+        preview.textContent = 'Sample story';
+        readerTopics.append(preview);
+      }
       const topics = Array.isArray(data.topics) && data.topics.length ? data.topics : [data.topic || 'Story'];
       topics.slice(0, 5).forEach(topic => {
         const chip = document.createElement('span');
@@ -1227,13 +1546,21 @@
     }
 
     if (readerBody) renderStoryBlocks(readerBody, data.body);
+    applyReaderSettings();
     stopReaderListen();
     closeReaderMore();
     const progress = state.progress[id] || { ratio: 0, finished: false };
-    if (!progress.finished && Number(progress.ratio) > 0) {
+    const savedRatio = Math.max(0, Math.min(1, Number(progress.ratio) || 0));
+    const hasMeaningfulProgress = !progress.finished && savedRatio >= READER_RESUME_THRESHOLD;
+    readerResumePending = hasMeaningfulProgress;
+    if (readerResume) readerResume.hidden = !hasMeaningfulProgress;
+    if (readerResumeMessage && hasMeaningfulProgress) {
+      readerResumeMessage.textContent = 'Saved place: about ' + Math.round(savedRatio * 100) + '%. Progress is stored only on this device.';
+    }
+    if (hasMeaningfulProgress) {
       if (readerLabel) readerLabel.textContent = Math.round(Number(progress.ratio) * 100) + '% read';
     }
-    const percent = Math.round((progress.finished ? 1 : Math.max(0, Math.min(1, Number(progress.ratio) || 0))) * 100);
+    const percent = Math.round((progress.finished ? 1 : savedRatio) * 100);
     if (readerProgressFill) readerProgressFill.style.width = percent + '%';
     if (readerProgress) readerProgress.setAttribute('aria-valuenow', String(percent));
     refreshBookmarkButtons();
@@ -1241,13 +1568,22 @@
     if (readerApplaudCount) readerApplaudCount.textContent = formatCount(data.applauseCount || 0);
     if (readerResponseStatCount) readerResponseStatCount.textContent = formatCount(data.responseCount || 0);
     if (readerRepostCount) readerRepostCount.textContent = formatCount(data.repostCount || 0);
-    if (readerRead) readerRead.textContent = state.progress[id]?.finished ? 'Finished' : 'Mark as finished';
+    if (readerRead) {
+      readerRead.textContent = state.progress[id]?.finished ? 'Finished' : 'Mark as finished';
+      readerRead.disabled = true;
+    }
     if (readerSocial) readerSocial.hidden = true;
     updateSocialActionAvailability();
     loadReaderSocial();
+    if (readerScroll) readerScroll.scrollTop = 0;
     reader.hidden = false;
-    if (typeof reader.showModal === 'function') reader.showModal();
+    if (!reader.open && typeof reader.showModal === 'function') reader.showModal();
     else reader.setAttribute('open', '');
+    if (readerScroll) readerScroll.scrollTop = 0;
+    afterReaderLayout(id, () => {
+      if (readerResumePending && readerScroll) readerScroll.scrollTop = 0;
+      updateReaderCompletionControl();
+    });
   }
 
   function closeReader() {
@@ -1257,13 +1593,14 @@
     if (reader.open && typeof reader.close === 'function') reader.close();
     else reader.removeAttribute('open');
     reader.hidden = true;
+    readerResumePending = false;
     currentStory = null;
   }
 
   function updateReaderProgress() {
-    if (!readerScroll || !currentStory) return;
-    const max = Math.max(1, readerScroll.scrollHeight - readerScroll.clientHeight);
-    const ratio = Math.max(0, Math.min(1, readerScroll.scrollTop / max));
+    if (!readerScroll || !currentStory || readerResumePending) return;
+    const max = Math.max(0, readerScroll.scrollHeight - readerScroll.clientHeight);
+    const ratio = max <= 1 ? (readerScroll.scrollHeight ? 1 : 0) : Math.max(0, Math.min(1, readerScroll.scrollTop / max));
     const previous = state.progress[currentStory.id] || {};
     state.progress[currentStory.id] = {
       ratio: previous.finished ? 1 : ratio,
@@ -1273,6 +1610,7 @@
     const percent = Math.round((state.progress[currentStory.id].finished ? 1 : ratio) * 100);
     if (readerProgressFill) readerProgressFill.style.width = percent + '%';
     if (readerProgress) readerProgress.setAttribute('aria-valuenow', String(percent));
+    updateReaderCompletionControl();
     clearTimeout(progressSaveTimer);
     progressSaveTimer = setTimeout(() => {
       persistState();
@@ -1282,12 +1620,20 @@
 
   function markFinished() {
     if (!currentStory) return;
+    if (!canMarkStoryFinished()) {
+      showToast('Read near the end of the story before marking it finished.');
+      updateReaderCompletionControl();
+      return;
+    }
     state.progress[currentStory.id] = { ratio: 1, finished: true };
     recordProgressChange(currentStory.id);
     persistState();
     if (readerProgressFill) readerProgressFill.style.width = '100%';
     if (readerProgress) readerProgress.setAttribute('aria-valuenow', '100');
-    if (readerRead) readerRead.textContent = 'Finished';
+    if (readerRead) {
+      readerRead.textContent = 'Finished';
+      readerRead.disabled = true;
+    }
     renderStats();
     showToast('Story marked as finished.');
   }
@@ -2171,7 +2517,8 @@
     backgroundRegions.forEach(region => { if (region) region.inert = open; });
     toggle.setAttribute('aria-expanded', String(open));
     toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
-    rail.setAttribute('aria-hidden', String(!open));
+    if (window.innerWidth <= 820) rail.setAttribute('aria-hidden', String(!open));
+    else rail.removeAttribute('aria-hidden');
     if (open) {
       window.setTimeout(() => close?.focus({ preventScroll: true }), 0);
     } else if (wasOpen) {
@@ -2179,6 +2526,10 @@
       menuReturnFocus = null;
       window.setTimeout(() => returnFocus?.focus({ preventScroll: true }), 0);
     }
+  }
+
+  function closeMobileMenuIfOpen() {
+    if (document.body.classList.contains('menu-open')) toggleMobileMenu(false);
   }
 
   function wireEvents() {
@@ -2190,6 +2541,7 @@
     document.querySelector('.mobile-drawer-close')?.addEventListener('click', () => toggleMobileMenu(false));
     document.querySelector('#drawer-overlay')?.addEventListener('click', () => toggleMobileMenu(false));
     reader?.addEventListener('close', () => {
+      if (reader.open) return;
       reader.hidden = true;
       currentStory = null;
       stopReaderListen();
@@ -2253,6 +2605,15 @@
       const target = event.target.closest('button, a');
       if (!target) return;
 
+      if (target.dataset.readerSize) {
+        setReaderSetting('textSize', target.dataset.readerSize);
+        return;
+      }
+      if (target.dataset.readerWidth) {
+        setReaderSetting('readingWidth', target.dataset.readerWidth);
+        return;
+      }
+
       const view = target.dataset.view;
       if (view) {
         event.preventDefault();
@@ -2301,6 +2662,12 @@
         return;
       }
 
+      if (target.id === 'writer-load-more') {
+        event.preventDefault();
+        loadPublishedWriters({ append: true });
+        return;
+      }
+
       if (target.id === 'load-more-online-stories') {
         event.preventDefault();
         loadOnlineStories({ append: true });
@@ -2341,7 +2708,8 @@
       if (target.id === 'search-clear') {
         if (search) search.value = '';
         updateSearchControls();
-        renderCurrentView();
+        if (API_ENABLED) schedulePublicCatalogSearch('', { immediate: true });
+        else renderCurrentView();
         searchBox?.classList.remove('search-open');
         searchToggle?.setAttribute('aria-expanded', 'false');
         search?.blur();
@@ -2383,12 +2751,14 @@
 
       if (target.id === 'editor-settings-button') {
         event.preventDefault();
+        closeMobileMenuIfOpen();
         openEditorSettings();
         return;
       }
 
       if (target.id === 'manage-stories-button') {
         event.preventDefault();
+        closeMobileMenuIfOpen();
         if (!editorAuthenticated) {
           openLogin();
           return;
@@ -2408,17 +2778,22 @@
 
       if (target.id === 'profile-button-top' || target.id === 'profile-button') {
         event.preventDefault();
+        closeMobileMenuIfOpen();
         openProfile();
         return;
       }
       if (target.id === 'writers-button' || target.id === 'suggestions-button') {
         event.preventDefault();
-        renderWriterList();
+        closeMobileMenuIfOpen();
+        const query = (writerSearch?.value || '').trim();
+        if (API_ENABLED && query && query !== writerSearchQuery) scheduleWriterSearch(query, { immediate: true });
+        else renderWriterList();
         if (typeof writersDialog?.showModal === 'function') writersDialog.showModal(); else writersDialog?.setAttribute('open', '');
         return;
       }
       if (target.id === 'games-button') {
         event.preventDefault();
+        closeMobileMenuIfOpen();
         startGame();
         if (typeof gamesDialog?.showModal === 'function') gamesDialog.showModal(); else gamesDialog?.setAttribute('open', '');
         return;
@@ -2527,6 +2902,16 @@
         return;
       }
 
+      if (target.id === 'reader-continue') {
+        resumeSavedPosition();
+        return;
+      }
+
+      if (target.id === 'reader-start-over') {
+        startStoryFromBeginning();
+        return;
+      }
+
       if (target.id === 'reader-bookmark') {
         if (currentStory) setBookmark(currentStory.id, !state.bookmarks.includes(currentStory.id));
         return;
@@ -2581,12 +2966,6 @@
         return;
       }
 
-      if (target.textContent?.trim() === 'Get started') {
-        const membership = document.querySelector('.membership-card');
-        membership?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
-      }
-
       if (target.matches('.story h2')) {
         openReader(target.closest('.story')?.dataset.storyId);
       }
@@ -2603,14 +2982,16 @@
 
     search?.addEventListener('input', () => {
       updateSearchControls();
-      renderCurrentView();
+      if (API_ENABLED) schedulePublicCatalogSearch(search.value);
+      else renderCurrentView();
     });
 
     search?.addEventListener('keydown', event => {
       if (event.key === 'Escape') {
         search.value = '';
         updateSearchControls();
-        renderCurrentView();
+        if (API_ENABLED) schedulePublicCatalogSearch('', { immediate: true });
+        else renderCurrentView();
         searchBox?.classList.remove('search-open');
         searchToggle?.setAttribute('aria-expanded', 'false');
         search.blur();
@@ -2635,7 +3016,7 @@
     writersClose?.addEventListener('click', () => writersDialog?.close());
     gamesClose?.addEventListener('click', () => gamesDialog?.close());
     gameRestart?.addEventListener('click', startGame);
-    writerSearch?.addEventListener('input', renderWriterList);
+    writerSearch?.addEventListener('input', () => scheduleWriterSearch(writerSearch.value));
     readerResponseForm?.addEventListener('submit', submitResponse);
     readerRespondCancel?.addEventListener('click', () => { if (readerSocial) readerSocial.hidden = true; });
     editorLoginForm?.addEventListener('submit', loginEditor);
@@ -2666,22 +3047,21 @@
   }
 
   stories.forEach(element => {
-    const title = element.querySelector('h2');
-    if (title) {
-      title.classList.add('story-title-button');
-      title.setAttribute('role', 'button');
-      title.setAttribute('tabindex', '0');
-      title.setAttribute('aria-label', 'Read ' + title.textContent.trim());
-      title.addEventListener('keydown', event => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          openReader(element.dataset.storyId);
-        }
-      });
+    const heading = element.querySelector('h2');
+    if (!heading) return;
+    let button = heading.querySelector('.story-title-button');
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'story-title-button';
+      button.textContent = heading.textContent.trim();
+      heading.replaceChildren(button);
     }
+    button.setAttribute('aria-label', 'Read ' + button.textContent.trim());
   });
 
-  ensureLocalStories();
+  if (!API_ENABLED) ensureLocalStories();
+  applyReaderSettings();
   installImageFallbacks();
   wireStorySocialControls();
   refreshBookmarkButtons();

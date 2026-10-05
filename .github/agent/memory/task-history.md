@@ -49,3 +49,63 @@ Keep concise records of recent work; archive older entries if this file grows be
 - **Changed files:** `app.js`, `index.html`, `styles.css`, `src/worker.js`, regenerated `src/static-content.js`, `test/site-structure.test.js`, `test/worker.test.js`, `.gitignore`, `AGENTS.md`, `CLAUDE.md`, `.codex/`, `.cursor/`, `.github/agent/`, `.github/ISSUE_TEMPLATE/`, `.github/PULL_REQUEST_TEMPLATE.md`, `.github/copilot-instructions.md`, `.github/project-metadata.yml`, and `.github/workflows/memory-check.yml`.
 - **Verification:** `npm test` passed (57/57); `npm run build:assets` passed; source/public frontend parity and exact Worker bundle source embedding passed; `node --check app.js` and `node --check src/worker.js` passed; `git diff --check` and staged-diff whitespace checks passed after integration.
 - **Notes:** Based the review branch on live `main` commit `362ccaa`. No merge, deployment, remote migration, or production-data change was performed. The push and PR are explicitly requested as review-only actions.
+
+### TASK-007 — Ink.gs editorial polish and truthful preview states
+- **Date:** 2026-10-05
+- **Type:** polish / fix / test
+- **Summary:** Refined the feed and reader with a restrained brass accent, quieter promotional surfaces, improved editorial spacing and responsive reader typography, and a higher-contrast local-preview disclosure. Bundled stories and their sample activity now appear only when API mode is disabled; API-backed pages wait for published API content or show the existing loading/empty/unavailable states. Replaced the unsupported “Member-only” reader chip with a “Sample story” chip for local fixtures only.
+- **Changed files:** `app.js`, `index.html`, `styles.css`, regenerated `public/` mirrors and `src/static-content.js`, `test/site-structure.test.js`, `.github/agent/memory/project-memory.md`, `.github/agent/memory/decisions-log.md`, and this task-history entry.
+- **Verification:** `npm run build:assets` passed; `npm test` passed (59/59); `node --check app.js` and `node --check src/worker.js` passed; `git diff --check` passed; generated public files and the Worker bundle match frontend sources. Chromium passed at 1440, 768, 390, and 320px with no horizontal overflow; reader open/close passed at 768, 390, and 320px; the API-unavailable preview showed zero bundled stories and the honest empty state; no runtime exceptions occurred. The preview disclosure color measured 7.15:1 contrast against the page background.
+- **Notes:** Preserved the existing review-branch work based on `origin/main` `362ccaa`. No push, merge, deploy, publication, or remote service/data change was performed; no dependencies were added. The temporary local preview server was stopped after browser checks.
+
+### TASK-008 — Mobile feed height, avatar target, and preview-rail gating
+- **Date:** 2026-10-05
+- **Type:** polish / fix / test
+- **Summary:** Compressed the mobile About banner to its truthful internal link and reduced main top padding, moving the first feed headline 26px earlier while preserving the Open in app note and reserved truthful feed-status slot. Expanded the mobile profile button to a 44×44px tap target while retaining a 34×34px visible circle. Gated the three bundled Staff picks to local preview so API-backed empty and unavailable feeds never show them.
+- **Changed files:** `index.html`, `app.js`, `styles.css`, `test/site-structure.test.js`, regenerated `public/` frontend mirrors and `src/static-content.js`, `.github/agent/memory/project-memory.md`, `.github/agent/memory/decisions-log.md`, and this task-history entry.
+- **Verification:** `npm run build:assets` passed; `npm test` passed (63/63); `node --check app.js` and `git diff --check` passed; `public/` mirrors match sources. Chromium at 320, 390, 430, and 1440px showed no horizontal overflow or page errors; the mobile headline moved from 328.1px to 302.1px, the avatar target measured 44×44px with a 34×34px content circle, and desktop layout/sample labels remained intact. Local API route mocks confirmed zero visible Staff picks with truthful “No published stories yet.” for HTTP 200 empty and “Online stories are temporarily unavailable.” for HTTP 503.
+- **Notes:** Existing worktree changes were preserved. No Worker/security logic, dependencies, remote services, or deployment state changed; no commit or push was made. `.github/agent/memory/project-memory.md` and `decisions-log.md` now explicitly include the Staff picks preview-only rule.
+
+
+### TASK-009 — Project-memory documentation cleanup
+- **Date:** 2026-10-05
+- **Type:** chore
+- **Summary:** Removed a duplicate Core paths table heading and clarified the decisions-log introduction so it accurately reflects the first recorded ADR.
+- **Changed files:** `.github/agent/memory/project-memory.md`, `.github/agent/memory/decisions-log.md`, and this task-history entry.
+- **Verification:** `git diff --check` passed; no application code or architecture changed.
+- **Notes:** Documentation-only cleanup; no publish or deployment.
+
+### TASK-010 — Remaining responsive UI spec and interaction gaps
+- **Date:** 2026-10-05
+- **Type:** fix / test
+- **Summary:** Finished the supported home/feed, mobile drawer, story-card, article-reader, responsive-geometry, touch-target, accessibility, and interaction work. The drawer now stays near 62% of phone width down to 320px; story titles are native buttons inside semantic headings, thumbnails open the same reader, mobile dialog destinations close the drawer, and desktop navigation stays exposed to assistive technology. Removed the unverified membership-promotion card and its dead action while preserving preview-only sample stories and truthful API loading/empty/error states.
+- **Changed files:** `app.js`, `index.html`, `styles.css`, `test/site-structure.test.js`, generated `public/` mirrors and `src/static-content.js`, `.github/agent/memory/project-memory.md`, and this task-history entry. No architecture change was made, so the decisions log was not updated.
+- **Verification:** `npm run build:assets` passed; `npm test` passed (65/65); `node --check` passed for `app.js`, `src/worker.js`, and the site-structure tests; `git diff --check` passed. `index.html`, `styles.css`, and `app.js` matched their `public/` mirrors and the Worker bundle exactly. Local Chromium passed at 320, 360, 375, 390, 412, 430, 768, and 1280px with no horizontal overflow, 44px mobile feed actions, semantic title keyboard activation, reader fit, and proportional phone drawers. Drawer-triggered profile/writer/game dialogs, search, thumbnail opening, and close paths passed at 390px. Skeleton states passed at 320, 390, and 768px. No page errors or non-local requests occurred.
+- **Notes:** Preserved the existing review branch at `b5e7106` over `origin/main` `362ccaa` and all pre-existing worktree changes. No commit, push, merge, deploy, production call, remote data change, or dependency change was performed. Discount/upgrade and membership promotion remain unsupported without a verified offer and destination; the “Open in app” bar remains informational because no app destination is configured; the green article passages in references are text selection, so persistent highlighting was not added without annotation support.
+
+
+### TASK-011 — Remove duplicate feed bookmark glyph
+- **Date:** 2026-10-05
+- **Type:** fix / test
+- **Summary:** Removed the CSS pseudo-element bookmark glyph from base and mobile rules because feed buttons already render the bookmark SVG; preserved the saved-state color and added regression coverage against duplicate visual sources.
+- **Changed files:** `styles.css`, `test/site-structure.test.js`, regenerated `public/styles.css` and `src/static-content.js`, and this task-history entry.
+- **Verification:** `npm run build:assets` passed; `npm test` passed (66/66); JavaScript syntax checks and `git diff --check` passed.
+- **Notes:** No behavior or backend architecture changed. No commit, push, merge, or deployment.
+
+
+### TASK-012 — Device-local reader controls and published catalog discovery
+- **Date:** 2026-10-05
+- **Type:** feature / fix / test
+- **Summary:** Added explicit Continue reading/Start from beginning actions for meaningful unfinished progress while normal reader opens remain at the top; deferred normalized scroll restoration until content/layout is ready; added accessible device-local serif reader size/width choices; and gated completion until the reader is near the end. Extended published story search with bounded literal queries and added cursor-paginated writer discovery from actual published-story author/publication strings, with abortable/race-safe UI states and honest local-preview behavior.
+- **Changed files:** `app.js`, `index.html`, `styles.css`, `src/worker.js`, `test/site-structure.test.js`, `test/worker.test.js`, generated `public/index.html`, `public/styles.css`, `public/app.js`, `src/static-content.js`, and `.github/agent/memory/project-memory.md`, `decisions-log.md`, and this task-history entry. No migration or dependency changes.
+- **Verification:** `npm test` passed (74/74); `npm run build:assets` passed; `node --check` passed for application, Worker, and test files; SQLite migrations and published-only literal search SQL were validated in an in-memory database; root/public parity, Worker bundle equality, and `git diff --check` passed. Local Chromium/Playwright interaction checks passed at 320, 390, 768, and 1280px for no-auto-jump, resume/start-over, local preference persistence and 44px controls, near-end completion, story/writer search paging, loading/empty/error states, and a delayed stale-search response; every non-local browser request was blocked and none was attempted.
+- **Notes:** Preserved the existing uncommitted worktree on `review/editorial-feed-auth-hardening-2026-10-05`. No commit, push, merge, deployment, production check, remote migration, or external service call was performed. Reader progress/settings remain device-local; no new identity, reader authentication, or synchronization was added.
+
+
+### TASK-013 — Reader resume/reopen state regression follow-up
+- **Date:** 2026-10-05
+- **Type:** fix / test
+- **Summary:** Kept meaningful saved progress intact while the explicit resume choice is pending; ordinary opens reset to the top before and after the native dialog opens, preferences are applied before layout, Continue restores the saved normalized ratio after layout, and Start from beginning resets device-local progress. Guarded the delayed native dialog `close` event so a fast reopen does not hide the reader or clear the reopened story state. Added a dependency-free Node/Chromium browser regression for saving progress, reopening, Continue, and Start from beginning.
+- **Changed files:** `app.js`, generated `public/app.js` and `src/static-content.js`, `test/site-structure.test.js`, new `test/reader-progress.browser.test.js`, and this task-history entry. Existing search/API and earlier worktree changes were preserved.
+- **Verification:** `npm run build:assets` passed; `npm test` passed (76/76); the headless Chromium reader regression passed three consecutive standalone runs and again in the full suite; `node --check` passed for `app.js`, `src/worker.js`, `test/site-structure.test.js`, and `test/reader-progress.browser.test.js`; root/public parity and exact `INDEX_HTML`/`STYLES_CSS`/`APP_JS` Worker-bundle parity passed; `git diff --check` passed.
+- **Notes:** Progress and reader preferences remain browser-local. No search/API behavior, D1 schema, dependencies, commit, push, merge, deployment, production operation, or external service was changed or performed.

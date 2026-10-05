@@ -35,6 +35,7 @@ const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 const STORY_PAGE_DEFAULT = 24;
 const STORY_PAGE_MAX = 50;
+const PUBLIC_SEARCH_MAX_LENGTH = 100;
 
 class HttpError extends Error {
   constructor(status, message, headers = {}) {
@@ -617,24 +618,51 @@ function storyPageLimit(url) {
 function makeStoryCursor(value) {
   return bytesToBase64Url(encoder.encode(JSON.stringify(value)));
 }
-
+function publicSearchPattern(url) {
+  const query = (url.searchParams.get("q") || "").trim();
+  if (Array.from(query).length > PUBLIC_SEARCH_MAX_LENGTH) {
+    throw new HttpError(400, "Search query is too long");
+  }
+  return query ? `%${query.replace(/[\\%_]/gu, "\\$&")}%` : "";
+}
+function parseWriterPageCursor(url) {
+  const raw = url.searchParams.get("cursor");
+  if (!raw) return null;
+  const bytes = base64UrlToBytes(raw);
+  if (!bytes) throw new HttpError(400, "Invalid writer cursor");
+  let value;
+  try {
+    value = JSON.parse(decoder.decode(bytes));
+  } catch {
+    throw new HttpError(400, "Invalid writer cursor");
+  }
+  if (!Array.isArray(value) || value.length !== 1 || typeof value[0] !== "string" || !value[0] || value[0].length > MAX_AUTHOR_LENGTH) {
+    throw new HttpError(400, "Invalid writer cursor");
+  }
+  return value[0];
+}
 async function handlePublicStories(request, env) {
   if (request.method !== "GET") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET" });
   const db = requireDatabase(env);
   const url = new URL(request.url);
   const limit = storyPageLimit(url);
   const cursor = parseStoryPageCursor(url, "public");
+  const pattern = publicSearchPattern(url);
+  const searchSql = pattern
+    ? " AND (title LIKE ? ESCAPE '\\' OR summary LIKE ? ESCAPE '\\' OR body LIKE ? ESCAPE '\\' OR author LIKE ? ESCAPE '\\' OR publication LIKE ? ESCAPE '\\' OR topic LIKE ? ESCAPE '\\')"
+    : "";
   const cursorSql = cursor ? " AND (published_at < ? OR (published_at = ? AND id < ?))" : "";
-  const bindings = cursor
-    ? [EDITOR_OWNER, cursor[0], cursor[0], cursor[1], limit + 1]
-    : [EDITOR_OWNER, limit + 1];
+  const bindings = [EDITOR_OWNER];
+  if (pattern) bindings.push(pattern, pattern, pattern, pattern, pattern, pattern);
+  if (cursor) bindings.push(cursor[0], cursor[0], cursor[1]);
+  bindings.push(limit + 1);
   const result = await db.prepare(
     `SELECT id, title, summary, body, author, publication, topic, photo, photo_alt, published_at,
         (SELECT COUNT(*) FROM story_social_actions a WHERE a.story_id = editor_stories.id AND a.kind = 'applause') AS applause_count,
         (SELECT COUNT(*) FROM story_social_actions a WHERE a.story_id = editor_stories.id AND a.kind = 'repost') AS repost_count,
         (SELECT COUNT(*) FROM story_responses r WHERE r.story_id = editor_stories.id) AS response_count
      FROM editor_stories
-     WHERE published = 1 AND managed_by = ?${cursorSql}
+     WHERE published = 1 AND managed_by = ?${searchSql}${cursorSql}
      ORDER BY published_at DESC, id DESC
      LIMIT ?`,
   ).bind(...bindings).all();
@@ -645,6 +673,41 @@ async function handlePublicStories(request, env) {
   return jsonResponse({
     stories: stories.map(publicStory),
     nextCursor: hasMore && last ? makeStoryCursor([last.published_at, last.id]) : null,
+  });
+}
+
+async function handlePublicWriters(request, env) {
+  if (request.method !== "GET") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET" });
+  const db = requireDatabase(env);
+  const url = new URL(request.url);
+  const pattern = publicSearchPattern(url);
+  if (!pattern) return jsonResponse({ writers: [], nextCursor: null });
+  const limit = storyPageLimit(url);
+  const cursor = parseWriterPageCursor(url);
+  const cursorSql = cursor ? " AND author COLLATE NOCASE > ? COLLATE NOCASE" : "";
+  const bindings = [EDITOR_OWNER, pattern, pattern];
+  if (cursor) bindings.push(cursor);
+  bindings.push(limit + 1);
+  const result = await db.prepare(
+    `SELECT MIN(author) AS author, MIN(publication) AS publication, COUNT(*) AS story_count
+     FROM editor_stories
+     WHERE published = 1 AND managed_by = ?
+       AND (author LIKE ? ESCAPE '\\' OR publication LIKE ? ESCAPE '\\')${cursorSql}
+     GROUP BY author COLLATE NOCASE
+     ORDER BY author COLLATE NOCASE, author
+     LIMIT ?`,
+  ).bind(...bindings).all();
+  const rows = result.results || [];
+  const hasMore = rows.length > limit;
+  const writers = hasMore ? rows.slice(0, limit) : rows;
+  const last = writers.at(-1);
+  return jsonResponse({
+    writers: writers.map((row) => ({
+      author: row.author,
+      publication: row.publication || "",
+      stories: Number(row.story_count || 0),
+    })),
+    nextCursor: hasMore && last ? makeStoryCursor([last.author]) : null,
   });
 }
 
@@ -746,6 +809,7 @@ export default {
 
     try {
       if (url.pathname === "/api/health") return await handleHealth(env);
+      if (url.pathname === "/api/writers") return await handlePublicWriters(request, env);
       if (url.pathname === "/api/stories") return await handlePublicStories(request, env);
       const socialStoryMatch = url.pathname.match(/^\/api\/social\/stories\/([A-Za-z0-9._~-]{1,160})$/u);
       if (socialStoryMatch) return await handleSocialStory(request, env, socialStoryMatch[1]);

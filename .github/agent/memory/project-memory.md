@@ -33,9 +33,9 @@ The root `index.html`, `styles.css`, and `app.js` are frontend sources. `public/
 
 ## Data and behavior
 
-The Worker exposes the D1-backed CMS and social APIs on the same origin. Public story listing is limited to published rows; editor listing/writes require authentication and CSRF/same-origin protections. Reader bookmarks, follows, reading progress, drafts, profiles, writer discovery, and games are client-side/local features in static-mirror mode; do not assume those local records are synchronized to D1.
+The Worker exposes the D1-backed CMS and social APIs on the same origin. Public story listing/search is limited to published rows; `GET /api/stories` supports bounded literal search while preserving its published-only cursor pagination, and `GET /api/writers` groups actual author/publication strings from published stories only without inventing profiles or stable writer IDs. Editor listing/writes require authentication and CSRF/same-origin protections. Reader bookmarks, follows, reading progress, reader preferences, drafts, profiles, writer follows, and games remain browser-local; do not assume those records are synchronized to D1. In static-preview mode writer search covers sample-story bylines only; in API mode it searches the published catalog.
 
-The local/static feed may be empty or the Worker API may be unavailable. Use actual repository/API data when present; otherwise preserve feed structure with a clearly labeled, non-fabricated placeholder/empty state. Never invent article stories, engagement counts, promotional promises, app links, or destinations.
+Bundled story and engagement fixtures, including the static Staff picks rail, render only when the API is disabled, are labeled as local preview samples, and are withheld from API-backed startup. When the Worker API is enabled, show live published rows or honest loading/empty/unavailable states rather than using bundled fixtures; the current Staff picks rail has no live-data source and stays hidden in API mode. Use actual repository/API data when present; otherwise preserve feed structure with a clearly labeled, non-fabricated placeholder/empty state. Never invent article stories, engagement counts, promotional promises, app links, or destinations.
 
 ## Core paths
 
@@ -71,3 +71,9 @@ The local/static feed may be empty or the Worker API may be unavailable. Use act
 ## Open/unknown facts
 
 User scale, product release stage/version, and production service status are not established by checked-in files; do not infer or claim them. Verify the current Worker API/data state before describing live content availability.
+
+## Visual-reference and UI notes
+
+- The supplied green article passages show text selection/highlighting, not ordinary paragraph backgrounds. Do not render persistent highlights unless annotation support is actually implemented.
+- Do not add membership/discount messaging or a promotion action without a verified offer and destination. Keep local preview stories clearly labeled and withhold them in API-backed loading, empty, and error states.
+- Dynamic feed titles remain semantic headings containing native buttons; story thumbnails open the same reader, mobile drawer actions that launch dialogs close the drawer, and desktop navigation remains exposed to assistive technology.
