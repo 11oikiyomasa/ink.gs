@@ -11,7 +11,7 @@ Stable project facts and constraints for future work. Update this file when the 
 | Audience size | Not recorded in the repository. |
 | Release stage/version | Not recorded; verify before making release claims. |
 | Design priorities | Honest editorial presentation, accessible long-form reading, responsive UI, minimal dependencies, secure publishing. |
-| Language/runtime | JavaScript ES modules; Node.js 22+ for local tests/build scripts; Cloudflare Workers runtime in deployment. |
+| Language/runtime | React 19 + JavaScript ES modules; esbuild frontend bundling; Node.js 22+ for local tests/build scripts; Cloudflare Workers runtime in deployment. |
 | Database | Cloudflare D1 via the Worker `DB` binding. |
 | ORM | None identified. |
 
@@ -19,17 +19,19 @@ Stable project facts and constraints for future work. Update this file when the 
 
 ```text
 Reader/editor browser
-   ├── index.html + styles.css + app.js
-   └── same-origin API and static assets
+   ├── React source: src/react/main.jsx + src/react/App.jsx
+   ├── compatibility behavior: src/react/legacy-controller.js
+   ├── CSS: styles.css
+   └── generated browser bundle: app.js
              ↓
       src/worker.js (Cloudflare Worker)
              ├── D1 binding → migrations/*.sql
              └── bundled UI → src/static-content.js
 
-npm run build:assets copies root frontend files to public/ and refreshes the Worker bundle.
+npm run build:assets bundles React into app.js, mirrors frontend files to public/, and refreshes the Worker bundle.
 ```
 
-The root `index.html`, `styles.css`, and `app.js` are frontend sources. `public/` is a generated static mirror. `src/static-content.js` embeds the frontend for the Worker. `src/worker.js` serves the app and handles editor authentication, publishing, public story APIs, and reader interactions. `migrations/` defines D1 tables. `scripts/` holds asset-building and password-hash helpers. `test/` contains Node's built-in tests and an in-memory D1 test double. The existing GitHub CI runs JavaScript syntax checks, tests, the asset build/synchronization check, and SQLite migration validation.
+The root `index.html` and `styles.css` are shell/presentation sources. `src/react/*` is the React UI source, `app.js` is a generated browser bundle, and `public/` is a generated static mirror. `src/static-content.js` embeds the frontend for the Worker. `src/worker.js` serves the app and handles editor authentication, publishing, public story APIs, and reader interactions. `migrations/` defines D1 tables. `scripts/` holds asset-building and password-hash helpers. `test/` contains Node's built-in tests and an in-memory D1 test double. The existing GitHub CI runs JavaScript syntax checks, tests, the asset build/synchronization check, and SQLite migration validation.
 
 ## Data and behavior
 
@@ -41,7 +43,10 @@ Bundled story and engagement fixtures, including the static Staff picks rail, re
 
 | Path | Responsibility |
 |---|---|
-| `index.html`, `styles.css`, `app.js` | Source frontend and interactions |
+| `index.html`, `styles.css` | Document shell and presentation source |
+| `src/react/main.jsx`, `src/react/App.jsx` | React frontend source |
+| `src/react/legacy-controller.js` | Temporary DOM compatibility controller |
+| `app.js` | Generated browser bundle |
 | `src/worker.js` | Worker routing, security, publishing and APIs |
 | `src/static-content.js` | Generated embedded frontend |
 | `public/` | Generated static frontend |
@@ -77,3 +82,7 @@ User scale, product release stage/version, and production service status are not
 - The supplied green article passages show text selection/highlighting, not ordinary paragraph backgrounds. Do not render persistent highlights unless annotation support is actually implemented.
 - Do not add membership/discount messaging or a promotion action without a verified offer and destination. Keep local preview stories clearly labeled and withhold them in API-backed loading, empty, and error states.
 - Dynamic feed titles remain semantic headings containing native buttons; story thumbnails open the same reader, mobile drawer actions that launch dialogs close the drawer, and desktop navigation remains exposed to assistive technology.
+
+
+## React migration state
+The browser render surface is mounted by React 19.3.0. The migration is intentionally compatibility-first: the previous imperative DOM controller is isolated in `src/react/legacy-controller.js` while individual flows move incrementally to React components and hooks. Worker routes, D1 contracts, publishing behavior, and browser-local reader state remain unchanged.
