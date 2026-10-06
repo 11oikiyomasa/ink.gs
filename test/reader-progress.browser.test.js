@@ -202,7 +202,7 @@ test("reader reopening preserves the explicit resume choice and start-over reset
     });
     server.closeAllConnections?.();
     await new Promise(resolveClose => server.close(resolveClose));
-    await rm(profileDirectory, { recursive: true, force: true });
+    await rm(profileDirectory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   });
 
   await waitForDebugPort(debugPort, browser, stderr);
