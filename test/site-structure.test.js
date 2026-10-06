@@ -495,6 +495,6 @@ test("React entry owns the browser runtime and keeps legacy behavior isolated", 
 });
 
 test("generated browser bundle is synchronized into public assets", async () => {
-  const publicApp = await readFile(new URL("../public/app.js", root), "utf8");
+  const publicApp = await readFile(new URL("public/app.js", root), "utf8");
   assert.equal(publicApp, appBundle);
 });
