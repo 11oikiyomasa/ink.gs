@@ -4,7 +4,9 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const root = new URL("../", import.meta.url);
-const html = await readFile(new URL("index.html", root), "utf8");
+const shellHtml = await readFile(new URL("index.html", root), "utf8");
+const reactApp = await readFile(new URL("src/react/App.jsx", root), "utf8");
+const html = `${shellHtml}\n${reactApp}`;
 const css = await readFile(new URL("styles.css", root), "utf8");
 const js = await readFile(new URL("src/react/legacy-controller.js", root), "utf8");
 const reactEntry = await readFile(new URL("src/react/main.jsx", root), "utf8");
@@ -497,4 +499,13 @@ test("React entry owns the browser runtime and keeps legacy behavior isolated", 
 test("generated browser bundle is synchronized into public assets", async () => {
   const publicApp = await readFile(new URL("public/app.js", root), "utf8");
   assert.equal(publicApp, appBundle);
+});
+
+
+test("React shell and UI source stay separated", () => {
+  assert.match(shellHtml, /<div id="root"><\/div>/u);
+  assert.match(shellHtml, /<script[^>]+type=["']module["'][^>]+src=["']app\.js["']/u);
+  assert.match(reactApp, /const APP_MARKUP/u);
+  assert.match(reactApp, /dangerouslySetInnerHTML/u);
+  assert.match(reactApp, /export default function App/u);
 });
