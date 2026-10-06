@@ -6,7 +6,9 @@ import { readFile } from "node:fs/promises";
 const root = new URL("../", import.meta.url);
 const html = await readFile(new URL("index.html", root), "utf8");
 const css = await readFile(new URL("styles.css", root), "utf8");
-const js = await readFile(new URL("app.js", root), "utf8");
+const js = await readFile(new URL("src/react/legacy-controller.js", root), "utf8");
+const reactEntry = await readFile(new URL("src/react/main.jsx", root), "utf8");
+const appBundle = await readFile(new URL("app.js", root), "utf8");
 const workerJs = await readFile(new URL("src/worker.js", root), "utf8");
 const staticContentJs = await readFile(new URL("src/static-content.js", root), "utf8");
 const wranglerConfig = await readFile(new URL("wrangler.jsonc", root), "utf8");
@@ -482,4 +484,17 @@ test("reader response actions have accessible 44px touch targets", () => {
   assert.ok(html.includes('>Post response</button>'));
   assert.match(css, /\.reader-response-actions \.reader-action\{[^}]*min-width:44px;min-height:44px/u);
   assert.match(css, /\.reader-response-actions \.reader-action:focus-visible\{[^}]*outline:/u);
+});
+
+
+test("React entry owns the browser runtime and keeps legacy behavior isolated", () => {
+  assert.match(reactEntry, /createRoot\(rootElement\)/u);
+  assert.match(reactEntry, /import\(["']\.\/legacy-controller\.js["']\)/u);
+  assert.match(appBundle, /createRoot/u);
+  assert.match(appBundle, /ink-react-app/u);
+});
+
+test("generated browser bundle is synchronized into public assets", async () => {
+  const publicApp = await readFile(new URL("../public/app.js", root), "utf8");
+  assert.equal(publicApp, appBundle);
 });
