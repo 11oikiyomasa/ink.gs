@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createServer } from "node:http";
+import { createServer, get as httpGet } from "node:http";
 import { spawn, spawnSync } from "node:child_process";
 import { access, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -121,8 +121,18 @@ async function waitForDebugPort(port, browser, stderr) {
   while (Date.now() < deadline) {
     if (browser.exitCode !== null) throw new Error(`Chromium exited with code ${browser.exitCode}`);
     try {
-      const response = await fetch(`http://127.0.0.1:${port}/json/version`);
-      if (response.ok) return port;
+      const reachable = await new Promise(resolveReachable => {
+        const request = httpGet(`http://127.0.0.1:${port}/json/version`, response => {
+          response.resume();
+          resolveReachable(response.statusCode === 200);
+        });
+        request.once("error", () => resolveReachable(false));
+        request.setTimeout(1000, () => {
+          request.destroy();
+          resolveReachable(false);
+        });
+      });
+      if (reachable) return port;
     } catch {
       // Chromium has not opened its local DevTools endpoint yet.
     }
