@@ -10,8 +10,8 @@ import { fileURLToPath } from "node:url";
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const browserCandidates = [
   process.env.CHROMIUM_PATH,
-  "chromium",
   "google-chrome-stable",
+  "chromium",
   "google-chrome",
   "chrome-headless-shell"
 ].filter(Boolean);
