@@ -96,20 +96,30 @@ async function waitFor(cdp, expression, description, timeout = 8000) {
   throw new Error(`Timed out waiting for ${description}`);
 }
 
-async function waitForDebugPort(profileDirectory, browser) {
-  const activePortFile = resolve(profileDirectory, "DevToolsActivePort");
+async function findFreeTcpPort() {
+  const probe = createServer();
+  await new Promise((resolveListen, rejectListen) => {
+    probe.once("error", rejectListen);
+    probe.listen(0, "127.0.0.1", resolveListen);
+  });
+  const port = probe.address().port;
+  await new Promise(resolveClose => probe.close(resolveClose));
+  return port;
+}
+
+async function waitForDebugPort(port, browser) {
   const deadline = Date.now() + 12000;
   while (Date.now() < deadline) {
     if (browser.exitCode !== null) throw new Error(`Chromium exited with code ${browser.exitCode}`);
     try {
-      const [port] = (await readFile(activePortFile, "utf8")).trim().split("\n");
-      if (port) return Number(port);
+      const response = await fetch(`http://127.0.0.1:${port}/json/version`);
+      if (response.ok) return port;
     } catch {
-      // Chromium has not published its ephemeral debugging port yet.
+      // Chromium has not opened its local DevTools endpoint yet.
     }
     await delay(50);
   }
-  throw new Error("Chromium did not publish its DevTools port");
+  throw new Error(`Chromium did not open its DevTools endpoint on port ${port}`);
 }
 
 function serveProject() {
@@ -156,6 +166,7 @@ test("reader reopening preserves the explicit resume choice and start-over reset
   });
   const baseUrl = `http://127.0.0.1:${server.address().port}/`;
   const profileDirectory = await mkdtemp(resolve(tmpdir(), "ink-reader-progress-"));
+  const debugPort = await findFreeTcpPort();
   const browser = spawn(chromiumPath, [
     "--headless=new",
     "--no-sandbox",
@@ -164,7 +175,8 @@ test("reader reopening preserves the explicit resume choice and start-over reset
     "--disable-background-networking",
     "--no-first-run",
     "--no-default-browser-check",
-    "--remote-debugging-port=0",
+    `--remote-debugging-port=${debugPort}`,
+    "--remote-debugging-address=127.0.0.1",
     "--remote-allow-origins=*",
     `--user-data-dir=${profileDirectory}`,
     "about:blank"
@@ -183,7 +195,7 @@ test("reader reopening preserves the explicit resume choice and start-over reset
     await rm(profileDirectory, { recursive: true, force: true });
   });
 
-  const debugPort = await waitForDebugPort(profileDirectory, browser);
+  await waitForDebugPort(debugPort, browser);
   const targetDeadline = Date.now() + 5000;
   let targets = [];
   while (Date.now() < targetDeadline) {
