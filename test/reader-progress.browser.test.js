@@ -120,26 +120,11 @@ async function waitForDebugPort(port, browser, stderr) {
   const deadline = Date.now() + 12000;
   while (Date.now() < deadline) {
     if (browser.exitCode !== null) throw new Error(`Chromium exited with code ${browser.exitCode}`);
-    try {
-      const reachable = await new Promise(resolveReachable => {
-        const request = httpGet(`http://127.0.0.1:${port}/json/version`, response => {
-          response.resume();
-          resolveReachable(response.statusCode === 200);
-        });
-        request.once("error", () => resolveReachable(false));
-        request.setTimeout(1000, () => {
-          request.destroy();
-          resolveReachable(false);
-        });
-      });
-      if (reachable) return port;
-    } catch {
-      // Chromium has not opened its local DevTools endpoint yet.
-    }
+    if (stderr.join("").includes("DevTools listening on ws://")) return port;
     await delay(50);
   }
   const diagnostic = stderr.join("").trim();
-  throw new Error(`Browser did not open its DevTools endpoint on port ${port}${diagnostic ? `: ${diagnostic.slice(-3000)}` : ""}`);
+  throw new Error(`Browser did not announce its DevTools endpoint on port ${port}${diagnostic ? `: ${diagnostic.slice(-3000)}` : ""}`);
 }
 
 function serveProject() {
@@ -225,10 +210,24 @@ test("reader reopening preserves the explicit resume choice and start-over reset
   let targets = [];
   while (Date.now() < targetDeadline) {
     try {
-      targets = await (await fetch(`http://127.0.0.1:${debugPort}/json`)).json();
+      targets = await new Promise((resolveTargets, rejectTargets) => {
+        const request = httpGet(`http://127.0.0.1:${debugPort}/json`, response => {
+          let body = "";
+          response.setEncoding("utf8");
+          response.on("data", chunk => { body += chunk; });
+          response.on("end", () => {
+            try { resolveTargets(JSON.parse(body)); } catch (error) { rejectTargets(error); }
+          });
+        });
+        request.once("error", rejectTargets);
+        request.setTimeout(1000, () => {
+          request.destroy();
+          rejectTargets(new Error("DevTools target request timed out"));
+        });
+      });
       if (targets.some(target => target.type === "page" && target.webSocketDebuggerUrl)) break;
     } catch {
-      // DevTools HTTP endpoint can lag the published port briefly.
+      // DevTools target discovery can lag the browser readiness signal briefly.
     }
     await delay(40);
   }
