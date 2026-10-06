@@ -335,7 +335,6 @@ const APP_MARKUP = `
     </section>
   </footer>
   <div class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="app.js"></script>
 `;
 
 export default function App() {
