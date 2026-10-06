@@ -1,17 +1,17 @@
 # ndregsman.eu.org — INK personal publishing site source archive
 
-This archive contains the homepage, the Cloudflare Worker API, D1 migrations, tests, and the configuration/scripts needed to build and run the project. The homepage is split into semantic HTML, an external stylesheet, and an external application module. It references six local photo paths and includes client-side image fallbacks, so the photo source directory is optional. It contains no local editor password/hash, Cloudflare API token, or other credential.
+This archive contains the homepage, the Cloudflare Worker API, D1 migrations, tests, and the configuration/scripts needed to build and run the project. The browser UI is rendered by React 19 from `src/react/`, bundled with esbuild into a self-contained `app.js`, and styled by the external stylesheet. It references six local photo paths and includes client-side image fallbacks, so the photo source directory is optional. It contains no local editor password/hash, Cloudflare API token, or other credential.
 
 ## Requirements and local checks
 
-Use Node.js 22 or newer. The project has no third-party package dependencies or lockfile; the test and asset-build commands use Node's built-in modules.
+Use Node.js 22 or newer. The project uses React 19 and esbuild as its frontend dependencies and does not commit a lockfile.
 
 ```sh
 npm test
 npm run build:assets
 ```
 
-`npm test` runs the Worker tests using an in-memory D1 test double. `npm run build:assets` copies `index.html`, `styles.css`, and `app.js` into `public/`, then copies files from `assets/` when that optional source directory exists. When `assets/` is absent, the build still prepares the static homepage and reports that the built-in image fallbacks remain available. The generated `public/` copy is intentionally not duplicated in this archive.
+`npm test` runs the Worker tests using an in-memory D1 test double. `npm run build:assets` bundles `src/react/main.jsx` into `app.js`, mirrors the frontend into `public/`, refreshes `src/static-content.js`, then copies files from `assets/` when that optional source directory exists. When `assets/` is absent, the build still prepares the static homepage and reports that the built-in image fallbacks remain available. The generated `public/` copy is intentionally not duplicated in this archive.
 
 Both SQL migrations can also be checked locally with SQLite. For example:
 
@@ -64,3 +64,7 @@ The workflow builds assets, applies remote D1 migrations, sets Worker secrets, d
 The CMS serves only published rows from `editor_stories` publicly; editor listing and writes require an authenticated session and CSRF/same-origin checks. Public reactions and responses are stored in D1 using a keyed anonymous reader fingerprint. The older `owner_state` table is retained by migration 0001 and is separate from the CMS tables; this project does not import browser-local bookmarks, follows, reading progress, or drafts into D1.
 
 Before enabling the Worker deployment workflow, verify that the intended Cloudflare account owns the named D1 database and that the four required GitHub Actions secrets are present. Once those prerequisites exist, the workflow is the verification gate for the production Worker.
+
+
+## Frontend architecture
+`index.html` is now the document shell. React mounts from `src/react/main.jsx`; `src/react/App.jsx` owns the current render surface; and `src/react/legacy-controller.js` preserves the former imperative interaction layer during the incremental migration. The Worker/D1 API contract is unchanged. This is a compatibility-first React migration; the legacy controller will be replaced flow-by-flow with React components/hooks rather than rewritten blindly in one step.
