@@ -60,3 +60,17 @@ Choose option 2. `GET /api/stories?q=…` retains its existing keyset pagination
 
 #### Consequences
 Catalog discovery now reaches published rows beyond the currently loaded page, while unpublished/local preview rows and fictional writer identities remain excluded. No migration, reader authentication, cross-device sync, or external service is introduced. Search values are bounded and parameterized; cursor pagination remains available for both result sets. Browser-local preferences and progress remain specific to that device.
+
+
+### ADR-003: Migrate the browser render surface to React without replacing the Worker
+- Date: 2026-10-06
+- Status: Accepted
+
+#### Context
+The browser UI had accumulated a large imperative DOM controller. The requested direction was to move the frontend to React while keeping the existing Cloudflare Worker/D1 runtime.
+
+#### Decision and rationale
+Use React 19 with a local esbuild bundle. `index.html` becomes a minimal document shell, `src/react/main.jsx` owns mounting, `src/react/App.jsx` owns the current render surface, and the former imperative controller is isolated in `src/react/legacy-controller.js` as a compatibility layer. This avoids changing Worker/D1 contracts during the migration.
+
+#### Consequences
+React/ReactDOM and esbuild are now dependencies. Generated `app.js`, `public/`, and `src/static-content.js` must be synchronized by the build. Full controller-to-hooks/component migration remains follow-up work.
