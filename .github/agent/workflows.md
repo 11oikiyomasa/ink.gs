@@ -27,3 +27,7 @@ Local checks are `npm test` and `npm run build:assets`. The optional deploy comm
 
 ## React migration
 Edit `src/react/` for UI changes. Keep generated `app.js`, `public/`, and `src/static-content.js` synchronized through the build rather than hand-editing generated output.
+
+
+## React migration
+Edit `src/react/` for UI changes. Keep generated `app.js`, `public/`, and `src/static-content.js` synchronized through the build rather than hand-editing generated output.
