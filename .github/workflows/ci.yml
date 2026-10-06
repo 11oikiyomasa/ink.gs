@@ -5,6 +5,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -15,16 +18,32 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Install Node dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build static assets
+        run: npm run build:assets
       - name: Check JavaScript syntax
         run: |
           node --check app.js
+          node --check src/react/legacy-controller.js
           node --check src/worker.js
       - name: Run tests
         run: npm test
-      - name: Build static assets
-        run: npm run build:assets
-      - name: Verify generated Worker bundle is committed
-        run: git diff --exit-code -- src/static-content.js public/
+      - name: Verify generated Worker bundle
+        if: github.event_name == 'pull_request'
+        run: git diff --exit-code -- app.js public/ src/static-content.js
+      - name: Commit generated assets on main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          if git diff --quiet -- app.js public/ src/static-content.js; then
+            echo "Generated assets are already synchronized."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js public/ src/static-content.js
+          git commit -m "chore: sync generated React assets [skip ci]"
+          git push
       - name: Validate D1 migrations with SQLite
         run: |
           python3 - <<'PY'
