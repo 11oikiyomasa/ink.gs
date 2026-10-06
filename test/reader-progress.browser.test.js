@@ -168,7 +168,7 @@ test("reader reopening preserves the explicit resume choice and start-over reset
   const profileDirectory = await mkdtemp(resolve(tmpdir(), "ink-reader-progress-"));
   const debugPort = await findFreeTcpPort();
   const browser = spawn(chromiumPath, [
-    "--headless=new",
+    "--headless",
     "--no-sandbox",
     "--disable-gpu",
     "--disable-dev-shm-usage",
