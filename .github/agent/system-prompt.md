@@ -39,3 +39,9 @@ Do not push, publish, deploy, apply remote migrations, or change remote services
 - Treat `src/react/` as the source of truth for browser UI structure.
 - `src/react/legacy-controller.js` is a temporary compatibility layer, not the preferred location for new features.
 - `dangerouslySetInnerHTML` in `App.jsx` is an intentional migration bridge; replace it incrementally with real React components as behavior moves out of the legacy controller.
+
+
+## React-specific guidance
+- Treat `src/react/` as the source of truth for browser UI structure.
+- `src/react/legacy-controller.js` is a temporary compatibility layer, not the preferred location for new features.
+- `dangerouslySetInnerHTML` in `App.jsx` is an intentional migration bridge; replace it incrementally with real React components as behavior moves out of the legacy controller.
