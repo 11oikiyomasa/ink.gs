@@ -2,7 +2,7 @@
 # ink.gs — Agent Workflows
 
 ## Feature work
-1. Read `AGENTS.md` and the three memory files; inspect the relevant UI, Worker, data, and generated assets.
+1. Read `AGENTS.md` and the three memory files; inspect the relevant React source, Worker, data, and generated assets.
 2. Compare the request with project constraints: preserve the real brand, use existing data, and do not invent content or destinations.
 3. Choose the smallest implementation and identify tests. Proceed when direction is clear; ask only for a materially missing choice or authority.
 4. Implement and update tests. For frontend changes, run `npm run build:assets` to synchronize `public/` and `src/static-content.js`.
@@ -23,3 +23,7 @@ Use only repository content and verified user-provided material. When stories ar
 
 ## Release and deployment
 Local checks are `npm test` and `npm run build:assets`. The optional deploy command and `.github/workflows/deploy-worker.yml` can change remote Worker/D1 state. Never push, publish, deploy, set secrets, or apply remote migrations unless the user explicitly requests it and any required authority is present.
+
+
+## React migration
+Edit `src/react/` for UI changes. Keep generated `app.js`, `public/`, and `src/static-content.js` synchronized through the build rather than hand-editing generated output.
