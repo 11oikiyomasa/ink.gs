@@ -109,3 +109,10 @@ Keep concise records of recent work; archive older entries if this file grows be
 - **Changed files:** `app.js`, generated `public/app.js` and `src/static-content.js`, `test/site-structure.test.js`, new `test/reader-progress.browser.test.js`, and this task-history entry. Existing search/API and earlier worktree changes were preserved.
 - **Verification:** `npm run build:assets` passed; `npm test` passed (76/76); the headless Chromium reader regression passed three consecutive standalone runs and again in the full suite; `node --check` passed for `app.js`, `src/worker.js`, `test/site-structure.test.js`, and `test/reader-progress.browser.test.js`; root/public parity and exact `INDEX_HTML`/`STYLES_CSS`/`APP_JS` Worker-bundle parity passed; `git diff --check` passed.
 - **Notes:** Progress and reader preferences remain browser-local. No search/API behavior, D1 schema, dependencies, commit, push, merge, deployment, production operation, or external service was changed or performed.
+
+### TASK-014 — React frontend migration foundation
+- **Date:** 2026-10-06
+- **Type:** architecture / migration / test
+- **Summary:** Moved the browser render surface to React 19, added esbuild, made `index.html` a minimal `#root` shell, bundled `src/react/main.jsx` into `app.js`, and isolated the former DOM controller in `src/react/legacy-controller.js` as a compatibility bridge.
+- **Verification:** GitHub Actions passed with the browser reader regression, generated asset synchronization, and D1 migration validation. A live GitHub Pages smoke test confirmed the app renders under `#root`, the feed is usable, mobile has no obvious horizontal overflow, and a story reader opens/closes.
+- **Notes:** This is a compatibility-first migration. Worker routes, D1 contracts, local reader state, and publishing behavior remain unchanged. Component-by-component migration of the compatibility controller is still pending.
