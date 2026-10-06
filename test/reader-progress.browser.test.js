@@ -8,7 +8,16 @@ import { dirname, extname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const chromiumPath = process.env.CHROMIUM_PATH || spawnSync("which", ["chromium"], { encoding: "utf8" }).stdout.trim();
+const browserCandidates = [
+  process.env.CHROMIUM_PATH,
+  "chromium",
+  "google-chrome-stable",
+  "google-chrome",
+  "chrome-headless-shell"
+].filter(Boolean);
+const chromiumPath = browserCandidates
+  .map(candidate => candidate.includes("/") ? candidate : spawnSync("which", [candidate], { encoding: "utf8" }).stdout.trim())
+  .find(Boolean) || "";
 
 function delay(milliseconds) {
   return new Promise(resolveDelay => setTimeout(resolveDelay, milliseconds));
@@ -107,7 +116,7 @@ async function findFreeTcpPort() {
   return port;
 }
 
-async function waitForDebugPort(port, browser) {
+async function waitForDebugPort(port, browser, stderr) {
   const deadline = Date.now() + 12000;
   while (Date.now() < deadline) {
     if (browser.exitCode !== null) throw new Error(`Chromium exited with code ${browser.exitCode}`);
@@ -119,7 +128,8 @@ async function waitForDebugPort(port, browser) {
     }
     await delay(50);
   }
-  throw new Error(`Chromium did not open its DevTools endpoint on port ${port}`);
+  const diagnostic = stderr.join("").trim();
+  throw new Error(`Browser did not open its DevTools endpoint on port ${port}${diagnostic ? `: ${diagnostic.slice(-3000)}` : ""}`);
 }
 
 function serveProject() {
@@ -180,8 +190,13 @@ test("reader reopening preserves the explicit resume choice and start-over reset
     "--remote-allow-origins=*",
     `--user-data-dir=${profileDirectory}`,
     "about:blank"
-  ], { stdio: "ignore" });
+  ], {
+    stdio: ["ignore", "ignore", "pipe"]
+  });
   let cdp;
+  const stderr = [];
+  browser.stderr?.setEncoding("utf8");
+  browser.stderr?.on("data", chunk => stderr.push(String(chunk)));
 
   t.after(async () => {
     cdp?.close();
@@ -195,7 +210,7 @@ test("reader reopening preserves the explicit resume choice and start-over reset
     await rm(profileDirectory, { recursive: true, force: true });
   });
 
-  await waitForDebugPort(debugPort, browser);
+  await waitForDebugPort(debugPort, browser, stderr);
   const targetDeadline = Date.now() + 5000;
   let targets = [];
   while (Date.now() < targetDeadline) {
