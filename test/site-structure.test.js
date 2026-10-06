@@ -86,6 +86,14 @@ test("reader supports topic chips and safe pull-quote rendering", () => {
   assert.ok(css.includes(".reader-body blockquote"));
 });
 
+test("local samples are labeled as preview content and never shown during live API loading", () => {
+  assert.match(js, /if \(!API_ENABLED\) ensureLocalStories\(\)/u);
+  assert.match(js, /Local preview · Sample stories and activity\./u);
+  assert.match(js, /preview\.textContent = 'Sample story'/u);
+  assert.doesNotMatch(html, /Member-only/u);
+  assert.match(html, /aria-label="Story topics"/u);
+});
+
 test("reader keeps editorial article hierarchy and honest mobile controls", () => {
   assert.ok(html.includes('id="reader-publication"'));
   assert.ok(html.includes('id="reader-meta"'));
@@ -132,12 +140,22 @@ test("mobile reader, menu, and search hooks stay wired", () => {
 
 
 test("dynamic reader stories and remote-only actions keep accessibility hooks", () => {
-  assert.match(js, /title\.className = 'story-title-button'/u);
-  assert.match(js, /title\.setAttribute\('tabindex', '0'\)/u);
+  assert.match(js, /const titleButton = document\.createElement\('button'\)/u);
+  assert.match(js, /titleButton\.className = 'story-title-button'/u);
+  assert.match(js, /title\.append\(titleButton\)/u);
+  assert.match(js, /imageButton\.className = 'story-image-button'/u);
+  assert.match(js, /imageButton\.addEventListener\('click', \(\) => openReader\(story\.id\)\)/u);
+  assert.doesNotMatch(js, /title\.setAttribute\('role', 'button'\)|title\.setAttribute\('tabindex', '0'\)/u);
   assert.match(js, /function socialAvailable\(\)/u);
   assert.match(js, /Engagement is available for published online stories/u);
   assert.match(js, /function readStorageValue\(key\)/u);
   assert.match(js, /This story link is malformed/u);
+});
+
+test("unsupported membership claims and demo-only promotion controls are absent", () => {
+  assert.doesNotMatch(html, /membership-card|Explore membership|Member-only/u);
+  assert.doesNotMatch(js, /Membership is a demo action|Get started/u);
+  assert.match(html, /id=["']reader-topics["'] aria-label=["']Story topics["']/u);
 });
 
 test("editor authentication controls are actually revealed only after sign-in", () => {
@@ -260,14 +278,29 @@ test("typography uses local system stacks with bold sans story headings and seri
   assert.match(css, /\.reader-body\s*\{[\s\S]*?font-family:\s*serif/u);
 });
 
+test("editorial accents are distinct from Medium yellow and preview chips stay legible", () => {
+  assert.doesNotMatch(css, /#ffc017/iu);
+  assert.match(css, /--accent:#c2a676/u);
+  assert.match(css, /\.promotion-banner\{background:#22211e/u);
+  assert.match(css, /\.reader-chip-preview\{border-color:/u);
+  assert.match(css, /\.reader-title\{max-width:19ch;font-size:clamp\(40px/u);
+});
+
 test("mobile drawer exposes accessible controls, focus handling, scroll lock, and narrow-width sizing", () => {
   assert.match(html, /id=["']menu-toggle["'][^>]*aria-controls=["']main-navigation["']/u);
   assert.match(html, /id=["']drawer-overlay["']/u);
   assert.match(js, /document\.activeElement === last/u);
   assert.match(js, /menuReturnFocus/u);
   assert.match(js, /body\.classList\.toggle\('menu-open', open\)/u);
-  assert.match(css, /width:clamp\(240px,62vw,360px\)/u);
+  assert.match(css, /width:clamp\(200px,62vw,360px\)/u);
   assert.match(css, /\.drawer-overlay\.visible/u);
+});
+
+test("drawer dialog actions close the mobile menu and desktop navigation remains accessible", () => {
+  assert.match(js, /function closeMobileMenuIfOpen\(\)\s*\{\s*if \(document\.body\.classList\.contains\('menu-open'\)\) toggleMobileMenu\(false\);/u);
+  const dialogActions = js.slice(js.indexOf("if (target.id === 'editor-settings-button')"), js.indexOf("if (target.dataset.writerAction"));
+  assert.equal((dialogActions.match(/closeMobileMenuIfOpen\(\)/gu) || []).length, 5);
+  assert.match(js, /if \(window\.innerWidth <= 820\) rail\.setAttribute\('aria-hidden', String\(!open\)\);\s*else rail\.removeAttribute\('aria-hidden'\);/u);
 });
 
 
@@ -285,6 +318,8 @@ test("responsive feed and reader typography stay legible with a safe-area-aware 
   assert.match(css, /\.reader-close\{width:44px;height:44px\}/u);
   assert.match(css, /\.reader-follow-publication\{min-height:44px;padding:0 4px\}/u);
   assert.match(css, /\.reader-inline-follow,\.reader-tool\{min-height:44px\}/u);
+  assert.match(css, /\.bookmark,\.more\{width:44px;height:44px;flex:0 0 44px\}/u);
+  assert.match(css, /\.story-image-button\{width:180px;aspect-ratio:16\/11/u);
 });
 
 
@@ -299,6 +334,7 @@ test("closed mobile reader stays out of the feed initially and after close or Es
   const closeReader = js.slice(js.indexOf("function closeReader()"), js.indexOf("function updateReaderProgress()"));
   assert.match(closeReader, /reader\.hidden\s*=\s*true;/u);
   assert.match(js, /reader\?\.addEventListener\('close',[\s\S]*?reader\.hidden\s*=\s*true;/u);
+  assert.match(js, /reader\?\.addEventListener\('close',[\s\S]*?if \(reader\.open\) return;[\s\S]*?reader\.hidden\s*=\s*true;/u);
 });
 
 
@@ -322,6 +358,34 @@ test("sample picks and mobile feed hierarchy are clearly labeled and sized respo
   assert.match(css, /@media \(max-width:360px\)\{\.skeleton-extra-title-line\{display:block\}\}/u);
 });
 
+test("API-backed empty feeds keep bundled Staff picks hidden", () => {
+  assert.match(html, /<section class="side-section" id="staff-picks" hidden>/u);
+  assert.match(js, /const staffPicks = document\.querySelector\('#staff-picks'\);\s*if \(staffPicks\) staffPicks\.hidden = API_ENABLED/u);
+  assert.match(js, /No published stories yet\./u);
+  assert.equal((js.match(/staffPicks\.hidden\s*=/gu) || []).length, 1);
+});
+
+test("API-backed error feeds keep bundled Staff picks hidden", () => {
+  assert.match(js, /else if \(!append\) \{\s*publicStoryUnavailable = true;\s*publicStorySearchError = false;/u);
+  assert.match(js, /publicStorySearchError = true;\s*publicStoryUnavailable = false;\s*renderRemoteStories\(\[\], \{ reset: true \}\)/u);
+  assert.match(js, /Online stories are temporarily unavailable\. Try again shortly\./u);
+  assert.match(js, /const staffPicks = document\.querySelector\('#staff-picks'\);\s*if \(staffPicks\) staffPicks\.hidden = API_ENABLED/u);
+  assert.equal((js.match(/staffPicks\.hidden\s*=/gu) || []).length, 1);
+});
+
+test("mobile feed compacts the About strip without removing Open in app or feed status", () => {
+  assert.match(html, /class="open-app-bar"/u);
+  assert.match(html, /class="feed-status-slot"><p class="feed-status"/u);
+  assert.match(css, /\.promotion-banner\s*\{\s*min-height:32px;[\s\S]*?padding:4px 12px;/u);
+  assert.match(css, /\.promotion-banner > span\s*\{display:none\}/u);
+  assert.match(css, /main\s*\{padding-top:8px\}/u);
+  assert.match(css, /@media \(max-width:820px\)\{\.feed-status-slot\{min-height:47px\}\}/u);
+});
+
+test("mobile profile avatar has a 44px tap box around its compact visible circle", () => {
+  assert.match(css, /\.avatar\{width:44px;height:44px;min-width:44px;min-height:44px;padding:5px;background-clip:content-box\}/u);
+});
+
 test("responsive header, drawer, and close controls retain 44px hit areas", () => {
   assert.match(css, /\.menu-toggle\{width:44px;height:44px\}/u);
   assert.match(css, /\.search-toggle\{width:44px;height:44px;min-width:44px;flex:0 0 44px\}/u);
@@ -330,4 +394,92 @@ test("responsive header, drawer, and close controls retain 44px hit areas", () =
   assert.match(css, /\.open-app-bar\{min-height:42px[\s\S]*?font-size:clamp\(16px,4vw,18px\)/u);
   assert.match(css, /\.welcome p:last-child\{margin-top:6px;font-size:12px;line-height:1\.4\}/u);
   assert.match(css, /main\{padding-top:14px\}/u);
+});
+
+
+test("feed bookmark renders only its SVG icon", () => {
+  assert.match(js, /bookmark\.replaceChildren\(iconSvg\('bookmark'\)\)/u);
+  assert.match(css, /\.bookmark svg\{width:15px;height:18px\}/u);
+  assert.doesNotMatch(css, /\.bookmark::before/u);
+  assert.doesNotMatch(css, /\.bookmark\[aria-pressed=['"]true['"]\]::before/u);
+});
+
+test("reader offers explicit resume and start-over without auto-restoring on a normal open", () => {
+  assert.match(html, /id="reader-continue"[^>]*>Continue reading/u);
+  assert.match(html, /id="reader-start-over"[^>]*>Start from beginning/u);
+  assert.match(js, /const READER_RESUME_THRESHOLD = 0\.02/u);
+  assert.match(js, /let readerResumePending = false/u);
+  const openReader = js.slice(js.indexOf("function openReader(id)"), js.indexOf("function closeReader()"));
+  assert.match(openReader, /applyReaderSettings\(\)/u);
+  assert.match(openReader, /readerScroll\) readerScroll\.scrollTop = 0/u);
+  assert.match(openReader, /hasMeaningfulProgress/u);
+  assert.match(openReader, /readerResumePending = hasMeaningfulProgress/u);
+  assert.match(openReader, /showModal\(\)[\s\S]*?readerScroll\.scrollTop = 0/u);
+  assert.doesNotMatch(openReader, /restoreReaderPosition/u);
+  assert.match(js, /function resumeSavedPosition\(\)[\s\S]*?afterReaderLayout\(storyId, \(\) => \{[\s\S]*?restoreReaderPosition\(storyId, ratio\);[\s\S]*?readerResumePending = false;/u);
+  assert.match(js, /target\.id === 'reader-continue'[\s\S]*?resumeSavedPosition\(\)/u);
+  assert.match(js, /function startStoryFromBeginning\(\)[\s\S]*?state\.progress\[currentStory\.id\] = \{ ratio: 0, finished: false \}/u);
+  assert.match(js, /function updateReaderProgress\(\)[\s\S]*?readerResumePending\) return/u);
+});
+
+test("reader settings are accessible, validated, local-only, and preserve serif body copy", () => {
+  assert.match(html, /<summary class="reader-tool reader-settings-toggle"[^>]*>Aa<\/summary>/u);
+  assert.match(html, /Text size[\s\S]*?data-reader-size="small"[\s\S]*?data-reader-size="regular"[\s\S]*?data-reader-size="large"/u);
+  assert.match(html, /Reading width[\s\S]*?data-reader-width="narrow"[\s\S]*?data-reader-width="comfortable"[\s\S]*?data-reader-width="wide"/u);
+  assert.match(html, /reading width, and progress are saved only on this device/u);
+  assert.match(js, /readerSettings: \{ textSize: 'regular', readingWidth: 'comfortable' \}/u);
+  assert.match(js, /\['small', 'regular', 'large'\]\.includes\(saved\.readerSettings\?\.textSize\)/u);
+  assert.match(js, /\['narrow', 'comfortable', 'wide'\]\.includes\(saved\.readerSettings\?\.readingWidth\)/u);
+  assert.match(js, /localStorage\.setItem\(storageKey, JSON\.stringify\(state\)\)/u);
+  assert.match(js, /function setReaderSetting\([\s\S]*?persistState\(\)[\s\S]*?applyReaderSettings\(\)/u);
+  assert.match(css, /\.reader\[data-reader-size="small"\] \.reader-body\{font-size:19px/u);
+  assert.match(css, /\.reader\[data-reader-width="wide"\] \.reader-body\{width:100%;max-width:76ch/u);
+  assert.match(css, /\.reader-body\{font-family:var\(--serif\)\}/u);
+  assert.match(css, /\.reader-setting-options button\{[^}]*min-height:44px/u);
+});
+
+test("reader completion is guarded by the near-end scroll threshold", () => {
+  assert.match(js, /const READER_COMPLETION_THRESHOLD = 0\.9/u);
+  assert.match(js, /function canMarkStoryFinished\(\)[\s\S]*?readerScrollRatio\(\) >= READER_COMPLETION_THRESHOLD/u);
+  assert.match(js, /readerRead\.disabled = finished \|\| !canMarkStoryFinished\(\)/u);
+  assert.match(js, /function markFinished\(\)[\s\S]*?if \(!canMarkStoryFinished\(\)\)[\s\S]*?Read near the end of the story/u);
+  assert.match(html, /id="reader-finish-hint"[^>]*>Available after reading near the end of the article\./u);
+  assert.match(css, /\.reader-finished\{min-height:44px\}/u);
+});
+
+test("live story discovery searches the published catalog with debounce, cancellation, and pagination states", () => {
+  assert.match(html, /id="search" type="search" maxlength="100"/u);
+  assert.match(js, /function schedulePublicCatalogSearch\([\s\S]*?publicStoryRequestController\?\.abort\(\)[\s\S]*?setTimeout\(run, 260\)/u);
+  assert.match(js, /params\.set\('q', publicStoryQuery\)/u);
+  assert.match(js, /signal: controller\.signal/u);
+  assert.match(js, /if \(requestId !== publicStoryRequestId\) return false/u);
+  assert.match(js, /Searching published stories…/u);
+  assert.match(js, /No published stories match that search\./u);
+  assert.match(js, /Published story search is temporarily unavailable/u);
+  assert.match(workerJs, /published = 1 AND managed_by = \?\$\{searchSql\}/u);
+  assert.match(workerJs, /function publicSearchPattern\(url\)/u);
+});
+
+test("writer discovery searches published catalog bylines only and keeps local preview scope honest", () => {
+  assert.match(html, /id="writer-search" type="search" maxlength="100"/u);
+  assert.match(html, /id="writer-search-status" role="status" aria-live="polite"/u);
+  assert.match(html, /id="writer-load-more"[^>]*hidden/u);
+  assert.match(js, /function scheduleWriterSearch\([\s\S]*?writerSearchController\?\.abort\(\)[\s\S]*?setTimeout\(run, 260\)/u);
+  assert.match(js, /apiRequest\('\/api\/writers\?' \+ params\.toString\(\)/u);
+  assert.match(js, /published writers and publications/u);
+  assert.match(js, /No published writers or publications match that search\./u);
+  assert.match(js, /Published writer search is temporarily unavailable/u);
+  assert.match(js, /Local preview · Searching sample-story bylines saved on this device\./u);
+  assert.match(workerJs, /WHERE published = 1 AND managed_by = \?/u);
+  assert.match(workerJs, /author LIKE \? ESCAPE/u);
+  assert.match(workerJs, /publication LIKE \? ESCAPE/u);
+  assert.doesNotMatch(workerJs, /writer_profiles|writer_id/u);
+});
+
+
+test("reader response actions have accessible 44px touch targets", () => {
+  assert.ok(html.includes('id="reader-respond-cancel"'));
+  assert.ok(html.includes('>Post response</button>'));
+  assert.match(css, /\.reader-response-actions \.reader-action\{[^}]*min-width:44px;min-height:44px/u);
+  assert.match(css, /\.reader-response-actions \.reader-action:focus-visible\{[^}]*outline:/u);
 });

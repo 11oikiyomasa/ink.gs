@@ -19,7 +19,7 @@
       <div class="top-actions">
         <div class="search-box" aria-label="Search stories">
           <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.4"></circle><path d="m15.5 15.5 4.2 4.2"></path></svg>
-          <input id="search" type="search" placeholder="Search stories" autocomplete="off" aria-label="Search stories" />
+          <input id="search" type="search" maxlength="100" placeholder="Search stories" autocomplete="off" aria-label="Search published stories" />
           <button class="search-toggle" id="search-toggle" type="button" aria-label="Open search" aria-expanded="false"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.4"></circle><path d="m15.5 15.5 4.2 4.2"></path></svg></button>
           <button class="search-clear" id="search-clear" type="button" aria-label="Clear search">×</button>
         </div>
@@ -127,13 +127,12 @@
       <section class="side-section side-discover"><p class="section-kicker">Explore</p><h2>Find something worth reading.</h2><p>Follow a topic, then let the feed narrow itself.</p><div class="topics">
         <button class="topic-button" data-topic="Technology">Technology</button><button class="topic-button" data-topic="Creativity">Creativity</button><button class="topic-button" data-topic="Life">Life</button><button class="topic-button" data-topic="Writing">Writing</button><button class="topic-button" data-topic="Travel">Travel</button><button class="topic-button" data-topic="Mindfulness">Mindfulness</button>
       </div></section>
-      <section class="side-section"><p class="section-kicker">Staff picks · Sample stories</p>
+      <section class="side-section" id="staff-picks" hidden><p class="section-kicker">Staff picks · Sample stories</p>
         <article class="pick"><span class="pick-number">01</span><div><p class="pick-byline">A Field Guide · 8 min</p><h3>On keeping a notebook you never show anyone</h3></div></article>
         <article class="pick"><span class="pick-number">02</span><div><p class="pick-byline">Civic Life · 6 min</p><h3>How a block becomes a neighborhood</h3></div></article>
         <article class="pick"><span class="pick-number">03</span><div><p class="pick-byline">New Rhythm · 5 min</p><h3>A kinder way to make a plan</h3></div></article>
         <a class="see-more" href="#stories">Browse all stories →</a>
       </section>
-      <section class="membership-card" id="membership"><p class="section-kicker">Membership</p><h2>Read without limits.</h2><p>Support writers and keep discovering ideas that stay with you.</p><button data-toast="Membership is a demo action on this sample page.">Explore membership</button></section>
     </aside>
   </div>
 <dialog class="composer" id="composer" aria-labelledby="composer-label" data-mode="write">
@@ -218,9 +217,13 @@
     <div class="reader-progress" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
     <div class="reader-scroll" id="reader-scroll" tabindex="0">
       <article class="reader-article">
-        <div class="reader-chips" id="reader-topics" aria-label="Story attributes">
-          <span class="reader-chip reader-chip-accent">Member-only</span>
-          <span class="reader-chip" id="reader-topic">Story</span>
+        <div class="reader-chips" id="reader-topics" aria-label="Story topics"></div>
+        <div class="reader-resume" id="reader-resume" hidden aria-labelledby="reader-resume-message">
+          <p id="reader-resume-message" role="status" aria-live="polite"></p>
+          <div class="reader-resume-actions" role="group" aria-label="Choose where to start reading">
+            <button type="button" id="reader-continue">Continue reading</button>
+            <button type="button" id="reader-start-over">Start from beginning</button>
+          </div>
         </div>
         <h2 class="reader-title" id="reader-title"></h2>
         <p class="reader-summary" id="reader-summary"></p>
@@ -230,6 +233,29 @@
           <span class="reader-author-name" id="reader-author-name"></span>
           <button class="reader-inline-follow" id="reader-follow" type="button" aria-pressed="false">Follow</button>
         </div>
+        <details class="reader-settings" id="reader-settings">
+          <summary class="reader-tool reader-settings-toggle" aria-label="Aa reader settings" title="Reader settings">Aa</summary>
+          <div class="reader-settings-panel" aria-label="Reader settings">
+            <p class="reader-local-note">Text size, reading width, and progress are saved only on this device.</p>
+            <fieldset class="reader-setting-group">
+              <legend>Text size</legend>
+              <div class="reader-setting-options">
+                <button type="button" data-reader-size="small" aria-pressed="false">Small</button>
+                <button type="button" data-reader-size="regular" aria-pressed="true">Regular</button>
+                <button type="button" data-reader-size="large" aria-pressed="false">Large</button>
+              </div>
+            </fieldset>
+            <fieldset class="reader-setting-group">
+              <legend>Reading width</legend>
+              <div class="reader-setting-options">
+                <button type="button" data-reader-width="narrow" aria-pressed="false">Narrow</button>
+                <button type="button" data-reader-width="comfortable" aria-pressed="true">Comfortable</button>
+                <button type="button" data-reader-width="wide" aria-pressed="false">Wide</button>
+              </div>
+            </fieldset>
+            <p class="reader-settings-status" id="reader-settings-status" role="status" aria-live="polite"></p>
+          </div>
+        </details>
         <div class="reader-tool-row">
           <button class="reader-tool" id="reader-listen" type="button" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 9.5A2.5 2.5 0 0 1 6.5 7H9l4-3v16l-4-3H6.5A2.5 2.5 0 0 1 4 14.5z"/><path d="M17 8.5a5 5 0 0 1 0 7M19.5 6a8.5 8.5 0 0 1 0 12"/></svg><span>Listen</span></button>
           <button class="reader-tool" id="reader-share" type="button" aria-label="Share story link" title="Share story link"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="m8.6 10.6 6.8-4.1M8.6 13.4l6.8 4.1"></path></svg><span>Share</span></button>
@@ -261,7 +287,8 @@
           <span class="reader-stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4.5h11v15l-5.5-3.3-5.5 3.3z"/></svg></span>
         </button>
       </div>
-      <button class="reader-finished" id="reader-read" type="button">Mark as finished</button>
+      <button class="reader-finished" id="reader-read" type="button" aria-describedby="reader-finish-hint">Mark as finished</button>
+      <span class="visually-hidden" id="reader-finish-hint">Available after reading near the end of the article.</span>
     </div>
     <section class="reader-social" id="reader-social" hidden aria-label="Story responses">
       <div class="reader-social-heading"><strong id="reader-response-count">0 responses</strong><span>Join the conversation</span></div>
@@ -287,8 +314,10 @@
   <dialog class="utility-dialog" id="writers-dialog" aria-labelledby="writers-title">
     <div class="utility-dialog-head"><div><p class="eyebrow">Discover</p><h2 id="writers-title">Find writers</h2><p>Search writers already represented in ink.gs and follow them from one place.</p></div><button class="utility-dialog-close" id="writers-close" type="button" aria-label="Close writer discovery">×</button></div>
     <label class="writer-search-label" for="writer-search">Search writers</label>
-    <input class="writer-search" id="writer-search" type="search" placeholder="Name or publication" autocomplete="off">
+    <input class="writer-search" id="writer-search" type="search" maxlength="100" placeholder="Name or publication" autocomplete="off">
+    <p class="writer-search-status" id="writer-search-status" role="status" aria-live="polite"></p>
     <div class="writer-list" id="writer-list" aria-live="polite"></div>
+    <button class="load-more writer-load-more" id="writer-load-more" type="button" hidden>Load more writers</button>
   </dialog>
 
   <dialog class="utility-dialog game-dialog" id="games-dialog" aria-labelledby="games-title">
