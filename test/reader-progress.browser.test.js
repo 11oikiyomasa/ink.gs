@@ -120,11 +120,29 @@ async function waitForDebugPort(port, browser, stderr) {
   const deadline = Date.now() + 12000;
   while (Date.now() < deadline) {
     if (browser.exitCode !== null) throw new Error(`Chromium exited with code ${browser.exitCode}`);
-    if (stderr.join("").includes("DevTools listening on ws://")) return port;
+    try {
+      await new Promise((resolveProbe, rejectProbe) => {
+        const request = httpGet(`http://127.0.0.1:${port}/json/version`, response => {
+          response.resume();
+          response.once("end", () => {
+            if (response.statusCode === 200) resolveProbe();
+            else rejectProbe(new Error(`DevTools returned HTTP ${response.statusCode}`));
+          });
+        });
+        request.once("error", rejectProbe);
+        request.setTimeout(750, () => {
+          request.destroy();
+          rejectProbe(new Error("DevTools readiness probe timed out"));
+        });
+      });
+      return port;
+    } catch {
+      // The browser can take a short moment to bind and expose its DevTools endpoint.
+    }
     await delay(50);
   }
   const diagnostic = stderr.join("").trim();
-  throw new Error(`Browser did not announce its DevTools endpoint on port ${port}${diagnostic ? `: ${diagnostic.slice(-3000)}` : ""}`);
+  throw new Error(`Browser did not expose its DevTools endpoint on port ${port}${diagnostic ? `: ${diagnostic.slice(-3000)}` : ""}`);
 }
 
 function serveProject() {
@@ -173,7 +191,7 @@ test("reader reopening preserves the explicit resume choice and start-over reset
   const profileDirectory = await mkdtemp(resolve(tmpdir(), "ink-reader-progress-"));
   const debugPort = await findFreeTcpPort();
   const browser = spawn(chromiumPath, [
-    "--headless",
+    "--headless=new",
     "--no-sandbox",
     "--disable-gpu",
     "--disable-dev-shm-usage",
